@@ -1,0 +1,38 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="heroGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#0f3460;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#533483;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="spotlight1" cx="30%" cy="20%" r="40%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Base gradient background -->
+  <rect width="1920" height="1080" fill="url(#heroGrad1)"/>
+  
+  <!-- Spotlight effect -->
+  <rect width="1920" height="1080" fill="url(#spotlight1)"/>
+  
+  <!-- Abstract geometric shapes -->
+  <circle cx="1600" cy="200" r="150" fill="#ffffff" opacity="0.03"/>
+  <circle cx="1700" cy="300" r="80" fill="#ffffff" opacity="0.05"/>
+  <rect x="100" y="800" width="200" height="200" rx="20" fill="#ffffff" opacity="0.02" transform="rotate(15 200 900)"/>
+  
+  <!-- Subtle grid pattern -->
+  <defs>
+    <pattern id="grid1" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#grid1)"/>
+  
+  <!-- Camera lens flare effect -->
+  <circle cx="1400" cy="150" r="3" fill="#ffffff" opacity="0.8"/>
+  <circle cx="1405" cy="155" r="6" fill="#ffffff" opacity="0.4"/>
+  <circle cx="1410" cy="160" r="2" fill="#ffffff" opacity="0.6"/>
+</svg>

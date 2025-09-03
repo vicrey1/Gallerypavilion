@@ -1,0 +1,53 @@
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4299e1;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#90cdf4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#bee3f8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mountainGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5568;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d3748;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4299e1;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#2b6cb0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="600" height="250" fill="url(#skyGrad)"/>
+  
+  <!-- Mountains -->
+  <path d="M0 200 L150 100 L300 150 L450 80 L600 120 L600 250 L0 250 Z" fill="url(#mountainGrad)"/>
+  
+  <!-- Snow caps -->
+  <path d="M120 120 L150 100 L180 120 Z" fill="white" opacity="0.9"/>
+  <path d="M420 100 L450 80 L480 100 Z" fill="white" opacity="0.9"/>
+  
+  <!-- Water/Lake -->
+  <rect x="0" y="250" width="600" height="150" fill="url(#waterGrad)"/>
+  
+  <!-- Water reflections -->
+  <path d="M0 250 L150 300 L300 280 L450 320 L600 300 L600 400 L0 400 Z" fill="#2b6cb0" opacity="0.6"/>
+  
+  <!-- Clouds -->
+  <ellipse cx="150" cy="80" rx="40" ry="20" fill="white" opacity="0.8"/>
+  <ellipse cx="170" cy="75" rx="30" ry="15" fill="white" opacity="0.7"/>
+  <ellipse cx="450" cy="60" rx="50" ry="25" fill="white" opacity="0.8"/>
+  <ellipse cx="480" cy="55" rx="35" ry="18" fill="white" opacity="0.7"/>
+  
+  <!-- Sun -->
+  <circle cx="500" cy="70" r="25" fill="#ffd700" opacity="0.9"/>
+  <circle cx="500" cy="70" r="30" fill="#ffd700" opacity="0.3"/>
+  
+  <!-- Trees silhouette -->
+  <path d="M50 200 L60 180 L70 200 Z" fill="#22543d" opacity="0.8"/>
+  <path d="M520 180 L530 160 L540 180 Z" fill="#22543d" opacity="0.8"/>
+  
+  <!-- Professional frame -->
+  <rect x="5" y="5" width="590" height="390" fill="none" stroke="#4a5568" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Watermark -->
+  <text x="300" y="390" text-anchor="middle" font-family="serif" font-size="14" fill="#4a5568" opacity="0.6">LANDSCAPE PHOTOGRAPHY</text>
+</svg>

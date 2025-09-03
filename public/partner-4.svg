@@ -1,0 +1,10 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Artisan Gallery -->
+  <g opacity="0.7">
+    <rect x="10" y="12" width="6" height="16" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <rect x="18" y="10" width="6" height="20" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <rect x="26" y="14" width="6" height="12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <text x="38" y="18" font-family="serif" font-size="10" font-weight="600" fill="currentColor">ARTISAN</text>
+    <text x="38" y="28" font-family="serif" font-size="10" font-weight="400" fill="currentColor">GALLERY</text>
+  </g>
+</svg>

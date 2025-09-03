@@ -1,0 +1,6 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="40" fill="#1a1a1a"/>
+  <circle cx="25" cy="20" r="12" fill="none" stroke="white" stroke-width="2"/>
+  <path d="M17 20 L33 20 M25 12 L25 28 M19.5 14.5 L30.5 25.5 M30.5 14.5 L19.5 25.5" stroke="white" stroke-width="1.5"/>
+  <text x="50" y="25" font-family="Arial, sans-serif" font-size="14" font-weight="300" text-anchor="start" fill="white">APERTURE</text>
+</svg>

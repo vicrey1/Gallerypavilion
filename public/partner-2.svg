@@ -1,0 +1,9 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Elite Wedding Photography -->
+  <g opacity="0.7">
+    <path d="M10 20 L18 12 L26 20 L18 28 Z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="18" cy="20" r="3" fill="currentColor"/>
+    <text x="32" y="18" font-family="serif" font-size="10" font-weight="600" fill="currentColor">ELITE</text>
+    <text x="32" y="28" font-family="serif" font-size="10" font-weight="400" fill="currentColor">WEDDINGS</text>
+  </g>
+</svg>

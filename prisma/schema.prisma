@@ -1,0 +1,481 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("photographer")
+  accounts      Account[]
+  sessions      Session[]
+  photographer  Photographer?
+  client        Client?
+  collections   Collection[]
+  wishlist      WishlistItem[]
+  photoReviews        PhotoReview[]
+  photographerReviews PhotographerReview[]
+  notifications       Notification[]
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Photography marketplace models
+model Photographer {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  businessName String?
+  website     String?
+  phone       String?
+  bio         String? @db.Text
+  equipment   String? @db.Text
+  experience  String? @db.Text
+  portfolio   String? @db.Text
+  socialMedia Json?    // Store social media links as JSON
+  status      PhotographerStatus @default(pending)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  galleries   Gallery[]
+  clients     Client[] @relation("PhotographerClients")
+  reviews     PhotographerReview[]
+  
+  @@map("photographers")
+}
+
+model Client {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  email      String   @unique
+  name       String
+  invitedBy  String   // Photographer ID who invited this client
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photographer Photographer @relation("PhotographerClients", fields: [invitedBy], references: [id])
+  favorites    Favorite[]
+  comments     Comment[]
+  purchaseRequests PurchaseRequest[]
+  clientInvites ClientInvite[]
+  
+  @@map("clients")
+}
+
+model Gallery {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  photographerId String
+  visibility     GalleryVisibility @default(private)
+  status         GalleryStatus @default(draft)
+  expiresAt      DateTime?
+  isPublic       Boolean @default(false)
+  allowDownloads Boolean @default(false)
+  requirePassword Boolean @default(false)
+  password       String?
+  views          Int @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  photos         Photo[]
+  collections    Collection[]
+  invites        Invite[]
+  analytics      Analytics[]
+  
+  @@map("galleries")
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  galleryId   String
+  userId      String
+  sortOrder   Int      @default(0)
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  gallery     Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      Photo[]
+  
+  @@map("collections")
+}
+
+model Photo {
+  id           String   @id @default(cuid())
+  galleryId    String
+  collectionId String?
+  title        String?
+  description  String?
+  filename     String
+  url          String
+  thumbnailUrl String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  mimeType     String
+  metadata     Json?    // EXIF data, AI tags, etc.
+  
+  // Pricing fields
+  price        Float?   // Price for the photo
+  isForSale    Boolean  @default(false)
+  
+  // Additional metadata
+  tags         Json?    // Photo tags/keywords as JSON array
+  category     String?  // Photo category
+  location     String?  // Where photo was taken
+  
+  // Artwork authenticity fields
+  editionNumber   Int?     @default(1)    // Edition number for limited editions
+  totalEditions   Int?     @default(1)    // Total number of editions
+  medium          String?                 // Medium used (e.g., "Silver Gelatin Print")
+  technique       String?                 // Technique used (e.g., "Traditional Darkroom")
+  materials       String?                 // Materials used (e.g., "Fiber Paper, Silver")
+  artistStatement String?  @db.Text       // Artist's statement about the work
+  provenance      String?  @db.Text       // Provenance and exhibition history
+  certificateId   String?                 // Unique certificate of authenticity ID
+  
+  sortOrder    Int      @default(0)
+  isPrivate    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  gallery          Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  collection       Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  favorites        Favorite[]
+  photoFavorites   PhotoFavorite[]
+  photoDownloads   PhotoDownload[]
+  comments         Comment[]
+  purchaseRequests PurchaseRequest[]
+  analytics        Analytics[]
+  wishlistItems    WishlistItem[]
+  reviews          PhotoReview[]
+  
+  @@map("photos")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  photoId   String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, photoId])
+  @@map("wishlist_items")
+}
+
+model PhotoReview {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 stars
+  comment   String?
+  userId    String
+  photoId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, photoId])
+}
+
+model PhotographerReview {
+  id             String   @id @default(cuid())
+  rating         Int      // 1-5 stars
+  comment        String?
+  userId         String
+  photographerId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photographer Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, photographerId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // 'new_photo', 'price_change', 'purchase_update', 'gallery_invite'
+  title     String
+  message   String
+  userId    String
+  isRead    Boolean  @default(false)
+  data      Json?    // Additional data like photoId, galleryId, etc.
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+
+
+model Invite {
+  id                 String     @id @default(cuid())
+  inviteCode         String     @unique
+  galleryId          String
+  clientEmail        String?
+  type               InviteType @default(single_use)
+  status             InviteStatus @default(active)
+  expiresAt          DateTime?
+  maxUsage           Int?
+  usageCount         Int        @default(0)
+  usedAt             DateTime?
+  
+  // Permissions
+  canView            Boolean    @default(true)
+  canFavorite        Boolean    @default(true)
+  canComment         Boolean    @default(false)
+  canDownload        Boolean    @default(false)
+  canRequestPurchase Boolean    @default(true)
+  
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  
+  // Relations
+  gallery            Gallery    @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  clientInvites      ClientInvite[]
+  
+  @@map("invites")
+}
+
+// Junction table for Client-Invite many-to-many relationship
+model ClientInvite {
+  id        String   @id @default(cuid())
+  clientId  String
+  inviteId  String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invite    Invite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  
+  @@unique([clientId, inviteId])
+  @@map("client_invites")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  clientId  String
+  photoId   String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo     Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@unique([clientId, photoId])
+  @@map("favorites")
+}
+
+model PhotoFavorite {
+  id        String   @id @default(cuid())
+  photoId   String
+  clientIp  String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@unique([photoId, clientIp])
+  @@map("photo_favorites")
+}
+
+model PhotoDownload {
+  id        String   @id @default(cuid())
+  photoId   String
+  clientIp  String
+  createdAt DateTime @default(now())
+  
+  // Relations
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@map("photo_downloads")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  clientId  String
+  photoId   String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo     Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@map("comments")
+}
+
+model PurchaseRequest {
+  id          String              @id @default(cuid())
+  clientId    String
+  photoId     String
+  licenseType PurchaseLicenseType @default(personal)
+  status      PurchaseStatus      @default(pending)
+  message     String?
+  price       Float?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  
+  // Relations
+  client      Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo       Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@map("purchase_requests")
+}
+
+model Analytics {
+  id         String        @id @default(cuid())
+  type       AnalyticsType
+  galleryId  String?
+  photoId    String?
+  clientId   String?
+  inviteCode String?
+  metadata   Json?         // Additional data like user agent, duration, etc.
+  createdAt  DateTime      @default(now())
+  
+  // Relations
+  gallery    Gallery? @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  photo      Photo?   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@map("analytics")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  type        String   @default("string")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+// Enums
+enum PhotographerStatus {
+  pending
+  approved
+  rejected
+  suspended
+}
+
+enum GalleryVisibility {
+  private
+  invite_only
+  public
+}
+
+enum GalleryStatus {
+  draft
+  active
+  archived
+}
+
+enum InviteType {
+  single_use
+  multi_use
+  time_limited
+}
+
+enum InviteStatus {
+  pending
+  active
+  used
+  expired
+  revoked
+}
+
+enum PurchaseLicenseType {
+  personal
+  commercial
+  editorial
+  extended
+}
+
+enum PurchaseStatus {
+  pending
+  approved
+  rejected
+  completed
+}
+
+enum AnalyticsType {
+  gallery_view
+  photo_view
+  photo_favorite
+  photo_unfavorite
+  photo_comment
+  photo_download
+  purchase_request
+  gallery_access
+  invite_created
+  invite_used
+  admin_action
+}

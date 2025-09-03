@@ -1,0 +1,36 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="heroGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#16213e;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#ff6b35;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#f7931e;stop-opacity:0.8" />
+    </linearGradient>
+    <radialGradient id="spotlight5" cx="40%" cy="60%" r="55%">
+      <stop offset="0%" style="stop-color:#ff6b35;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#ff6b35;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Base gradient background -->
+  <rect width="1920" height="1080" fill="url(#heroGrad5)"/>
+  
+  <!-- Spotlight effect -->
+  <rect width="1920" height="1080" fill="url(#spotlight5)"/>
+  
+  <!-- Abstract camera aperture -->
+  <g transform="translate(800,400)">
+    <polygon points="0,-60 52,-18 32,48 -32,48 -52,-18" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.15"/>
+    <polygon points="0,-40 35,-12 21,32 -21,32 -35,-12" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.12"/>
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.1"/>
+  </g>
+  
+  <!-- Scattered triangles -->
+  <polygon points="300,150 320,180 280,180" fill="#ffffff" opacity="0.08"/>
+  <polygon points="1500,700 1520,730 1480,730" fill="#ffffff" opacity="0.06"/>
+  <polygon points="150,800 170,830 130,830" fill="#ff6b35" opacity="0.12"/>
+  
+  <!-- Curved lines -->
+  <path d="M100,300 Q300,200 500,300 Q700,400 900,300" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.1"/>
+  <path d="M1000,600 Q1200,500 1400,600 Q1600,700 1800,600" stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.08"/>
+</svg>

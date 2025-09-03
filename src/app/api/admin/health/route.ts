@@ -1,0 +1,100 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { promises as fs } from 'fs'
+import path from 'path'
+
+export async function GET(request: NextRequest) {
+  try {
+    const healthChecks = {
+      database: { status: 'unknown', responseTime: 0, error: null },
+      storage: { status: 'unknown', freeSpace: 0, error: null },
+      memory: { status: 'unknown', usage: 0, total: 0 },
+      uptime: process.uptime()
+    }
+
+    // Database health check
+    try {
+      const dbStart = Date.now()
+      await prisma.$queryRaw`SELECT 1`
+      const dbEnd = Date.now()
+      healthChecks.database = {
+        status: 'healthy',
+        responseTime: dbEnd - dbStart,
+        error: null
+      }
+    } catch (error) {
+      healthChecks.database = {
+        status: 'unhealthy',
+        responseTime: 0,
+        error: error instanceof Error ? error.message : 'Database connection failed'
+      }
+    }
+
+    // Storage health check
+    try {
+      const uploadsDir = path.join(process.cwd(), 'public', 'uploads')
+      
+      // Ensure uploads directory exists
+      try {
+        await fs.access(uploadsDir)
+      } catch {
+        await fs.mkdir(uploadsDir, { recursive: true })
+      }
+
+      const stats = await fs.stat(uploadsDir)
+      
+      // Get disk space (simplified check)
+      const testFile = path.join(uploadsDir, '.health-check')
+      await fs.writeFile(testFile, 'health check')
+      await fs.unlink(testFile)
+      
+      healthChecks.storage = {
+        status: 'healthy',
+        freeSpace: 0, // Would need platform-specific implementation for actual free space
+        error: null
+      }
+    } catch (error) {
+      healthChecks.storage = {
+        status: 'unhealthy',
+        freeSpace: 0,
+        error: error instanceof Error ? error.message : 'Storage check failed'
+      }
+    }
+
+    // Memory usage check
+    const memUsage = process.memoryUsage()
+    const totalMemory = memUsage.heapTotal + memUsage.external
+    const usedMemory = memUsage.heapUsed
+    const memoryUsagePercent = (usedMemory / totalMemory) * 100
+
+    healthChecks.memory = {
+      status: memoryUsagePercent > 90 ? 'warning' : 'healthy',
+      usage: Math.round(memoryUsagePercent),
+      total: Math.round(totalMemory / 1024 / 1024) // MB
+    }
+
+    // Overall health status
+    const overallStatus = 
+      healthChecks.database.status === 'unhealthy' || healthChecks.storage.status === 'unhealthy'
+        ? 'unhealthy'
+        : healthChecks.memory.status === 'warning'
+        ? 'warning'
+        : 'healthy'
+
+    return NextResponse.json({
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      checks: healthChecks
+    })
+  } catch (error) {
+    console.error('Health check error:', error)
+    return NextResponse.json(
+      {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Health check failed'
+      },
+      { status: 500 }
+    )
+  }
+}

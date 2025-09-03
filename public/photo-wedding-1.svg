@@ -1,0 +1,46 @@
+<svg width="600" height="400" viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="weddingBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff5f5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#fed7d7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#feb2b2;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="couple" cx="50%" cy="60%" r="40%">
+      <stop offset="0%" style="stop-color:#f7fafc;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:0.7" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="600" height="400" fill="url(#weddingBg)"/>
+  
+  <!-- Romantic backdrop -->
+  <circle cx="300" cy="200" r="150" fill="url(#couple)"/>
+  
+  <!-- Bride silhouette -->
+  <ellipse cx="250" cy="180" rx="40" ry="50" fill="white" opacity="0.9"/>
+  <path d="M210 230 Q250 220 290 230 Q290 280 250 300 Q210 280 210 230" fill="white" opacity="0.8"/>
+  
+  <!-- Groom silhouette -->
+  <ellipse cx="350" cy="180" rx="35" ry="45" fill="#2d3436" opacity="0.8"/>
+  <rect x="320" y="225" width="60" height="75" fill="#2d3436" opacity="0.7"/>
+  
+  <!-- Wedding dress details -->
+  <path d="M220 280 Q250 270 280 280 Q280 350 250 380 Q220 350 220 280" fill="white" opacity="0.9"/>
+  
+  <!-- Romantic lighting -->
+  <circle cx="200" cy="100" r="30" fill="#ffd700" opacity="0.3"/>
+  <circle cx="400" cy="120" r="25" fill="#ffd700" opacity="0.2"/>
+  
+  <!-- Floral elements -->
+  <circle cx="100" cy="300" r="8" fill="#e53e3e" opacity="0.6"/>
+  <circle cx="120" cy="320" r="6" fill="#e53e3e" opacity="0.5"/>
+  <circle cx="500" cy="280" r="10" fill="#e53e3e" opacity="0.6"/>
+  <circle cx="480" cy="300" r="7" fill="#e53e3e" opacity="0.5"/>
+  
+  <!-- Professional frame -->
+  <rect x="10" y="10" width="580" height="380" fill="none" stroke="#a0aec0" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Watermark -->
+  <text x="300" y="390" text-anchor="middle" font-family="serif" font-size="14" fill="#718096" opacity="0.6">WEDDING PHOTOGRAPHY</text>
+</svg>
