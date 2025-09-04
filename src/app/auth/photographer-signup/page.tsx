@@ -48,8 +48,8 @@ export default function PhotographerSignup() {
     }
     
     // Validate required fields
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setError('Please fill in all required fields.')
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.portfolio || !formData.experience || !formData.specialization) {
+      setError('Please fill in all required fields (marked with *).')
       return
     }
     

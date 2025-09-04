@@ -12,7 +12,7 @@ const photographerSignupSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters long'),
   phone: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
-  portfolio: z.string().url('Portfolio must be a valid URL').min(1, 'Portfolio URL is required'),
+  portfolio: z.string().min(1, 'Portfolio URL is required').url('Portfolio must be a valid URL'),
   experience: z.string().min(1, 'Experience level is required'),
   specialization: z.string().min(1, 'Specialization is required'),
   businessName: z.string().optional(),
