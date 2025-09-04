@@ -1010,16 +1010,7 @@ export default function Home() {
               <p className="text-gray-300">Yes! Our analytics dashboard shows you detailed insights including which photos clients view most, download activity, time spent in galleries, and engagement patterns to help you understand client preferences.</p>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              viewport={{ once: true }}
-              className="glass-card p-6"
-            >
-              <h3 className="text-xl font-semibold text-white mb-3">Is there a free trial available?</h3>
-              <p className="text-gray-300">Yes! We offer a 14-day free trial with full access to all features. No credit card required to start, and you can upgrade to a paid plan anytime during or after your trial period.</p>
-            </motion.div>
+
           </div>
         </div>
       </section>
