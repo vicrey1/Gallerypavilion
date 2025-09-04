@@ -121,6 +121,37 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // Handle Prisma errors
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'A user with this email already exists' },
+          { status: 400 }
+        )
+      }
+      console.error('Prisma error code:', error.code, 'Message:', error.message)
+      return NextResponse.json(
+        { error: 'Database error occurred' },
+        { status: 500 }
+      )
+    }
+    
+    // Handle other database errors
+    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+      console.error('Unknown Prisma error:', error.message)
+      return NextResponse.json(
+        { error: 'Database connection error' },
+        { status: 500 }
+      )
+    }
+    
+    // Log the full error for debugging
+    console.error('Unexpected error during registration:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

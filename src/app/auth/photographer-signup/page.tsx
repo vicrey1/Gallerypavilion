@@ -26,18 +26,30 @@ export default function PhotographerSignup() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    // Clear error when user starts typing
+    if (error) setError('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Clear any previous errors
+    setError('')
+    
     // Validate password confirmation
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match. Please check and try again.')
+      setError('Passwords do not match. Please check and try again.')
+      return
+    }
+    
+    // Validate required fields
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      setError('Please fill in all required fields.')
       return
     }
     
@@ -64,7 +76,8 @@ export default function PhotographerSignup() {
       setSubmitted(true)
     } catch (error) {
       console.error('Registration error:', error)
-      alert(error instanceof Error ? error.message : 'Registration failed. Please try again.')
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed. Please try again.'
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -144,6 +157,17 @@ export default function PhotographerSignup() {
             className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20"
           >
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Error Display */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 mb-6"
+                >
+                  <p className="text-red-200 text-sm font-medium">{error}</p>
+                </motion.div>
+              )}
+              
               {/* Personal Information */}
               <div>
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
