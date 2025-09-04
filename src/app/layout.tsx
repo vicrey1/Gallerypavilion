@@ -6,6 +6,9 @@ import SessionProvider from '@/components/SessionProvider'
 import SessionErrorHandler from '@/components/SessionErrorHandler'
 import './globals.css'
 
+// Force dynamic rendering to prevent static generation issues with session
+export const dynamic = 'force-dynamic'
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],

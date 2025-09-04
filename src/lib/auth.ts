@@ -82,6 +82,11 @@ export const authOptions: NextAuthOptions = {
             throw new Error('User is not a photographer')
           }
 
+          // Check photographer approval status
+          if (user.photographer.status !== 'approved') {
+            throw new Error('Account pending approval')
+          }
+
           return {
             id: user.id,
             email: user.email,

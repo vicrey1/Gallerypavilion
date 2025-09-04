@@ -37,7 +37,14 @@ export default function PhotographerLogin() {
       })
 
       if (result?.error) {
-        setError('Invalid email or password')
+        // Show specific error messages for better user experience
+        if (result.error === 'Account pending approval') {
+          setError('Your account is pending approval. Please wait for admin approval or contact support.')
+        } else if (result.error === 'User is not a photographer') {
+          setError('This account is not registered as a photographer. Please sign up as a photographer first.')
+        } else {
+          setError('Invalid email or password')
+        }
       } else {
         // Successfully logged in - redirect to dashboard
         setError('')
