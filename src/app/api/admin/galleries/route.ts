@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
           where: {
             type: 'gallery_access',
             metadata: {
-              path: 'galleryId',
+              path: ['galleryId'],
               equals: gallery.id
             }
           }
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
           where: {
             type: 'photo_download',
             metadata: {
-              path: 'galleryId',
+              path: ['galleryId'],
               equals: gallery.id
             }
           }
@@ -307,13 +307,13 @@ export async function DELETE(request: NextRequest) {
           OR: [
             {
               metadata: {
-                path: 'galleryId',
+                path: ['galleryId'],
                 equals: galleryId
               }
             },
             ...gallery.photos.map(photo => ({
               metadata: {
-                path: 'photoId',
+                path: ['photoId'],
                 equals: photo.id
               }
             }))
