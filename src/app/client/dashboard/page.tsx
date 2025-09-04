@@ -1,6 +1,5 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { Camera, ArrowLeft, Heart, Download, Eye, Calendar, User, Mail, Grid, List } from 'lucide-react'
 import Link from 'next/link'
@@ -53,7 +52,7 @@ interface ClientGallery {
   accessedAt: string
 }
 
-function ClientDashboard() {
+export default function ClientDashboard() {
   const [galleries, setGalleries] = useState<ClientGallery[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -356,16 +355,3 @@ function ClientDashboard() {
     </div>
   )
 }
-
-// Export with SSR disabled to prevent prerender errors
-export default dynamic(() => Promise.resolve(ClientDashboard), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-        <p className="text-white">Loading dashboard...</p>
-      </div>
-    </div>
-  )
-})

@@ -439,28 +439,28 @@ export default function Home() {
             className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center"
           >
             <Image 
-              src="/vogue-logo.jpg" 
+              src="/vogue-logo.svg" 
               alt="Vogue" 
               width={120}
               height={40}
               className="h-10 w-auto opacity-60 hover:opacity-100 transition-opacity rounded"
             />
             <Image 
-              src="/natgeo-wild-logo.jpg" 
+              src="/natgeo-wild-logo.svg" 
               alt="National Geographic Wild" 
               width={120}
               height={40}
               className="h-10 w-auto opacity-60 hover:opacity-100 transition-opacity rounded"
             />
             <Image 
-              src="/aperture-logo.jpg" 
+              src="/aperture-logo.svg" 
               alt="Aperture" 
               width={120}
               height={40}
               className="h-10 w-auto opacity-60 hover:opacity-100 transition-opacity rounded"
             />
             <Image 
-              src="/getty-images-logo.jpg" 
+              src="/getty-images-logo.svg" 
               alt="Getty Images" 
               width={120}
               height={40}
