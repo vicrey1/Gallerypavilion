@@ -21,50 +21,38 @@ export default function HelpPage() {
     {
       id: 1,
       category: 'getting-started',
-      question: 'How do I create my first photo gallery?',
-      answer: 'To create your first gallery, log into your account and click "Create New Gallery" from your dashboard. Upload your photos, add titles and descriptions, then choose your privacy settings. Your gallery will be ready to share!'
+      question: 'How secure are my photos?',
+      answer: 'Your photos are protected with military-grade encryption, secure cloud storage, and access controls. We use the same security standards as major financial institutions to ensure your creative work is completely safe.'
     },
     {
       id: 2,
-      category: 'getting-started',
-      question: 'What file formats are supported?',
-      answer: 'We support all major image formats including JPEG, PNG, TIFF, RAW files (CR2, NEF, ARW), and HEIC. Maximum file size is 50MB per image for Pro accounts and 10MB for free accounts.'
+      category: 'galleries',
+      question: 'Can I customize the galleries with my branding?',
+      answer: 'Absolutely! All plans include custom branding options. You can add your logo, choose color schemes, and even use a custom domain with our Professional and Enterprise plans.'
     },
     {
       id: 3,
-      category: 'galleries',
-      question: 'How do I share my gallery with clients?',
-      answer: 'You can share galleries by generating a unique link, sending email invitations, or creating a password-protected gallery. Go to your gallery settings and choose your preferred sharing method.'
+      category: 'getting-started',
+      question: 'What file formats do you support?',
+      answer: 'We support all major image formats including JPEG, PNG, TIFF, and RAW files. Our platform automatically optimizes images for web viewing while preserving the original quality for downloads.'
     },
     {
       id: 4,
       category: 'galleries',
-      question: 'Can I organize photos into collections?',
-      answer: 'Yes! You can create collections within your galleries to organize photos by theme, event, or any criteria you choose. Collections help clients navigate large galleries more easily.'
+      question: 'How do clients access their galleries?',
+      answer: 'Clients receive a secure link and password to access their private gallery. They can view, favorite, and download photos (if you allow it) from any device without needing to create an account.'
     },
     {
       id: 5,
-      category: 'account',
-      question: 'How do I upgrade my subscription?',
-      answer: 'Go to Account Settings > Billing to view available plans and upgrade. Changes take effect immediately, and you\'ll only pay the prorated difference for the current billing period.'
+      category: 'technical',
+      question: 'Can I track how clients interact with my galleries?',
+      answer: 'Yes! Our analytics dashboard shows you detailed insights including which photos clients view most, download activity, time spent in galleries, and engagement patterns to help you understand client preferences.'
     },
     {
       id: 6,
       category: 'account',
-      question: 'Can I cancel my subscription anytime?',
-      answer: 'Yes, you can cancel anytime from your account settings. Your account will remain active until the end of your current billing period, and you\'ll retain access to all features until then.'
-    },
-    {
-      id: 7,
-      category: 'technical',
-      question: 'Why are my photos uploading slowly?',
-      answer: 'Upload speed depends on your internet connection and file sizes. For faster uploads, try reducing image file sizes, uploading during off-peak hours, or using our desktop app for bulk uploads.'
-    },
-    {
-      id: 8,
-      category: 'technical',
-      question: 'My gallery isn\'t loading properly. What should I do?',
-      answer: 'Try refreshing the page, clearing your browser cache, or trying a different browser. If the issue persists, check our status page or contact support with details about your browser and device.'
+      question: 'Is there a free trial available?',
+      answer: 'Yes! We offer a 14-day free trial with full access to all features. No credit card required to start, and you can upgrade to a paid plan anytime during or after your trial period.'
     }
   ]
 
