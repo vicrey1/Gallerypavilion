@@ -6,6 +6,7 @@ interface InviteEmailData {
   galleryTitle: string
   photographerName: string
   inviteUrl: string
+  inviteCode?: string
   expiresAt?: Date
   permissions: {
     canView: boolean
@@ -147,6 +148,12 @@ function generateInviteEmailHTML(data: InviteEmailData): string {
         
         <p><strong>${data.photographerName}</strong> has invited you to view their private gallery: <strong>"${data.galleryTitle}"</strong></p>
         
+        ${data.inviteCode ? `<div style="background: white; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: center; border: 2px dashed #667eea;">
+          <h3 style="margin-top: 0; color: #667eea;">Your Invitation Code</h3>
+          <p style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 2px; margin: 10px 0;">${data.inviteCode}</p>
+          <p style="font-size: 14px; color: #666; margin-bottom: 0;">Use this code to access the gallery at <a href="https://www.gallerypavilion.com" style="color: #667eea;">www.gallerypavilion.com</a></p>
+        </div>` : ''}
+        
         <div class="permissions">
           <h3>Your Access Permissions:</h3>
           <ul>
@@ -157,6 +164,10 @@ function generateInviteEmailHTML(data: InviteEmailData): string {
         <div style="text-align: center;">
           <a href="${data.inviteUrl}" class="cta-button">View Gallery</a>
         </div>
+        
+        <p style="text-align: center; margin-top: 20px;">
+          <small>Or visit <a href="https://www.gallerypavilion.com" style="color: #667eea;">www.gallerypavilion.com</a> and enter your invitation code</small>
+        </p>
         
         ${expiryText}
         
@@ -199,10 +210,15 @@ Hello${data.recipientName ? ` ${data.recipientName}` : ''}!
 
 ${data.photographerName} has invited you to view their private gallery: "${data.galleryTitle}"
 
-Your Access Permissions:
+${data.inviteCode ? `Your Invitation Code: ${data.inviteCode}
+You can use this code at www.gallerypavilion.com
+
+` : ''}Your Access Permissions:
 ${permissions}
 
 View Gallery: ${data.inviteUrl}
+
+Or visit www.gallerypavilion.com and enter your invitation code
 ${expiryText}
 
 This is an automated email from Private Gallery. Please do not reply to this email.

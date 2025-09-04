@@ -116,7 +116,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Return gallery data with invite permissions
-    return NextResponse.json({
+    // If accessed via email, indicate client dashboard redirect
+    const response = {
       success: true,
       gallery: {
         id: gallery.id,
@@ -135,12 +136,18 @@ export async function POST(request: NextRequest) {
       },
       invite: {
         id: invite.id,
+        code: invite.inviteCode,
         type: invite.type,
         expiresAt: invite.expiresAt,
         usageCount: invite.usageCount + 1,
         maxUsage: invite.maxUsage,
       },
-    });
+      // Add flag to indicate if this was accessed via email
+      accessMethod: email ? 'email' : 'code',
+      clientEmail: email || invite.clientEmail,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

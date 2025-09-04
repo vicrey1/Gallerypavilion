@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       galleryTitle: gallery.title,
       photographerName: gallery.photographer.name || gallery.photographer.businessName || 'Photographer',
       inviteUrl,
+      inviteCode,
       expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
       permissions: {
         canView: data.canView,

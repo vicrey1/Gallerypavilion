@@ -45,8 +45,14 @@ export default function InvitePage() {
           invite: data.invite
         }))
         
-        // Redirect to the actual gallery with invite code
-        router.push(`/gallery/${data.gallery.id}/invite?code=${data.invite.code}`)
+        // Check access method and redirect accordingly
+        if (data.accessMethod === 'email') {
+          // Redirect to client dashboard for email access
+          router.push(`/client/dashboard?email=${encodeURIComponent(data.clientEmail)}`)
+        } else {
+          // Redirect to the actual gallery with invite code for code access
+          router.push(`/invite/${data.invite.code}`)
+        }
       } else {
         throw new Error('Invalid invite code or email')
       }
