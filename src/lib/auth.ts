@@ -85,8 +85,8 @@ export const authOptions: NextAuthOptions = {
           return {
             id: user.id,
             email: user.email,
-            name: user.name,
-            role: user.role,
+            name: user.name ?? undefined,
+            role: user.role as 'photographer' | 'client' | 'admin',
             photographerId: user.photographer.id,
             photographerStatus: user.photographer.status
           }
@@ -161,8 +161,19 @@ export const authOptions: NextAuthOptions = {
           })
 
           if (!client) {
+            // First create a User record
+            const user = await prisma.user.create({
+              data: {
+                email: clientEmail,
+                name: credentials.email ? credentials.email.split('@')[0] : `Client ${invite.inviteCode}`,
+                role: 'client'
+              }
+            })
+            
+            // Then create the Client record
             client = await prisma.client.create({
               data: {
+                userId: user.id,
                 email: clientEmail,
                 name: credentials.email ? credentials.email.split('@')[0] : `Client ${invite.inviteCode}`,
                 invitedBy: invite.gallery.photographerId
@@ -171,7 +182,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Update invite usage for single-use invites
-          if (invite.type === 'single-use') {
+          if (invite.type === 'single_use') {
             await prisma.invite.update({
               where: { id: invite.id },
               data: { 
@@ -195,7 +206,7 @@ export const authOptions: NextAuthOptions = {
           return {
             id: client.id,
             email: client.email,
-            name: client.name,
+            name: client.name ?? undefined,
             role: 'client' as const,
             photographerId: invite.gallery.photographerId,
             inviteCode: invite.inviteCode,
@@ -302,24 +313,22 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as 'photographer' | 'client' | 'admin'
         session.user.photographerId = token.photographerId as string
         session.user.inviteCode = token.inviteCode as string
-        session.user.permissions = token.permissions as Record<string, boolean>
+        session.user.permissions = token.permissions as {
+          canView: boolean
+          canFavorite: boolean
+          canComment: boolean
+          canDownload: boolean
+          canRequestPurchase: boolean
+        }
       }
       return session
     },
     
-    async redirect({ url, baseUrl, token }) {
+    async redirect({ url, baseUrl }) {
       // Always allow access to signup pages, even when logged in
       if (url.includes('/signup') || url.includes('/photographer-signup')) {
         if (url.startsWith('/')) return `${baseUrl}${url}`
         else if (new URL(url).origin === baseUrl) return url
-      }
-      
-      // Role-based redirection after successful login
-      if (token?.role === 'admin') {
-        return `${baseUrl}/admin`
-      }
-      if (token?.role === 'photographer') {
-        return `${baseUrl}/dashboard`
       }
       
       // Default redirect logic
@@ -348,7 +357,7 @@ export const authOptions: NextAuthOptions = {
               clientId: user.id,
               inviteCode: user.inviteCode,
               metadata: {
-                userAgent: profile?.userAgent || 'unknown',
+                userAgent: 'unknown',
                 timestamp: new Date().toISOString()
               }
             }
@@ -396,7 +405,7 @@ export async function validateInviteCode(inviteCode: string): Promise<boolean> {
 
 export async function createInvite(data: {
   galleryId: string
-  type: 'single-use' | 'multi-use' | 'time-limited'
+  type: 'single_use' | 'multi_use' | 'time_limited'
   clientEmail?: string
   expiresAt?: Date
   maxUsage?: number
@@ -492,23 +501,28 @@ export async function getClientAccessibleGalleries(clientId: string) {
     const client = await prisma.client.findUnique({
       where: { id: clientId },
       include: {
-        invites: {
+        clientInvites: {
           where: {
-            status: 'active',
-            OR: [
-              { expiresAt: null },
-              { expiresAt: { gt: new Date() } }
-            ]
+            invite: {
+              status: 'active',
+              OR: [
+                { expiresAt: null },
+                { expiresAt: { gt: new Date() } }
+              ]
+            }
           },
           include: {
-            gallery: {
+            invite: {
               include: {
-                collections: {
+                gallery: {
                   include: {
-                    photos: true
+                    collections: {
+                      include: {
+                        photos: true
+                      }
+                    }
                   }
-                },
-                photographer: true
+                }
               }
             }
           }
@@ -516,7 +530,7 @@ export async function getClientAccessibleGalleries(clientId: string) {
       }
     })
     
-    return client?.invites.map(invite => invite.gallery) || []
+    return client?.clientInvites.map(clientInvite => clientInvite.invite.gallery) || []
   } catch (error) {
     console.error('Error fetching client galleries:', error)
     throw error

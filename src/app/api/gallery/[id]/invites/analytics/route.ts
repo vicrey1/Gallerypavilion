@@ -6,9 +6,10 @@ import { authOptions } from '@/lib/auth';
 // Get invite analytics for a gallery
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -23,7 +24,7 @@ export async function GET(
     // Verify the user owns the gallery
     const gallery = await prisma.gallery.findFirst({
       where: {
-        id: params.id,
+        id: id,
         photographer: {
           user: {
             email: session.user.email,
@@ -46,7 +47,7 @@ export async function GET(
     // Get all invites for the gallery
     const allInvites = await prisma.invite.findMany({
       where: {
-        galleryId: params.id,
+        galleryId: id,
       },
       orderBy: {
         createdAt: 'desc',
@@ -56,7 +57,7 @@ export async function GET(
     // Get invites created in the specified period
     const recentInvites = await prisma.invite.findMany({
       where: {
-        galleryId: params.id,
+        galleryId: id,
         createdAt: {
           gte: startDate,
         },

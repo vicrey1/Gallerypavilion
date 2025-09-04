@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, {
       value: string
-      description: string
+      type: string
+      description: string | null
       updatedAt: Date
     }>)
 

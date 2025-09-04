@@ -1,15 +1,5 @@
 import nodemailer from 'nodemailer'
 
-interface EmailConfig {
-  host: string
-  port: number
-  secure: boolean
-  auth: {
-    user: string
-    pass: string
-  }
-}
-
 interface InviteEmailData {
   recipientEmail: string
   recipientName?: string
@@ -77,8 +67,8 @@ async function createTransporter() {
 // Generate HTML email template
 function generateInviteEmailHTML(data: InviteEmailData): string {
   const permissionsList = Object.entries(data.permissions)
-    .filter(([_, value]) => value)
-    .map(([key, _]) => {
+    .filter(([, value]) => value)
+    .map(([key]) => {
       const labels: Record<string, string> = {
         canView: 'View photos',
         canFavorite: 'Mark favorites',
@@ -170,7 +160,7 @@ function generateInviteEmailHTML(data: InviteEmailData): string {
         
         ${expiryText}
         
-        <p><small>If the button doesn't work, copy and paste this link into your browser:<br>
+        <p><small>If the button doesn&apos;t work, copy and paste this link into your browser:<br>
         <a href="${data.inviteUrl}">${data.inviteUrl}</a></small></p>
       </div>
       
@@ -185,8 +175,8 @@ function generateInviteEmailHTML(data: InviteEmailData): string {
 // Generate plain text email
 function generateInviteEmailText(data: InviteEmailData): string {
   const permissions = Object.entries(data.permissions)
-    .filter(([_, value]) => value)
-    .map(([key, _]) => {
+    .filter(([, value]) => value)
+    .map(([key]) => {
       const labels: Record<string, string> = {
         canView: 'View photos',
         canFavorite: 'Mark favorites',

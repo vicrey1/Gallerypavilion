@@ -21,9 +21,10 @@ const updateInviteSchema = z.object({
 // Get specific invite
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -34,7 +35,7 @@ export async function GET(
 
     const invite = await prisma.invite.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographer: {
             user: {
@@ -95,8 +96,9 @@ export async function GET(
 // Update invite
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -112,7 +114,7 @@ export async function PUT(
     // Verify the user owns the gallery
     const existingInvite = await prisma.invite.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographer: {
             user: {
@@ -143,7 +145,7 @@ export async function PUT(
 
     // Update the invite
     const updatedInvite = await prisma.invite.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         clientEmail: data.clientEmail,
         type: data.type,
@@ -184,7 +186,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       );
     }
@@ -200,8 +202,9 @@ export async function PUT(
 // Delete invite
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -214,7 +217,7 @@ export async function DELETE(
     // Verify the user owns the gallery
     const invite = await prisma.invite.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographer: {
             user: {
@@ -234,7 +237,7 @@ export async function DELETE(
 
     // Delete the invite
     await prisma.invite.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({

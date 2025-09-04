@@ -272,7 +272,7 @@ export default function HelpPage() {
               <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No results found</h3>
               <p className="text-gray-300 mb-4">
-                We couldn't find any FAQs matching your search. Try different keywords or browse all categories.
+                We couldn&apos;t find any FAQs matching your search. Try different keywords or browse all categories.
               </p>
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -338,7 +338,7 @@ export default function HelpPage() {
         >
           <h2 className="text-2xl font-bold text-white mb-4">Still Need Help?</h2>
           <p className="text-indigo-100 mb-6">
-            Can't find what you're looking for? Our support team is ready to help you with any questions or issues.
+            Can&apos;t find what you&apos;re looking for? Our support team is ready to help you with any questions or issues.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">

@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 import { signIn, getProviders } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Camera, Mail, Key, User, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-export default function SignIn() {
+function SignInContent() {
   const [activeTab, setActiveTab] = useState<'photographer' | 'client'>('photographer')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -320,5 +323,13 @@ export default function SignIn() {
         </div>
       </motion.div>
     </div>
+  )
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <SignInContent />
+    </Suspense>
   )
 }

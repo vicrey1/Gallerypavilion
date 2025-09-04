@@ -348,7 +348,7 @@ export default function CookiesPage() {
           <h3 className="text-lg font-semibold text-white mb-2">Questions About Cookies?</h3>
           <p className="text-gray-300 text-sm mb-4">
             If you have any questions about our use of cookies or need help managing your preferences, 
-            please don't hesitate to contact us.
+            please don&apos;t hesitate to contact us.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">

@@ -36,13 +36,17 @@ export async function GET(request: NextRequest) {
 
     const where: {
       photographerId: string
-      status?: string
+      status?: 'draft' | 'active' | 'archived'
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' }
+        description?: { contains: string; mode: 'insensitive' }
+      }>
     } = {
       photographerId: session.user.photographerId,
     }
 
     if (status && status !== 'all') {
-      where.status = status
+      where.status = status as 'draft' | 'active' | 'archived'
     }
 
     if (search) {
@@ -57,11 +61,11 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           _count: {
-            select: {
-              photos: true,
-              invites: true,
-            },
+          select: {
+            photos: true,
+            invites: true,
           },
+        },
           photos: {
             take: 1,
             orderBy: { createdAt: 'desc' },
@@ -85,8 +89,7 @@ export async function GET(request: NextRequest) {
       isPublic: gallery.isPublic,
       allowDownloads: gallery.allowDownloads,
       totalPhotos: gallery._count.photos,
-      views: gallery._count.views,
-      favorites: gallery._count.favorites,
+      views: gallery.views,
       invites: gallery._count.invites,
       thumbnail: gallery.photos[0]?.url || null,
     }))
@@ -161,7 +164,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }

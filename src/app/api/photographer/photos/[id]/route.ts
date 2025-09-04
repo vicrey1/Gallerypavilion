@@ -26,9 +26,10 @@ const updatePhotoSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.photographerId) {
@@ -50,7 +51,7 @@ export async function PUT(
     // Check if photo exists and belongs to photographer's gallery
     const existingPhoto = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographerId: session.user.photographerId,
         },
@@ -68,7 +69,7 @@ export async function PUT(
     }
 
     const photo = await prisma.photo.update({
-      where: { id: params.id },
+      where: { id: id },
       data: dataToUpdate,
       select: {
         id: true,
@@ -134,7 +135,7 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }
@@ -149,8 +150,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions)
     
@@ -164,7 +166,7 @@ export async function DELETE(
     // Check if photo exists and belongs to photographer's gallery
     const existingPhoto = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographerId: session.user.photographerId,
         },
@@ -194,7 +196,7 @@ export async function DELETE(
 
     // Delete photo record from database
     await prisma.photo.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json(
@@ -212,8 +214,9 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions)
     
@@ -226,7 +229,7 @@ export async function GET(
 
     const photo = await prisma.photo.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographerId: session.user.photographerId,
         },

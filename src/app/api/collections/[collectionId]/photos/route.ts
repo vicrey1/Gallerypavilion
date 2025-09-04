@@ -8,9 +8,10 @@ const prisma = new PrismaClient()
 // POST /api/collections/[collectionId]/photos - Add photo to collection
 export async function POST(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
   try {
+    const { collectionId } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -29,7 +30,7 @@ export async function POST(
     // Check if user owns the collection
     const collection = await prisma.collection.findFirst({
       where: {
-        id: params.collectionId,
+        id: collectionId,
         userId: session.user.id
       }
     })
@@ -56,16 +57,7 @@ export async function POST(
     }
 
     // Check if photo is already in collection
-    const existingCollectionPhoto = await prisma.collectionPhoto.findUnique({
-      where: {
-        collectionId_photoId: {
-          collectionId: params.collectionId,
-          photoId: photoId
-        }
-      }
-    })
-
-    if (existingCollectionPhoto) {
+    if (photo.collectionId === collectionId) {
       return NextResponse.json(
         { error: 'Photo is already in this collection' },
         { status: 409 }
@@ -73,35 +65,33 @@ export async function POST(
     }
 
     // Add photo to collection
-    const collectionPhoto = await prisma.collectionPhoto.create({
-      data: {
-        collectionId: params.collectionId,
-        photoId: photoId
+    const updatedPhoto = await prisma.photo.update({
+      where: {
+        id: photoId
       },
-      include: {
-        photo: {
-          select: {
-            id: true,
-            title: true,
-            filename: true,
-            thumbnailUrl: true,
-            price: true
-          }
-        }
+      data: {
+        collectionId: collectionId
+      },
+      select: {
+        id: true,
+        title: true,
+        filename: true,
+        thumbnailUrl: true,
+        price: true
       }
     })
 
     // Update collection's updatedAt timestamp
     await prisma.collection.update({
       where: {
-        id: params.collectionId
+        id: collectionId
       },
       data: {
         updatedAt: new Date()
       }
     })
 
-    return NextResponse.json({ collectionPhoto }, { status: 201 })
+    return NextResponse.json({ photo: updatedPhoto }, { status: 201 })
   } catch (error) {
     console.error('Error adding photo to collection:', error)
     return NextResponse.json(
@@ -114,8 +104,9 @@ export async function POST(
 // DELETE /api/collections/[collectionId]/photos - Remove photo from collection
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
+  const { collectionId } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -135,7 +126,7 @@ export async function DELETE(
     // Check if user owns the collection
     const collection = await prisma.collection.findFirst({
       where: {
-        id: params.collectionId,
+        id: collectionId,
         userId: session.user.id
       }
     })
@@ -147,17 +138,14 @@ export async function DELETE(
       )
     }
 
-    // Check if photo is in collection
-    const collectionPhoto = await prisma.collectionPhoto.findUnique({
+    // Check if photo exists and is in collection
+    const photo = await prisma.photo.findUnique({
       where: {
-        collectionId_photoId: {
-          collectionId: params.collectionId,
-          photoId: photoId
-        }
+        id: photoId
       }
     })
 
-    if (!collectionPhoto) {
+    if (!photo || photo.collectionId !== collectionId) {
       return NextResponse.json(
         { error: 'Photo not found in collection' },
         { status: 404 }
@@ -165,19 +153,19 @@ export async function DELETE(
     }
 
     // Remove photo from collection
-    await prisma.collectionPhoto.delete({
+    await prisma.photo.update({
       where: {
-        collectionId_photoId: {
-          collectionId: params.collectionId,
-          photoId: photoId
-        }
+        id: photoId
+      },
+      data: {
+        collectionId: null
       }
     })
 
     // Update collection's updatedAt timestamp
     await prisma.collection.update({
       where: {
-        id: params.collectionId
+        id: collectionId
       },
       data: {
         updatedAt: new Date()

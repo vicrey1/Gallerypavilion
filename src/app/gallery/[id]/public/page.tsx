@@ -174,7 +174,22 @@ Best regards`
     window.location.href = mailtoLink
   }
 
-
+  const handleDownload = async (photo: Photo) => {
+    try {
+      const response = await fetch(photo.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = photo.title || `photo-${photo.id}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Download failed:', error)
+    }
+  }
 
   // Get unique categories
   const categories = ['all', ...new Set(gallery?.photos.map(photo => photo.category).filter(Boolean) || [])]
@@ -435,7 +450,7 @@ Best regards`
                     <button
                       onClick={(e) => {
                           e.stopPropagation()
-                          toggleFavorite(photo.id)
+                          handleFavorite(photo.id)
                         }}
                         className={`p-2 rounded-full transition-colors ${
                           photo.isFavorited

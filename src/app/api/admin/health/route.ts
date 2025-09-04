@@ -6,8 +6,8 @@ import path from 'path'
 export async function GET(request: NextRequest) {
   try {
     const healthChecks = {
-      database: { status: 'unknown', responseTime: 0, error: null },
-      storage: { status: 'unknown', freeSpace: 0, error: null },
+      database: { status: 'unknown', responseTime: 0, error: null as string | null },
+      storage: { status: 'unknown', freeSpace: 0, error: null as string | null },
       memory: { status: 'unknown', usage: 0, total: 0 },
       uptime: process.uptime()
     }

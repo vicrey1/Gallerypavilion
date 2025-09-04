@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Star, MessageCircle, Edit, Trash2, Send } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
@@ -37,11 +37,7 @@ export default function ReviewSection({ photoId, className = '' }: ReviewSection
   const [formData, setFormData] = useState({ rating: 5, comment: '' })
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchReviews()
-  }, [photoId])
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/reviews/photo/${photoId}`)
@@ -54,7 +50,11 @@ export default function ReviewSection({ photoId, className = '' }: ReviewSection
     } finally {
       setLoading(false)
     }
-  }
+  }, [photoId])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const submitReview = async () => {
     if (!session) {
@@ -84,6 +84,7 @@ export default function ReviewSection({ photoId, className = '' }: ReviewSection
         setError(errorData.error || 'Failed to submit review')
       }
     } catch (error) {
+      console.error('Error submitting review:', error)
       setError('Failed to submit review')
     } finally {
       setSubmitting(false)
@@ -94,7 +95,7 @@ export default function ReviewSection({ photoId, className = '' }: ReviewSection
     if (!confirm('Are you sure you want to delete this review?')) return
 
     try {
-      const response = await fetch(`/api/reviews/photo/${photoId}`, {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
         method: 'DELETE'
       })
 

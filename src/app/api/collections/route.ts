@@ -22,19 +22,15 @@ export async function GET(request: NextRequest) {
       },
       include: {
         photos: includePhotos ? {
-          include: {
-            photo: {
-              select: {
-                id: true,
-                title: true,
-                filename: true,
-                thumbnailUrl: true,
-                price: true
-              }
-            }
+          select: {
+            id: true,
+            title: true,
+            filename: true,
+            thumbnailUrl: true,
+            price: true
           },
           orderBy: {
-            addedAt: 'desc'
+            createdAt: 'desc'
           }
         } : false,
         _count: {
@@ -67,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, isPublic } = body
+    const { name, description, isPublic, galleryId } = body
 
     if (!name || name.trim().length === 0) {
       return NextResponse.json(
@@ -78,9 +74,10 @@ export async function POST(request: NextRequest) {
 
     const collection = await prisma.collection.create({
       data: {
-        name: name.trim(),
+        title: name.trim(),
         description: description?.trim() || null,
-        isPublic: Boolean(isPublic),
+        isPrivate: !Boolean(isPublic),
+        galleryId: galleryId,
         userId: session.user.id
       },
       include: {

@@ -19,9 +19,10 @@ const inviteSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.photographerId) {
@@ -33,7 +34,7 @@ export async function POST(
 
     const body = await request.json()
     const validatedData = inviteSchema.parse(body)
-    const galleryId = params.id
+    const galleryId = id
 
     // Verify the gallery belongs to the photographer
     const gallery = await prisma.gallery.findFirst({
@@ -113,7 +114,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }
@@ -129,8 +130,9 @@ export async function POST(
 // GET /api/photographer/galleries/[id]/invites - Get all invites for a gallery
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions)
     
@@ -141,7 +143,7 @@ export async function GET(
       )
     }
 
-    const galleryId = params.id
+    const galleryId = id
 
     // Verify the gallery belongs to the photographer
     const gallery = await prisma.gallery.findFirst({
@@ -162,16 +164,6 @@ export async function GET(
     const invites = await prisma.invite.findMany({
       where: { galleryId },
       include: {
-        client: {
-          include: {
-            user: {
-              select: {
-                email: true,
-                name: true,
-              },
-            },
-          },
-        },
         clientInvites: {
           include: {
             client: {
@@ -193,17 +185,23 @@ export async function GET(
     return NextResponse.json(
       invites.map(invite => ({
         id: invite.id,
-        code: invite.code,
-        clientEmail: invite.client.user.email,
-        clientName: invite.client.user.name,
+        code: invite.inviteCode,
+        clientEmail: invite.clientEmail,
+        clientName: invite.clientInvites[0]?.client?.user?.name || 'Unknown',
         type: invite.type,
         expiresAt: invite.expiresAt,
         maxUsage: invite.maxUsage,
         currentUsage: invite.usageCount,
-        permissions: JSON.parse(invite.permissions as string),
+        permissions: {
+          canView: invite.canView,
+          canFavorite: invite.canFavorite,
+          canComment: invite.canComment,
+          canDownload: invite.canDownload,
+          canRequestPurchase: invite.canRequestPurchase,
+        },
         status: invite.status,
         createdAt: invite.createdAt,
-        inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.code}`,
+        inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
       }))
     )
 

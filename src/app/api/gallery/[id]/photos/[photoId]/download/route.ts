@@ -11,10 +11,11 @@ const paramsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const { id: galleryId, photoId } = paramsSchema.parse(params)
+    const resolvedParams = await params;
+    const { id: galleryId, photoId } = paramsSchema.parse(resolvedParams)
     
     // Get client IP for tracking downloads
     const clientIp = request.headers.get('x-forwarded-for') || 

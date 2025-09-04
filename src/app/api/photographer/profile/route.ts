@@ -108,15 +108,15 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update photographer data
-    const updateData: any = {}
+    const updateData: Partial<z.infer<typeof updateProfileSchema>> = {}
     
     if (validatedData.businessName !== undefined) updateData.businessName = validatedData.businessName
-    if (validatedData.website !== undefined) updateData.website = validatedData.website || null
+    if (validatedData.website !== undefined) updateData.website = validatedData.website || undefined
     if (validatedData.phone !== undefined) updateData.phone = validatedData.phone
     if (validatedData.bio !== undefined) updateData.bio = validatedData.bio
     if (validatedData.equipment !== undefined) updateData.equipment = validatedData.equipment
     if (validatedData.experience !== undefined) updateData.experience = validatedData.experience
-    if (validatedData.portfolio !== undefined) updateData.portfolio = validatedData.portfolio || null
+    if (validatedData.portfolio !== undefined) updateData.portfolio = validatedData.portfolio || undefined
     if (validatedData.socialMedia !== undefined) updateData.socialMedia = validatedData.socialMedia
 
     const updatedPhotographer = await prisma.photographer.update({
@@ -160,7 +160,7 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }

@@ -4,13 +4,14 @@ import { authOptions } from '@/lib/auth'
 import { generateSignedUrl, verifyImageAccessToken, logSecurityEvent, checkRateLimit } from '@/lib/security'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
+    const { path } = await params
     const session = await getServerSession(authOptions)
     const url = new URL(request.url)
     const photoId = url.searchParams.get('photoId')
     const token = url.searchParams.get('token')
-    const clientIp = request.ip || 'unknown'
+    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     
     // Rate limiting
     if (!checkRateLimit(clientIp, 50, 60000)) {
@@ -30,7 +31,9 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     // Get photo details
     const photo = await prisma.photo.findUnique({
       where: { id: photoId },
-      include: {
+      select: {
+        id: true,
+        url: true,
         collection: {
           include: {
             gallery: {
@@ -60,13 +63,13 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     if (session) {
       // Check if user is the photographer who owns this photo
       if (session.user.role === 'photographer' && 
-          session.user.photographerId === photo.collection.gallery.photographerId) {
+          photo.collection && session.user.photographerId === photo.collection.gallery.photographerId) {
         hasAccess = true
         isPhotographer = true
       }
       
       // Check if user is a client with valid invite
-      if (session.user.role === 'client' && session.user.inviteCode) {
+      if (session.user.role === 'client' && session.user.inviteCode && photo.collection) {
         const invite = photo.collection.gallery.invites.find(
           inv => inv.inviteCode === session.user.inviteCode && 
                  inv.status === 'active' &&
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
         reason: 'no_permission',
         ip: clientIp,
         photoId,
-        userId: session?.user?.id,
+        userId: session?.user?.id || null,
       })
       return new NextResponse('Access denied', { status: 403 })
     }
@@ -118,8 +121,8 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     // Log successful access
     logSecurityEvent('gallery_access', {
       photoId,
-      userId: session?.user?.id,
-      userRole: session?.user?.role,
+      userId: session?.user?.id || null,
+      userRole: session?.user?.role || null,
       ip: clientIp,
     })
 
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
       data: {
         type: 'photo_view',
         photoId,
-        galleryId: photo.collection.galleryId,
+        galleryId: photo.collection?.galleryId || null,
         clientId: session?.user?.role === 'client' ? session.user.id : null,
         metadata: {
           userAgent: request.headers.get('user-agent'),
@@ -139,13 +142,13 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
     })
 
     // Generate signed URL for the image
-    const imageKey = photo.fileUrl.replace(/^https?:\/\/[^\/]+\//, '') // Extract S3 key from URL
+    const imageKey = photo.url.replace(/^https?:\/\/[^\/]+\//, '') // Extract S3 key from URL
     
     try {
       // For photographers, serve original images
       // For clients, serve watermarked versions (unless download is explicitly allowed)
       const shouldWatermark = !isPhotographer && 
-                             photo.collection.gallery.watermarkEnabled &&
+                             !photo.collection?.gallery.allowDownloads &&
                              !url.searchParams.get('download')
       
       if (shouldWatermark) {
@@ -156,7 +159,7 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
         return NextResponse.redirect(signedUrl, {
           headers: {
             'X-Watermark': 'true',
-            'X-Photographer': photo.collection.gallery.photographer.name,
+            'X-Photographer': photo.collection?.gallery.photographer.name || 'Unknown',
             'Cache-Control': 'private, max-age=3600',
           },
         })

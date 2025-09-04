@@ -9,7 +9,7 @@ const createNotificationSchema = z.object({
   title: z.string().min(1),
   message: z.string().min(1),
   userId: z.string(),
-  data: z.record(z.any()).optional()
+  data: z.record(z.string(), z.any()).optional()
 })
 
 // GET /api/notifications - Get user's notifications
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: any = {
+    const where: { userId: string; isRead?: boolean } = {
       userId: user.id
     }
 
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       )
     }

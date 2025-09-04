@@ -16,7 +16,15 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Get recent activities from various sources
-    const activities = []
+    const activities: Array<{
+      id: string
+      type: string
+      title: string
+      description: string
+      timestamp: Date
+      status: string
+      metadata?: Record<string, string | number | boolean | null>
+    }> = []
 
     // Recent photographer registrations
     const recentPhotographers = await prisma.photographer.findMany({
@@ -74,6 +82,7 @@ export async function GET(request: NextRequest) {
       status: string
       createdAt: Date
       photographer: {
+        id: string
         user: {
           name: string | null
           email: string
@@ -90,7 +99,7 @@ export async function GET(request: NextRequest) {
         metadata: {
           galleryId: gallery.id,
           galleryTitle: gallery.title,
-          photographerId: gallery.photographerId,
+          photographerId: gallery.photographer.id,
           photographerName: gallery.photographer.user.name
         }
       })
@@ -117,12 +126,12 @@ export async function GET(request: NextRequest) {
     recentClients.forEach((client: {
       id: string
       createdAt: Date
-      photographerId: string
       user: {
         name: string | null
         email: string
       }
       photographer: {
+        id: string
         user: {
           name: string | null
         }
@@ -139,7 +148,7 @@ export async function GET(request: NextRequest) {
           clientId: client.id,
           clientName: client.user.name,
           clientEmail: client.user.email,
-          photographerId: client.invitedBy,
+          photographerId: client.photographer.id,
           photographerName: client.photographer.user.name
         }
       })
@@ -158,7 +167,7 @@ export async function GET(request: NextRequest) {
           }
         },
         photo: {
-          select: { title: true, filename: true }
+          select: { id: true, title: true, filename: true }
         }
       }
     })
@@ -167,13 +176,17 @@ export async function GET(request: NextRequest) {
       id: string
       createdAt: Date
       status: string
+      licenseType: string
+      price: number | null
       client: {
+        id: string
         user: {
           name: string | null
           email: string
         }
       }
       photo: {
+        id: string
         title: string | null
         filename: string
       }
@@ -187,9 +200,9 @@ export async function GET(request: NextRequest) {
         status: purchase.status,
         metadata: {
           purchaseId: purchase.id,
-          clientId: purchase.clientId,
+          clientId: purchase.client.id,
           clientName: purchase.client.user.name,
-          photoId: purchase.photoId,
+          photoId: purchase.photo.id,
           photoTitle: purchase.photo.title,
           licenseType: purchase.licenseType,
           price: purchase.price

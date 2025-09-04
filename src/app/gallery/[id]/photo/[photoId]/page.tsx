@@ -75,7 +75,7 @@ export default function PhotoDetailPage() {
       const response = await fetch('/api/wishlist')
       if (response.ok) {
         const data = await response.json()
-        const isPhotoInWishlist = data.wishlist.some((item: any) => item.id === photoId)
+        const isPhotoInWishlist = data.wishlist.some((item: { id: string }) => item.id === photoId)
         setIsInWishlist(isPhotoInWishlist)
       }
     } catch (error) {

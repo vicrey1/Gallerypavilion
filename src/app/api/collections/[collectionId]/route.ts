@@ -8,9 +8,10 @@ const prisma = new PrismaClient()
 // GET /api/collections/[collectionId] - Get a specific collection
 export async function GET(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
   try {
+    const { collectionId } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -18,10 +19,10 @@ export async function GET(
 
     const collection = await prisma.collection.findFirst({
       where: {
-        id: params.collectionId,
+        id: collectionId,
         OR: [
           { userId: session.user.id },
-          { isPublic: true }
+          { isPrivate: false }
         ]
       },
       include: {
@@ -33,25 +34,21 @@ export async function GET(
         },
         photos: {
           include: {
-            photo: {
-              include: {
-                gallery: {
+            gallery: {
+              select: {
+                id: true,
+                title: true,
+                photographer: {
                   select: {
                     id: true,
-                    title: true,
-                    photographer: {
-                      select: {
-                        id: true,
-                        name: true
-                      }
-                    }
+                    name: true
                   }
                 }
               }
             }
           },
           orderBy: {
-            addedAt: 'desc'
+            createdAt: 'desc'
           }
         },
         _count: {
@@ -82,8 +79,9 @@ export async function GET(
 // PUT /api/collections/[collectionId] - Update a collection
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
+  const { collectionId } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -103,7 +101,7 @@ export async function PUT(
     // Check if user owns the collection
     const existingCollection = await prisma.collection.findFirst({
       where: {
-        id: params.collectionId,
+        id: collectionId,
         userId: session.user.id
       }
     })
@@ -117,12 +115,12 @@ export async function PUT(
 
     const collection = await prisma.collection.update({
       where: {
-        id: params.collectionId
+        id: collectionId
       },
       data: {
-        name: name.trim(),
+        title: name.trim(),
         description: description?.trim() || null,
-        isPublic: Boolean(isPublic)
+        isPrivate: !Boolean(isPublic)
       },
       include: {
         _count: {
@@ -146,8 +144,9 @@ export async function PUT(
 // DELETE /api/collections/[collectionId] - Delete a collection
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { collectionId: string } }
+  { params }: { params: Promise<{ collectionId: string }> }
 ) {
+  const { collectionId } = await params
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -157,7 +156,7 @@ export async function DELETE(
     // Check if user owns the collection
     const existingCollection = await prisma.collection.findFirst({
       where: {
-        id: params.collectionId,
+        id: collectionId,
         userId: session.user.id
       }
     })
@@ -171,7 +170,7 @@ export async function DELETE(
 
     await prisma.collection.delete({
       where: {
-        id: params.collectionId
+        id: collectionId
       }
     })
 

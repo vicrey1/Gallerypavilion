@@ -7,7 +7,7 @@ export interface CreateNotificationData {
   title: string
   message: string
   userId: string
-  data?: any
+  data?: Record<string, unknown>
 }
 
 export async function createNotification(notificationData: CreateNotificationData) {
@@ -18,7 +18,7 @@ export async function createNotification(notificationData: CreateNotificationDat
         title: notificationData.title,
         message: notificationData.message,
         userId: notificationData.userId,
-        data: notificationData.data ? JSON.stringify(notificationData.data) : null,
+        data: notificationData.data ? JSON.stringify(notificationData.data) : undefined,
         isRead: false
       }
     })
@@ -37,7 +37,7 @@ export async function createBulkNotifications(notifications: CreateNotificationD
         title: notif.title,
         message: notif.message,
         userId: notif.userId,
-        data: notif.data ? JSON.stringify(notif.data) : null,
+        data: notif.data ? JSON.stringify(notif.data) : undefined,
         isRead: false
       }))
     })
@@ -102,21 +102,30 @@ export async function notifyGalleryInvitees(
 ) {
   try {
     // Get all users who have access to this gallery
-    const invites = await prisma.galleryInvite.findMany({
+    const invites = await prisma.invite.findMany({
       where: {
         galleryId,
-        status: 'accepted'
+        status: 'active'
       },
       include: {
-        user: true
+        clientInvites: {
+          include: {
+            client: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
       }
     })
 
     const notifications = invites
-      .filter(invite => invite.userId !== excludeUserId)
-      .map(invite => ({
+      .flatMap(invite => invite.clientInvites)
+      .filter(clientInvite => clientInvite.client.userId !== excludeUserId)
+      .map(clientInvite => ({
         ...NotificationTemplates.newPhoto(photographerName, galleryTitle),
-        userId: invite.userId,
+        userId: clientInvite.client.userId,
         data: { galleryId, galleryTitle }
       }))
 

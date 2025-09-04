@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { GalleryStatus, GalleryVisibility } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,10 +23,10 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     const where: {
-      status?: string
+      status?: GalleryStatus
       photographerId?: string
     } = {}
-    if (status) where.status = status
+    if (status) where.status = status as GalleryStatus
     if (photographerId) where.photographerId = photographerId
 
     const [galleries, total] = await Promise.all([
@@ -155,7 +156,8 @@ export async function PUT(request: NextRequest) {
     }
 
     let updateData: {
-      status?: 'archived' | 'active' | 'draft'
+      status?: GalleryStatus
+      visibility?: GalleryVisibility
     } = {}
 
     switch (action) {
@@ -166,7 +168,7 @@ export async function PUT(request: NextRequest) {
         updateData = { status: 'active' }
         break
       case 'suspend':
-        updateData = { status: 'suspended' }
+        updateData = { status: 'archived' }
         break
       case 'update_status':
         if (!status) {
@@ -305,16 +307,16 @@ export async function DELETE(request: NextRequest) {
           OR: [
             {
               metadata: {
-                path: ['galleryId'],
+                path: 'galleryId',
                 equals: galleryId
               }
             },
-            {
+            ...gallery.photos.map(photo => ({
               metadata: {
-                path: ['photoId'],
-                in: gallery.photos.map(p => p.id)
+                path: 'photoId',
+                equals: photo.id
               }
-            }
+            }))
           ]
         }
       }),

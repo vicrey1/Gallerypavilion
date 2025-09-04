@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { motion } from 'framer-motion'
 import { Heart, ArrowLeft, Eye, DollarSign, Trash2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'

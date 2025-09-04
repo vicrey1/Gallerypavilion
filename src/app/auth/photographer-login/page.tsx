@@ -169,7 +169,7 @@ export default function PhotographerLogin() {
           {/* Footer Links */}
           <div className="mt-8 text-center space-y-4">
             <div className="text-gray-400 text-sm">
-              Don't have an account?
+              Don&apos;t have an account?
             </div>
             <Link
               href="/auth/photographer-signup"

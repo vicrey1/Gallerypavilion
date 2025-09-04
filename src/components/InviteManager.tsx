@@ -375,17 +375,19 @@ export default function InviteManager({ galleryId, galleryTitle }: InviteManager
            )}
          </>
        ) : (
-         <InviteAnalytics galleryId={galleryId} invites={invites} />
+         galleryId && <InviteAnalytics galleryId={galleryId} />
        )}
 
       {/* Create Invite Modal */}
-      <CreateInviteModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        galleryId={galleryId}
-        galleryTitle={galleryTitle}
-        onInviteCreated={fetchInvites}
-      />
+      {galleryId && galleryTitle && (
+        <CreateInviteModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          galleryId={galleryId}
+          galleryTitle={galleryTitle}
+          onInviteCreated={fetchInvites}
+        />
+      )}
 
       {/* Edit Invite Modal */}
       <AnimatePresence>

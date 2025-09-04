@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
           portfolio: validatedData.portfolio || null,
           socialMedia: validatedData.instagram ? {
             instagram: validatedData.instagram
-          } : null,
+          } : Prisma.JsonNull,
           status: 'pending' // Default status for admin approval
         }
       })
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Validation failed',
-          details: error.errors.map(err => ({
+          details: error.issues.map(err => ({
             field: err.path.join('.'),
             message: err.message
           }))

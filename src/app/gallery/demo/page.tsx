@@ -312,7 +312,7 @@ export default function GalleryPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      setShowPurchaseModal(photo)
+                      setShowPurchaseModal({ photo })
                     }}
                     className="p-2 rounded-full bg-white/10 text-gray-400 hover:text-green-400 transition-colors"
                   >
@@ -390,7 +390,7 @@ export default function GalleryPage() {
                   </button>
                   
                   <button
-                    onClick={() => setShowPurchaseModal(selectedPhoto)}
+                    onClick={() => setShowPurchaseModal({ photo: selectedPhoto })}
                     className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
                   >
                     <ShoppingCart className="h-4 w-4" />
@@ -421,7 +421,7 @@ export default function GalleryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-xl font-bold text-white mb-4">Request Purchase</h3>
-              <p className="text-gray-300 mb-6">Select the license type for &quot;{showPurchaseModal.title}&quot;</p>
+              <p className="text-gray-300 mb-6">Select the license type for &quot;{showPurchaseModal.photo.title}&quot;</p>
               
               <div className="space-y-3">
                 {[
@@ -431,7 +431,7 @@ export default function GalleryPage() {
                 ].map((license) => (
                   <button
                     key={license.type}
-                    onClick={() => handlePurchaseRequest(showPurchaseModal, license.type)}
+                    onClick={() => handlePurchaseRequest(showPurchaseModal.photo, license.type)}
                     className="w-full text-left p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-white/20 transition-all"
                   >
                     <div className="font-semibold text-white">{license.label}</div>

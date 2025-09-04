@@ -13,16 +13,17 @@ const certificateRequestSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { photoId: string } }
+  { params }: { params: Promise<{ photoId: string }> }
 ) {
   try {
+    const { photoId } = await params
     const session = await getServerSession(authOptions)
     const body = await request.json()
     const { requestType, clientEmail, clientName } = certificateRequestSchema.parse(body)
 
     // Get photo details with gallery and photographer info
     const photo = await prisma.photo.findUnique({
-      where: { id: params.photoId },
+      where: { id: photoId },
       include: {
         gallery: {
           include: {
@@ -53,7 +54,7 @@ export async function POST(
       
       // Update photo with certificate ID
       await prisma.photo.update({
-        where: { id: params.photoId },
+        where: { id: photoId },
         data: { certificateId }
       })
     }
@@ -79,7 +80,7 @@ export async function POST(
         issuedAt: new Date(),
         clientEmail: clientEmail || session?.user?.email,
         clientName: clientName || session?.user?.name,
-        verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${params.photoId}/verify?id=${certificateId}`
+        verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${photoId}/verify?id=${certificateId}`
       }
 
       return NextResponse.json({
@@ -112,7 +113,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }
@@ -127,8 +128,9 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { photoId: string } }
+  { params }: { params: Promise<{ photoId: string }> }
 ) {
+  const { photoId } = await params
   try {
     const { searchParams } = new URL(request.url)
     const certificateId = searchParams.get('id')
@@ -143,7 +145,7 @@ export async function GET(
     // Get photo details for verification
     const photo = await prisma.photo.findFirst({
       where: {
-        id: params.photoId,
+        id: photoId,
         certificateId: certificateId
       },
       include: {

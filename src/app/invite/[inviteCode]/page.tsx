@@ -11,6 +11,8 @@ import PhotoLightbox from '@/components/PhotoLightbox';
 interface Photo {
   id: string;
   filename: string;
+  url?: string;
+  thumbnailUrl?: string;
   title?: string;
   description?: string;
   tags?: string[];
@@ -22,7 +24,6 @@ interface Photo {
   fileSize?: number;
   mimeType?: string;
   favorites?: number;
-
   views?: number;
   location?: string;
   isFavorited?: boolean;
@@ -179,9 +180,9 @@ export default function InviteGalleryPage() {
     if (!galleryData?.permissions.canRequestPurchase) return;
     
     const subject = `Purchase request for photo: ${photo.title}`;
-    const body = `Hi ${galleryData.photographer.name},\n\nI would like to purchase the photo "${photo.title}" from your gallery "${galleryData.title}".\n\nPhoto Details:\n- Title: ${photo.title}\n- Price: $${photo.basePrice || photo.price}\n\nPlease let me know the next steps for completing this purchase.\n\nBest regards`;
+    const body = `Hi ${galleryData.gallery.photographer.name},\n\nI would like to purchase the photo "${photo.title}" from your gallery "${galleryData.gallery.title}".\n\nPhoto Details:\n- Title: ${photo.title}\n- Price: $${photo.basePrice || photo.price}\n\nPlease let me know the next steps for completing this purchase.\n\nBest regards`;
     
-    const mailtoLink = `mailto:${galleryData.photographer.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailtoLink = `mailto:${galleryData.gallery.photographer.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink, '_blank');
   };
 
@@ -696,11 +697,11 @@ export default function InviteGalleryPage() {
               fileSize: photo.fileSize || 0,
               mimeType: photo.mimeType || 'image/jpeg',
               favorites: photo.favorites || 0,
-
+              downloads: 0,
               price: photo.basePrice || photo.price,
               isForSale: photo.isForSale,
               tags: Array.isArray(photo.tags) ? photo.tags : [],
-            category: Array.isArray(photo.tags) ? photo.tags[0] : undefined,
+              category: Array.isArray(photo.tags) ? photo.tags[0] : undefined,
               location: photo.location,
               photographer: {
                 id: gallery.photographer.id,

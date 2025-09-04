@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
@@ -53,7 +56,7 @@ interface Photo {
   format: string
 }
 
-export default function PhotoComparisonPage() {
+function PhotoComparisonPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { data: session, status } = useSession()
@@ -570,5 +573,13 @@ export default function PhotoComparisonPage() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+export default function PhotoComparisonPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <PhotoComparisonPageContent />
+    </Suspense>
   )
 }

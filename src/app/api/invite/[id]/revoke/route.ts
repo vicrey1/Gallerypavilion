@@ -6,9 +6,10 @@ import { authOptions } from '@/lib/auth';
 // Revoke invite
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function POST(
     // Verify the user owns the gallery
     const invite = await prisma.invite.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographer: {
             user: {
@@ -47,7 +48,7 @@ export async function POST(
 
     // Update invite status to revoked
     const revokedInvite = await prisma.invite.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         status: 'revoked',
       },

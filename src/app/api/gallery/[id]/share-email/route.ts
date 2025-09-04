@@ -16,14 +16,21 @@ const emailShareSchema = z.object({
     canComment: z.boolean().default(false),
     canDownload: z.boolean().default(false),
     canRequestPurchase: z.boolean().default(false)
-  }).default({})
+  }).default({
+    canView: true,
+    canFavorite: false,
+    canComment: false,
+    canDownload: false,
+    canRequestPurchase: false
+  })
 })
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.photographerId) {
@@ -35,7 +42,7 @@ export async function POST(
 
     const body = await request.json()
     const validatedData = emailShareSchema.parse(body)
-    const galleryId = params.id
+    const galleryId = id
 
     // Verify the gallery belongs to the photographer
     const gallery = await prisma.gallery.findFirst({
@@ -48,6 +55,7 @@ export async function POST(
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
                 email: true
               }
@@ -109,7 +117,7 @@ export async function POST(
       galleryTitle: gallery.title,
       photographerName: gallery.photographer?.user?.name || gallery.photographer?.businessName || 'Photographer',
       inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
-      expiresAt: invite.expiresAt,
+      expiresAt: invite.expiresAt || undefined,
       permissions: {
         canView: invite.canView,
         canFavorite: invite.canFavorite,
@@ -162,7 +170,7 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }

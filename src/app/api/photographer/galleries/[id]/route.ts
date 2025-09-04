@@ -145,7 +145,7 @@ export async function GET(
         invite.clientInvites.map(clientInvite => ({
           id: clientInvite.id,
           email: clientInvite.client.user.email,
-          status: clientInvite.status,
+          status: invite.status,
           invitedAt: clientInvite.createdAt,
         }))
       ),
@@ -216,7 +216,15 @@ export async function PUT(
       requirePassword?: boolean
       password?: string
       status?: 'draft' | 'active' | 'archived'
-    } = { ...validatedData }
+    } = {}
+    
+    if (validatedData.title !== undefined) updateData.title = validatedData.title
+    if (validatedData.description !== undefined) updateData.description = validatedData.description
+    if (validatedData.isPublic !== undefined) updateData.isPublic = validatedData.isPublic
+    if (validatedData.allowDownloads !== undefined) updateData.allowDownloads = validatedData.allowDownloads
+    if (validatedData.requirePassword !== undefined) updateData.requirePassword = validatedData.requirePassword
+    if (validatedData.password !== undefined) updateData.password = validatedData.password
+    if (validatedData.status !== undefined) updateData.status = validatedData.status
     
     if (validatedData.expiresAt !== undefined) {
       updateData.expiresAt = validatedData.expiresAt ? new Date(validatedData.expiresAt) : null
@@ -229,8 +237,6 @@ export async function PUT(
         _count: {
           select: {
             photos: true,
-            views: true,
-            favorites: true,
             invites: true,
           },
         },
@@ -248,14 +254,13 @@ export async function PUT(
       allowDownloads: gallery.allowDownloads,
       requirePassword: gallery.requirePassword,
       totalPhotos: gallery._count.photos,
-      views: gallery._count.views,
-      favorites: gallery._count.favorites,
+      views: gallery.views,
       invites: gallery._count.invites,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
+        { error: 'Validation error', details: error.issues },
         { status: 400 }
       )
     }

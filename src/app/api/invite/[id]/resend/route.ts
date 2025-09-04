@@ -7,9 +7,10 @@ import { sendInviteEmail } from '@/lib/email';
 // Resend invite email
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(
     // Get the invite with gallery and photographer details
     const invite = await prisma.invite.findFirst({
       where: {
-        id: params.id,
+        id: id,
         gallery: {
           photographer: {
             user: {
@@ -70,12 +71,19 @@ export async function POST(
 
     // Send the email
     try {
+      if (!invite.clientEmail) {
+        return NextResponse.json(
+          { error: 'Client email is required' },
+          { status: 400 }
+        );
+      }
+
       await sendInviteEmail({
         recipientEmail: invite.clientEmail,
         galleryTitle: invite.gallery.title,
         photographerName: invite.gallery.photographer.user.name || 'Photographer',
         inviteUrl,
-        expiresAt: invite.expiresAt,
+        expiresAt: invite.expiresAt || undefined,
         permissions: {
           canView: invite.canView,
           canFavorite: invite.canFavorite,

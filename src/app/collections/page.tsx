@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -385,7 +388,7 @@ export default function CollectionsPage() {
                         <h3 className="font-semibold text-white truncate flex-1">{collection.name}</h3>
                         <div className="flex items-center space-x-1 ml-2">
                           {collection.isPublic && (
-                            <Eye className="w-4 h-4 text-green-400" title="Public" />
+                            <Eye className="w-4 h-4 text-green-400" />
                           )}
                           <button
                             onClick={() => {
@@ -445,7 +448,7 @@ export default function CollectionsPage() {
                         <h3 className="font-semibold text-white truncate">{collection.name}</h3>
                         <div className="flex items-center space-x-2 ml-4">
                           {collection.isPublic && (
-                            <Eye className="w-4 h-4 text-green-400" title="Public" />
+                            <Eye className="w-4 h-4 text-green-400" />
                           )}
                           <button
                             onClick={() => {

@@ -11,7 +11,7 @@ interface Notification {
   title: string
   message: string
   isRead: boolean
-  data?: any
+  data?: Record<string, unknown>
   createdAt: string
 }
 
@@ -95,13 +95,15 @@ export default function NotificationCenter() {
         setFetchError(errorMessage)
       }
     } catch (error) {
-      const errorMessage = `Network error: ${error.message}`
+      const errorMessage = `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`
       console.error('Error fetching notifications:', error)
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      })
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        })
+      }
       setFetchError(errorMessage)
     } finally {
       setLoading(false)

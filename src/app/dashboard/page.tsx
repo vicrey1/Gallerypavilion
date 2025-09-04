@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Plus, Upload, Eye, Heart, Download, Settings, Users, BarChart3, Calendar, Search, Filter, Grid, List, X, Edit, Trash2, Share, Copy, Mail } from 'lucide-react'
 import Link from 'next/link'

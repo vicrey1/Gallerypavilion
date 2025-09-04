@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { motion } from 'framer-motion'
@@ -221,6 +224,19 @@ export default function AdminPanel() {
       fetchAdminData()
     }
   }, [session])
+
+  const fetchPhotographers = async () => {
+    try {
+      const photographersResponse = await fetch('/api/admin/photographers')
+      if (!photographersResponse.ok) {
+        throw new Error(`Failed to fetch photographers: ${photographersResponse.status}`)
+      }
+      const photographersData = await photographersResponse.json()
+      setPhotographers(photographersData.photographers || [])
+    } catch (error) {
+      console.error('Error fetching photographers:', error)
+    }
+  }
 
   const handleApprovePhotographer = async (photographerId: string) => {
      try {

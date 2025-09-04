@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { PhotographerStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const skip = (page - 1) * limit
 
-    const where = status ? { status: status as 'active' | 'inactive' | 'suspended' } : {}
+    const where = status ? { status: status as PhotographerStatus } : {}
 
     const [photographers, total] = await Promise.all([
       prisma.photographer.findMany({

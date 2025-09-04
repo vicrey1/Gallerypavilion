@@ -284,9 +284,9 @@ export default function CollectionDetailPage() {
                 <div className="flex items-center space-x-2">
                   <h1 className="text-xl font-bold text-white truncate">{collection.name}</h1>
                   {collection.isPublic ? (
-                    <Eye className="h-4 w-4 text-green-400" title="Public" />
+                    <Eye className="h-4 w-4 text-green-400" />
                   ) : (
-                    <EyeOff className="h-4 w-4 text-gray-400" title="Private" />
+                    <EyeOff className="h-4 w-4 text-gray-400" />
                   )}
                 </div>
                 <p className="text-gray-300 text-sm">{collection.photos.length} photos</p>
@@ -311,9 +311,9 @@ export default function CollectionDetailPage() {
                   <div className="flex items-center space-x-2">
                     <h1 className="text-xl font-bold text-white">{collection.name}</h1>
                     {collection.isPublic ? (
-                      <Eye className="h-4 w-4 text-green-400" title="Public" />
+                      <Eye className="h-4 w-4 text-green-400" />
                     ) : (
-                      <EyeOff className="h-4 w-4 text-gray-400" title="Private" />
+                      <EyeOff className="h-4 w-4 text-gray-400" />
                     )}
                   </div>
                   <p className="text-gray-300 text-sm">{collection.photos.length} photos • by {collection.user.name}</p>

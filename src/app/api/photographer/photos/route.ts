@@ -132,13 +132,13 @@ export async function POST(request: NextRequest) {
     await writeFile(thumbnailPath, buffer)
 
     // Process tags if provided
-    let processedTags = null
+    let processedTags: any = null
     if (tags) {
       try {
-        processedTags = JSON.stringify(JSON.parse(tags))
+        processedTags = JSON.parse(tags)
       } catch {
         // If tags is not valid JSON, treat as comma-separated string
-        processedTags = JSON.stringify(tags.split(',').map(tag => tag.trim()).filter(tag => tag))
+        processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag)
       }
     }
 
@@ -246,11 +246,11 @@ export async function GET(request: NextRequest) {
         where: { galleryId },
         include: {
           _count: {
-            select: {
-              favorites: true,
-              downloads: true,
-            },
+          select: {
+            favorites: true,
+            photoDownloads: true,
           },
+        },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -269,7 +269,7 @@ export async function GET(request: NextRequest) {
       fileSize: photo.fileSize,
       mimeType: photo.mimeType,
       favorites: photo._count.favorites,
-      downloads: photo._count.downloads,
+      downloads: photo._count.photoDownloads,
     }))
 
     return NextResponse.json({

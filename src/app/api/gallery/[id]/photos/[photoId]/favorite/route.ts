@@ -9,10 +9,11 @@ const paramsSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; photoId: string } }
+  { params }: { params: Promise<{ id: string; photoId: string }> }
 ) {
   try {
-    const { id: galleryId, photoId } = paramsSchema.parse(params)
+    const resolvedParams = await params;
+    const { id: galleryId, photoId } = paramsSchema.parse(resolvedParams)
     
     // Parse request body for additional context
     let requestBody = {}
@@ -25,7 +26,6 @@ export async function POST(
     // Get client IP for tracking favorites
     const clientIp = request.headers.get('x-forwarded-for') || 
                     request.headers.get('x-real-ip') || 
-                    request.ip ||
                     'unknown'
 
     // Verify the photo belongs to the gallery and gallery is accessible

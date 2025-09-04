@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { InviteType, InviteStatus } from '@prisma/client';
 
 // Get all invites for a gallery
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -24,7 +26,7 @@ export async function GET(
     // Verify the user owns the gallery
     const gallery = await prisma.gallery.findFirst({
       where: {
-        id: params.id,
+        id: id,
         photographer: {
           user: {
             email: session.user.email,
@@ -41,16 +43,16 @@ export async function GET(
     }
 
     // Build where clause for filtering
-    const whereClause: any = {
-      galleryId: params.id,
+    const whereClause: { galleryId: string; status?: InviteStatus; type?: InviteType } = {
+      galleryId: id,
     };
 
     if (status && status !== 'all') {
-      whereClause.status = status;
+      whereClause.status = status as InviteStatus;
     }
 
     if (type && type !== 'all') {
-      whereClause.type = type;
+      whereClause.type = type as InviteType;
     }
 
     const invites = await prisma.invite.findMany({

@@ -125,7 +125,7 @@ export default function PhotoDetailPage() {
       if (favoritesData) {
         const parsedData = JSON.parse(favoritesData)
         if (parsedData.favorites && Array.isArray(parsedData.favorites)) {
-          const isFav = parsedData.favorites.some((fav: any) => fav.id === photoData.id)
+          const isFav = parsedData.favorites.some((fav: { id: string }) => fav.id === photoData.id)
           setIsFavorited(isFav)
         }
       }
@@ -145,7 +145,10 @@ export default function PhotoDetailPage() {
       
       try {
         const storageKey = `invite_favorites_${inviteCode}`
-        let favoritesData = {
+        let favoritesData: {
+          favorites: any[],
+          addedAt: string
+        } = {
           favorites: [],
           addedAt: new Date().toISOString()
         }
@@ -184,14 +187,14 @@ export default function PhotoDetailPage() {
           }
           
           // Check if not already in favorites
-          const exists = favoritesData.favorites.some((fav: any) => fav.id === photo.id)
+          const exists = favoritesData.favorites.some((fav: { id: string }) => fav.id === photo.id)
           if (!exists) {
             favoritesData.favorites.push(favoritePhoto)
             favoritesData.addedAt = new Date().toISOString()
           }
         } else {
           // Remove from favorites
-          favoritesData.favorites = favoritesData.favorites.filter((fav: any) => fav.id !== photo.id)
+          favoritesData.favorites = favoritesData.favorites.filter((fav: { id: string }) => fav.id !== photo.id)
         }
         
         localStorage.setItem(storageKey, JSON.stringify(favoritesData))

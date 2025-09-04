@@ -55,7 +55,7 @@ export default function InviteFavoritesPage() {
           if (favoritesData) {
             const parsedData = JSON.parse(favoritesData)
             if (parsedData.favorites && Array.isArray(parsedData.favorites)) {
-              parsedData.favorites.forEach((photo: any) => {
+              parsedData.favorites.forEach((photo: Omit<FavoritePhoto, 'inviteCode' | 'addedAt'>) => {
                 allFavorites.push({
                   ...photo,
                   inviteCode,
@@ -97,7 +97,7 @@ export default function InviteFavoritesPage() {
       if (favoritesData) {
         const parsedData = JSON.parse(favoritesData)
         if (parsedData.favorites) {
-          parsedData.favorites = parsedData.favorites.filter((photo: any) => photo.id !== photoId)
+          parsedData.favorites = parsedData.favorites.filter((photo: { id: string }) => photo.id !== photoId)
           localStorage.setItem(storageKey, JSON.stringify(parsedData))
         }
       }

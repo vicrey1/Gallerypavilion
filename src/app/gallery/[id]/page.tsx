@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Plus, Upload, Eye, Heart, Download, Users, Grid, List, X, Edit, Trash2, Share, ArrowLeft, Image as ImageIcon, Filter, Search, Star, DollarSign, Tag, SlidersHorizontal, Layers, TrendingUp, Award, Palette } from 'lucide-react'
 
@@ -24,6 +27,7 @@ interface Photo {
   fileSize: number
   mimeType: string
   favorites: number
+  downloads: number
   isFavorited?: boolean
   price?: number
   isForSale: boolean
@@ -1025,7 +1029,11 @@ export default function GalleryDetailPage() {
               photos={filteredAndSortedPhotos()}
               onPhotoClick={(photo) => router.push(`/gallery/${gallery.id}/photo/${photo.id}`)}
               onEditPhoto={handleEditPhoto}
-              onDeletePhoto={(photoId) => handleDeletePhoto(photoId)}
+              onDeletePhoto={(photoId) => {
+                const newSelected = new Set([photoId])
+                setSelectedPhotos(newSelected)
+                handleDeletePhotos()
+              }}
               onFavorite={toggleFavorite}
               selectedPhotos={selectedPhotos}
               onPhotoSelect={(photoId, selected) => {

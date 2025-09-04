@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Heart, Share2, Info, Camera, MapPin, Calendar, Eye, Star, Tag, DollarSign } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Heart, Info, Camera, MapPin, Calendar, Eye } from 'lucide-react'
 import Image from 'next/image'
 
 interface Photo {
@@ -22,6 +22,7 @@ interface Photo {
   category?: string
   location?: string
   orientation?: 'landscape' | 'portrait' | 'square'
+  isFavorited?: boolean
   photographer?: {
     id: string
     name: string

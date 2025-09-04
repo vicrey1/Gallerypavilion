@@ -406,7 +406,7 @@ export default function TutorialsPage() {
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No resources found</h3>
               <p className="text-gray-300 mb-4">
-                We couldn't find any learning resources matching your criteria. Try adjusting your filters or search terms.
+                We couldn&apos;t find any learning resources matching your criteria. Try adjusting your filters or search terms.
               </p>
               <motion.button
                 whileHover={{ scale: 1.05 }}
