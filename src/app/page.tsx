@@ -5,6 +5,7 @@ import { Camera, Shield, Users, ArrowRight, Star, Check, Mail, Phone, MapPin, Fa
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import NewsletterSubscription from '@/components/NewsletterSubscription'
 
 export default function Home() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
@@ -1110,36 +1111,7 @@ export default function Home() {
       {/* Newsletter Signup Section */}
       <section className="px-6 py-20 bg-gradient-to-r from-purple-900 to-pink-900">
         <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Stay Updated with <span className="gradient-text">Gallery Pavilion</span>
-            </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Get the latest features, photography tips, and industry insights delivered to your inbox
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input 
-                type="email" 
-                placeholder="Enter your email address" 
-                className="flex-1 px-6 py-3 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-8 py-3 bg-white text-purple-900 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-              >
-                Subscribe
-              </motion.button>
-            </div>
-            <p className="text-sm text-gray-400 mt-4">
-              No spam, unsubscribe at any time. We respect your privacy.
-            </p>
-          </motion.div>
+          <NewsletterSubscription />
         </div>
       </section>
 

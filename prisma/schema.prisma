@@ -479,3 +479,13 @@ enum AnalyticsType {
   invite_used
   admin_action
 }
+
+model NewsletterSubscription {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  isActive     Boolean  @default(true)
+  unsubscribedAt DateTime?
+  
+  @@map("newsletter_subscriptions")
+}
