@@ -34,12 +34,12 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'PrivateGallery - Exclusive Photogram Art Collection',
-  description: 'Curated collection of original photogram artworks. Each piece is a unique, camera-less photograph created through direct light exposure on photographic paper.',
-  keywords: 'photogram, photography, art gallery, original artwork, unique prints, contemporary art, photographic art, exclusive collection',
+  title: 'Gallery Pavilion - Professional Photography Platform',
+  description: 'Professional photography platform for photographers to showcase, share, and sell their work. Create beautiful galleries, manage clients, and grow your photography business.',
+  keywords: 'photography, gallery, photographer, portfolio, photo sharing, professional photography, client galleries, photo sales, photography business',
   openGraph: {
-    title: 'PrivateGallery - Exclusive Photogram Art Collection',
-    description: 'Discover unique photogram artworks - original, camera-less photographs with certificates of authenticity.',
+    title: 'Gallery Pavilion - Professional Photography Platform',
+    description: 'Professional photography platform for photographers to showcase, share, and sell their work with beautiful galleries and client management tools.',
     type: 'website',
   },
 }

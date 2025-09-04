@@ -124,7 +124,7 @@ export default function PrivacyPage() {
         >
           <h2 className="text-2xl font-bold text-white mb-4">Our Commitment to Your Privacy</h2>
           <p className="text-gray-300 mb-4">
-            At PrivateGallery, we understand that your photos are precious memories and professional work. 
+            At Gallery Pavilion, we understand that your photos are precious memories and professional work. 
             We are committed to protecting your privacy and ensuring that your personal information and 
             creative content remain secure and private.
           </p>
@@ -274,7 +274,7 @@ export default function PrivacyPage() {
                 Contact Us
               </motion.button>
             </Link>
-            <a href="mailto:privacy@privategallery.com">
+            <a href="mailto:privacy@gallerypavilion.com">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

@@ -120,7 +120,7 @@ export default function PhotographerSignup() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <Camera className="h-8 w-8 text-white" />
-            <span className="text-2xl font-bold text-white">PrivateGallery</span>
+            <span className="text-2xl font-bold text-white">Gallery Pavilion</span>
           </Link>
           
           <Link 
@@ -146,7 +146,7 @@ export default function PhotographerSignup() {
               Join Our Exclusive Network
             </h1>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Apply to become a photographer on PrivateGallery. We carefully review each application to maintain our high standards.
+              Apply to become a photographer on Gallery Pavilion. We carefully review each application to maintain our high standards.
             </p>
           </motion.div>
 

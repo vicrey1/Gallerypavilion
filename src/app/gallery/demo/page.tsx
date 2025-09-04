@@ -107,7 +107,7 @@ export default function GalleryPage() {
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2">
               <Camera className="h-6 w-6 text-white" />
-              <span className="text-lg font-bold text-white">PrivateGallery</span>
+              <span className="text-lg font-bold text-white">Gallery Pavilion</span>
             </Link>
             <div className="text-gray-300">•</div>
             <div className="text-white">

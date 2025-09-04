@@ -28,7 +28,7 @@ export default function TutorialsPage() {
   const tutorials = [
     {
       id: 1,
-      title: 'Getting Started with PrivateGallery',
+      title: 'Getting Started with Gallery Pavilion',
       description: 'Learn the basics of creating your account and uploading your first photos.',
       category: 'getting-started',
       level: 'beginner',
@@ -102,7 +102,7 @@ export default function TutorialsPage() {
     {
       id: 7,
       title: 'API Integration for Developers',
-      description: 'Integrate PrivateGallery with your existing workflow using our API.',
+      description: 'Integrate Gallery Pavilion with your existing workflow using our API.',
       category: 'advanced',
       level: 'advanced',
       duration: '15:20',
@@ -182,7 +182,7 @@ export default function TutorialsPage() {
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent"> Resources</span>
             </h1>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Master PrivateGallery with our comprehensive guides and tutorials. From basics to advanced features.
+              Master Gallery Pavilion with our comprehensive guides and tutorials. From basics to advanced features.
             </p>
           </motion.div>
         </div>
@@ -249,7 +249,7 @@ export default function TutorialsPage() {
             className="mb-12"
           >
             <h2 className="text-3xl font-bold text-white mb-4">Featured Tutorials</h2>
-            <p className="text-gray-300">Start with these essential tutorials to get the most out of PrivateGallery.</p>
+            <p className="text-gray-300">Start with these essential tutorials to get the most out of Gallery Pavilion.</p>
           </motion.div>
           
           <div className="grid md:grid-cols-2 gap-8">
@@ -308,7 +308,7 @@ export default function TutorialsPage() {
           className="mb-12"
         >
           <h2 className="text-3xl font-bold text-white mb-4">Learning Paths</h2>
-          <p className="text-gray-300">Structured learning paths to guide your journey with PrivateGallery.</p>
+          <p className="text-gray-300">Structured learning paths to guide your journey with Gallery Pavilion.</p>
         </motion.div>
         
         <div className="grid md:grid-cols-3 gap-6">

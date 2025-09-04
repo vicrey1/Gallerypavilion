@@ -176,7 +176,7 @@ function generateInviteEmailHTML(data: InviteEmailData): string {
       </div>
       
       <div class="footer">
-        <p>This is an automated email from Private Gallery. Please do not reply to this email.</p>
+        <p>This is an automated email from Gallery Pavilion. Please do not reply to this email.</p>
       </div>
     </body>
     </html>
@@ -221,7 +221,7 @@ View Gallery: ${data.inviteUrl}
 Or visit www.gallerypavilion.com and enter your invitation code
 ${expiryText}
 
-This is an automated email from Private Gallery. Please do not reply to this email.
+This is an automated email from Gallery Pavilion. Please do not reply to this email.
   `
 }
 

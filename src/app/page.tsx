@@ -45,7 +45,7 @@ export default function Home() {
             className="flex items-center space-x-2"
           >
             <Camera className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-            <span className="text-lg sm:text-2xl font-bold text-white">PrivateGallery</span>
+            <span className="text-lg sm:text-2xl font-bold text-white">Gallery Pavilion</span>
           </motion.div>
           
           <motion.div 
@@ -152,7 +152,7 @@ export default function Home() {
                 href="/invite"
                 className="group border-2 border-white/80 text-white px-6 py-3 sm:px-10 sm:py-5 rounded-full font-semibold text-base sm:text-lg hover:bg-white/10 hover:border-white transition-all duration-500 flex items-center space-x-3 backdrop-blur-sm hover:backdrop-blur-md w-full sm:w-auto justify-center"
               >
-                <span>Access Private Gallery</span>
+                <span>Access Gallery Pavilion</span>
                 <Shield className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-12 transition-transform duration-300" />
               </Link>
             </motion.div>
@@ -188,7 +188,7 @@ export default function Home() {
             className="text-center mb-12 sm:mb-16"
           >
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6">
-              Why Choose PrivateGallery?
+              Why Choose Gallery Pavilion?
             </h2>
             <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto px-4">
               Built for photographers who value exclusivity, security, and premium client experiences.
@@ -794,7 +794,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              About <span className="gradient-text">PrivateGallery</span>
+              About <span className="gradient-text">Gallery Pavilion</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               We revolutionize how professional photographers share their work with clients through secure, private galleries that protect your creative assets while delivering an exceptional viewing experience.
@@ -950,7 +950,7 @@ export default function Home() {
               Frequently Asked <span className="gradient-text">Questions</span>
             </h2>
             <p className="text-xl text-gray-300">
-              Everything you need to know about PrivateGallery
+              Everything you need to know about Gallery Pavilion
             </p>
           </motion.div>
 
@@ -996,7 +996,7 @@ export default function Home() {
               className="glass-card p-6"
             >
               <h3 className="text-xl font-semibold text-white mb-3">How do clients access their galleries?</h3>
-              <p className="text-gray-300">Clients receive a secure link and password to access their private gallery. They can view, favorite, and download photos (if you allow it) from any device without needing to create an account.</p>
+              <p className="text-gray-300">Clients receive a secure link and password to access their gallery. They can view, favorite, and download photos (if you allow it) from any device without needing to create an account.</p>
             </motion.div>
 
             <motion.div
@@ -1038,7 +1038,7 @@ export default function Home() {
               Trusted by <span className="gradient-text">Thousands</span> of Photographers
             </h2>
             <p className="text-lg text-gray-300">
-              Join the growing community of professionals who trust PrivateGallery
+              Join the growing community of professionals who trust Gallery Pavilion
             </p>
           </motion.div>
           
@@ -1126,7 +1126,7 @@ export default function Home() {
             viewport={{ once: true }}
           >
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Stay Updated with <span className="gradient-text">PrivateGallery</span>
+              Stay Updated with <span className="gradient-text">Gallery Pavilion</span>
             </h2>
             <p className="text-xl text-gray-300 mb-8">
               Get the latest features, photography tips, and industry insights delivered to your inbox
@@ -1166,7 +1166,7 @@ export default function Home() {
               Get in <span className="gradient-text">Touch</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Ready to elevate your photography business? Contact us today and discover how PrivateGallery can transform your client experience.
+              Ready to elevate your photography business? Contact us today and discover how Gallery Pavilion can transform your client experience.
             </p>
           </motion.div>
 
@@ -1257,7 +1257,7 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="text-gray-300">Email</p>
-                      <p className="text-white font-semibold">hello@privategallery.com</p>
+                      <p className="text-white font-semibold">hello@gallerypavilion.com</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -1379,7 +1379,7 @@ export default function Home() {
                 >
                   <Camera className="h-8 w-8 text-white" />
                 </motion.div>
-                <span className="text-2xl font-bold text-white gradient-text">PrivateGallery</span>
+                <span className="text-2xl font-bold text-white gradient-text">Gallery Pavilion</span>
               </motion.div>
               <p className="text-gray-400 leading-relaxed">
                 The premier platform for professional photographers to securely share their work with clients through private, branded galleries.
@@ -1488,8 +1488,8 @@ export default function Home() {
                   <Mail className="h-5 w-5 text-purple-400" />
                   <div>
                     <p className="text-sm text-gray-500">Email</p>
-                    <a href="mailto:support@privategallery.com" className="hover:text-white transition-colors">
-                      support@privategallery.com
+                    <a href="mailto:support@gallerypavilion.com" className="hover:text-white transition-colors">
+                  support@gallerypavilion.com
                     </a>
                   </div>
                 </motion.div>
@@ -1541,7 +1541,7 @@ export default function Home() {
           >
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6 text-gray-400">
-                <p>&copy; 2024 PrivateGallery. All rights reserved.</p>
+                <p>&copy; 2024 Gallery Pavilion. All rights reserved.</p>
                 <div className="flex space-x-4 text-sm">
                   <motion.div whileHover={{ scale: 1.05 }}>
                     <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

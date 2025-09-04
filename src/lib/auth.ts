@@ -245,7 +245,7 @@ export const authOptions: NextAuthOptions = {
 
         // For demo purposes, use hardcoded admin credentials
         // In production, this should be stored securely in database
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@privategallery.com'
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@gallerypavilion.com'
         const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
 
         if (credentials.email.toLowerCase() === adminEmail.toLowerCase() && 

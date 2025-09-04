@@ -39,8 +39,8 @@ export default function ContactPage() {
       icon: Mail,
       title: 'Email Support',
       description: 'Get help via email',
-      contact: 'support@privategallery.com',
-      action: 'mailto:support@privategallery.com',
+      contact: 'support@gallerypavilion.com',
+      action: 'mailto:support@gallerypavilion.com',
       responseTime: 'Usually responds within 2-4 hours'
     },
     {
@@ -271,7 +271,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-white mb-1">Email</h3>
-                    <p className="text-gray-400">support@privategallery.com</p>
+                    <p className="text-gray-400">support@gallerypavilion.com</p>
                     <p className="text-sm text-gray-500">We typically respond within 2-4 hours</p>
                   </div>
                 </div>

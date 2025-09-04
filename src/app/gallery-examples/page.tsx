@@ -107,7 +107,7 @@ export default function GalleryExamplesPage() {
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Examples</span>
             </h1>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Explore different gallery styles and see how PrivateGallery adapts to every type of photography business.
+              Explore different gallery styles and see how Gallery Pavilion adapts to every type of photography business.
             </p>
             <Link href="/gallery/demo">
               <motion.button
@@ -325,7 +325,7 @@ export default function GalleryExamplesPage() {
             Ready to Create Your Own Stunning Galleries?
           </h2>
           <p className="text-xl text-purple-100 mb-8">
-            Start your free trial today and see how PrivateGallery can transform your photography business.
+            Start your free trial today and see how Gallery Pavilion can transform your photography business.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/photographer-signup">

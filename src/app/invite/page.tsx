@@ -70,7 +70,7 @@ export default function InvitePage() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <Camera className="h-8 w-8 text-white" />
-            <span className="text-2xl font-bold text-white">PrivateGallery</span>
+            <span className="text-2xl font-bold text-white">Gallery Pavilion</span>
           </Link>
           
           <Link 

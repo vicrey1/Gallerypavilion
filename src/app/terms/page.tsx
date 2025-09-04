@@ -11,7 +11,7 @@ export default function TermsPage() {
       title: 'Acceptance of Terms',
       icon: FileText,
       content: [
-        'By accessing and using PrivateGallery, you accept and agree to be bound by these Terms of Service',
+        'By accessing and using Gallery Pavilion, you accept and agree to be bound by these Terms of Service',
         'If you do not agree to these terms, you may not use our service',
         'We may update these terms at any time, and continued use constitutes acceptance of changes',
         'You must be at least 18 years old or have parental consent to use our service'
@@ -22,7 +22,7 @@ export default function TermsPage() {
       title: 'Service Description',
       icon: Globe,
       content: [
-        'PrivateGallery provides online photo gallery hosting and management services',
+        'Gallery Pavilion provides online photo gallery hosting and management services',
         'We offer various subscription plans with different storage and feature limits',
         'Service availability may vary by geographic location',
         'We reserve the right to modify or discontinue features with reasonable notice'
@@ -121,10 +121,10 @@ export default function TermsPage() {
           viewport={{ once: true }}
           className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 mb-16"
         >
-          <h2 className="text-2xl font-bold text-white mb-4">Welcome to PrivateGallery</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">Welcome to Gallery Pavilion</h2>
           <p className="text-gray-300 mb-4">
-            These Terms of Service ("Terms") govern your use of the PrivateGallery website and services 
-            operated by PrivateGallery Inc. ("us", "we", or "our"). These Terms apply to all visitors, 
+            These Terms of Service ("Terms") govern your use of the Gallery Pavilion website and services 
+             operated by Gallery Pavilion Inc. ("us", "we", or "our"). These Terms apply to all visitors, 
             users, and others who access or use our service.
           </p>
           <p className="text-gray-300">
@@ -267,7 +267,7 @@ export default function TermsPage() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">Limitation of Damages</h3>
               <p className="text-gray-300">
-                In no event shall PrivateGallery be liable for any indirect, incidental, special, 
+                In no event shall Gallery Pavilion be liable for any indirect, incidental, special, 
                 consequential, or punitive damages, including loss of profits, data, or other 
                 intangible losses resulting from your use of the service.
               </p>
@@ -345,7 +345,7 @@ export default function TermsPage() {
                 Contact Support
               </motion.button>
             </Link>
-            <a href="mailto:legal@privategallery.com">
+            <a href="mailto:legal@gallerypavilion.com">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

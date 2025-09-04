@@ -121,7 +121,7 @@ export default function FeaturesPage() {
             Complete Feature Set
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Discover all the tools and capabilities that make PrivateGallery the perfect choice for professional photographers.
+            Discover all the tools and capabilities that make Gallery Pavilion the perfect choice for professional photographers.
           </p>
         </motion.div>
 
@@ -211,7 +211,7 @@ export default function FeaturesPage() {
             Integrates with Your Favorite Tools
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Connect PrivateGallery with the tools you already use to create a seamless photography workflow.
+            Connect Gallery Pavilion with the tools you already use to create a seamless photography workflow.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             {['Lightroom', 'Photoshop', 'Capture One', 'Dropbox'].map((tool, index) => (
@@ -252,7 +252,7 @@ export default function FeaturesPage() {
             Ready to Experience These Features?
           </h2>
           <p className="text-xl text-purple-100 mb-8">
-            Start your free trial today and see how PrivateGallery can transform your photography business.
+            Start your free trial today and see how Gallery Pavilion can transform your photography business.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/photographer-signup">

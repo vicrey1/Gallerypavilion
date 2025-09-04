@@ -272,7 +272,7 @@ export default function PricingPage() {
             Ready to Transform Your Photography Business?
           </h2>
           <p className="text-xl text-purple-100 mb-8">
-            Join thousands of photographers who trust PrivateGallery to deliver exceptional client experiences.
+            Join thousands of photographers who trust Gallery Pavilion to deliver exceptional client experiences.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/photographer-signup">

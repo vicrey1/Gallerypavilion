@@ -1,4 +1,4 @@
-# Gallery PAvilion - Photography Platform
+# Gallery Pavilion - Photography Platform
 
 A modern, full-featured photography platform built with Next.js, featuring gallery management, photographer profiles, and client collaboration tools.
 

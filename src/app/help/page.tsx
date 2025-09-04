@@ -125,7 +125,7 @@ export default function HelpPage() {
               <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent"> Center</span>
             </h1>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-8">
-              Find answers to your questions and get the support you need to make the most of PrivateGallery.
+              Find answers to your questions and get the support you need to make the most of Gallery Pavilion.
             </p>
           </motion.div>
         </div>
@@ -209,7 +209,7 @@ export default function HelpPage() {
         >
           <h2 className="text-3xl font-bold text-white mb-4">Frequently Asked Questions</h2>
           <p className="text-gray-300">
-            Find quick answers to the most common questions about PrivateGallery.
+            Find quick answers to the most common questions about Gallery Pavilion.
           </p>
         </motion.div>
 
@@ -350,7 +350,7 @@ export default function HelpPage() {
                 Contact Support
               </motion.button>
             </Link>
-            <a href="mailto:help@privategallery.com">
+            <a href="mailto:help@gallerypavilion.com">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
