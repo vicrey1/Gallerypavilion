@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -74,10 +74,10 @@ model Photographer {
   businessName String?
   website     String?
   phone       String?
-  bio         String?
-  equipment   String?
-  experience  String?
-  portfolio   String?
+  bio         String? @db.Text
+  equipment   String? @db.Text
+  experience  String? @db.Text
+  portfolio   String? @db.Text
   socialMedia Json?    // Store social media links as JSON
   status      PhotographerStatus @default(pending)
   createdAt   DateTime @default(now())
@@ -187,8 +187,8 @@ model Photo {
   medium          String?                 // Medium used (e.g., "Silver Gelatin Print")
   technique       String?                 // Technique used (e.g., "Traditional Darkroom")
   materials       String?                 // Materials used (e.g., "Fiber Paper, Silver")
-  artistStatement String?                 // Artist's statement about the work
-  provenance      String?                 // Provenance and exhibition history
+  artistStatement String?  @db.Text       // Artist's statement about the work
+  provenance      String?  @db.Text       // Provenance and exhibition history
   certificateId   String?                 // Unique certificate of authenticity ID
   
   sortOrder    Int      @default(0)

@@ -46,6 +46,19 @@ async function main() {
     })
   }
 
+  // Create admin user
+  const hashedAdminPassword = await bcrypt.hash('admin123', 12)
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@gallerypavilion.com' },
+    update: {},
+    create: {
+      email: 'admin@gallerypavilion.com',
+      name: 'Gallery Pavilion Admin',
+      role: 'admin',
+      password: hashedAdminPassword
+    }
+  })
+
   // Create a test user and photographer
   const hashedPassword = await bcrypt.hash('password123', 12)
   const testUser = await prisma.user.upsert({
@@ -171,6 +184,11 @@ async function main() {
   })
 
   console.log('Database seeded successfully!')
+  console.log('\n=== ADMIN CREDENTIALS ===')
+  console.log('Email: admin@gallerypavilion.com')
+  console.log('Password: admin123')
+  console.log('Role: admin')
+  console.log('\n=== TEST DATA ===')
   console.log('Test invite code: TEST123')
   console.log('Test gallery ID:', testGallery.id)
 }
