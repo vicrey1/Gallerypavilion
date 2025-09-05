@@ -31,7 +31,6 @@ function SignInContent() {
       const result = await signIn('photographer-login', {
         email,
         password,
-        callbackUrl,
         redirect: false
       })
 
