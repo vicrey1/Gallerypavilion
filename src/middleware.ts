@@ -11,8 +11,8 @@ export default withAuth(
 
     const isAdmin = req.nextUrl.pathname.startsWith('/admin')
 
-    // Redirect authenticated users away from auth pages (except signup pages and photographer login)
-    if (isAuthPage && isAuth && !req.nextUrl.pathname.includes('/signup') && !req.nextUrl.pathname.includes('/photographer-login')) {
+    // Redirect authenticated users away from auth pages (except signup pages, photographer login, and admin login)
+    if (isAuthPage && isAuth && !req.nextUrl.pathname.includes('/signup') && !req.nextUrl.pathname.includes('/photographer-login') && !req.nextUrl.pathname.includes('/admin-login')) {
       if (token.role === 'admin') {
         return NextResponse.redirect(new URL('/admin', req.url))
       }
