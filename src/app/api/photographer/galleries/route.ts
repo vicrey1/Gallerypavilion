@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const where: {
       photographerId: string
-      status?: string
+      status?: 'draft' | 'active' | 'archived'
       OR?: Array<{
         title?: { contains: string; mode: 'insensitive' }
         description?: { contains: string; mode: 'insensitive' }
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
       photographerId: session.user.photographerId,
     }
 
-    if (status && status !== 'all') {
-      where.status = status
+    if (status && status !== 'all' && (status === 'draft' || status === 'active' || status === 'archived')) {
+      where.status = status as 'draft' | 'active' | 'archived'
     }
 
     if (search) {
