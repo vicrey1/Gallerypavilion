@@ -36,9 +36,7 @@ async function seedProduction() {
         name: 'System Administrator',
         password: hashedPassword,
         role: 'admin',
-        emailVerified: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        emailVerified: new Date()
       }
     })
     

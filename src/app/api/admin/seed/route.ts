@@ -46,9 +46,7 @@ export async function POST(request: NextRequest) {
         name: 'System Administrator',
         password: hashedPassword,
         role: 'admin',
-        emailVerified: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date()
+        emailVerified: new Date()
       }
     })
     
