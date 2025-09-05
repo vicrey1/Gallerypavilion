@@ -278,11 +278,6 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -293,6 +288,11 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production'
       }
     }
+  },
+  
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   
   callbacks: {
