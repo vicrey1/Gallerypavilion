@@ -344,12 +344,14 @@ export const authOptions: NextAuthOptions = {
           })
           
           if (!photographer || photographer.status !== 'approved') {
-            // If photographer no longer exists or is not approved, invalidate token
-            throw new Error('Account pending approval')
+            // If photographer no longer exists or is not approved, return null to invalidate token
+            console.log('Photographer status changed, invalidating token:', { photographerId: token.photographerId, status: photographer?.status })
+            return null
           }
         } catch (error) {
           console.error('Error re-validating photographer status:', error)
-          throw error
+          // Don't throw error during callback, just log it and continue
+          // This prevents breaking the authentication flow
         }
       }
       return token
