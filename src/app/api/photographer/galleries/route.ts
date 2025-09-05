@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const where: {
       photographerId: string
-      status?: 'draft' | 'active' | 'archived'
+      status?: string
       OR?: Array<{
         title?: { contains: string; mode: 'insensitive' }
         description?: { contains: string; mode: 'insensitive' }
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && status !== 'all') {
-      where.status = status as 'draft' | 'active' | 'archived'
+      where.status = status
     }
 
     if (search) {
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       )
     }
