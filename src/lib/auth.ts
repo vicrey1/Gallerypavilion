@@ -243,22 +243,37 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password are required')
         }
 
-        // For demo purposes, use hardcoded admin credentials
-        // In production, this should be stored securely in database
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@gallerypavilion.com'
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
+        try {
+          // Find the user by email
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email.toLowerCase() }
+          })
 
-        if (credentials.email.toLowerCase() === adminEmail.toLowerCase() && 
-            credentials.password === adminPassword) {
+          if (!user || !user.password) {
+            throw new Error('Invalid email or password')
+          }
+
+          // Check if user has admin role
+          if (user.role !== 'admin') {
+            throw new Error('Access denied - Admin privileges required')
+          }
+
+          // Verify password
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+          if (!isValidPassword) {
+            throw new Error('Invalid email or password')
+          }
+
           return {
-            id: 'admin-1',
-            email: adminEmail,
-            name: 'System Administrator',
+            id: user.id,
+            email: user.email,
+            name: user.name ?? 'System Administrator',
             role: 'admin' as const
           }
+        } catch (error) {
+          console.error('Admin authentication error:', error)
+          throw error
         }
-
-        throw new Error('Invalid admin credentials')
       }
     })
   ],
