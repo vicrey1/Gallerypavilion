@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { GalleryStatus } from '@prisma/client'
 import { z } from 'zod'
 
 const createGallerySchema = z.object({
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     const where: {
       photographerId: string
-      status?: 'draft' | 'active' | 'archived'
+      status?: GalleryStatus
       OR?: Array<{
         title?: { contains: string; mode: 'insensitive' }
         description?: { contains: string; mode: 'insensitive' }
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status && status !== 'all' && (status === 'draft' || status === 'active' || status === 'archived')) {
-      where.status = status as 'draft' | 'active' | 'archived'
+      where.status = status as GalleryStatus
     }
 
     if (search) {
