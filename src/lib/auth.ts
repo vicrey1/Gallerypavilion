@@ -44,9 +44,6 @@ declare module 'next-auth' {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: 'jwt',
-  },
   providers: [
     // Credentials provider for photographer authentication
     CredentialsProvider({
