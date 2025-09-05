@@ -19,7 +19,8 @@ export default withAuth(
     }
 
     // Redirect authenticated users away from signup pages to their appropriate dashboard
-    if (isAuthPage && isAuth && req.nextUrl.pathname.includes('/signup')) {
+    // Exception: Allow photographer signup for all users (admins might want to become photographers too)
+    if (isAuthPage && isAuth && req.nextUrl.pathname.includes('/signup') && !req.nextUrl.pathname.includes('/photographer-signup')) {
       if (token.role === 'admin') {
         return NextResponse.redirect(new URL('/admin', req.url))
       } else if (token.role === 'photographer') {
@@ -27,6 +28,11 @@ export default withAuth(
       } else if (token.role === 'client') {
         return NextResponse.redirect(new URL('/client/dashboard', req.url))
       }
+    }
+
+    // Redirect photographers away from photographer signup to their dashboard
+    if (isAuthPage && isAuth && req.nextUrl.pathname.includes('/photographer-signup') && token.role === 'photographer') {
+      return NextResponse.redirect(new URL('/dashboard', req.url))
     }
 
     // Protect dashboard routes - only photographers
