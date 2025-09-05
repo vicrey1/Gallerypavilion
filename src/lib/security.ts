@@ -50,7 +50,7 @@ export function generateWatermarkedUrl(
 ): string {
   // In a real implementation, this would integrate with an image processing service
   // like AWS Lambda + Sharp, Cloudinary, or ImageKit
-  const baseUrl = process.env.APP_URL || 'http://localhost:3001'
+  const baseUrl = process.env.APP_URL || 'https://gallerypavilion.com'
   const encodedKey = encodeURIComponent(originalKey)
   const encodedWatermark = encodeURIComponent(watermarkText)
   

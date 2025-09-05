@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       recipientName: 'Test User',
       galleryTitle: 'Test Gallery',
       photographerName: 'Test Photographer',
-      inviteUrl: 'http://localhost:3001/gallery/test/invite?code=test123',
+      inviteUrl: 'https://gallerypavilion.com/gallery/test/invite?code=test123',
       permissions: {
         canView: true,
         canFavorite: true,
