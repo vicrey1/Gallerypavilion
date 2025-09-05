@@ -18,6 +18,17 @@ export default withAuth(
       }
     }
 
+    // Redirect authenticated users away from signup pages to their appropriate dashboard
+    if (isAuthPage && isAuth && req.nextUrl.pathname.includes('/signup')) {
+      if (token.role === 'admin') {
+        return NextResponse.redirect(new URL('/admin', req.url))
+      } else if (token.role === 'photographer') {
+        return NextResponse.redirect(new URL('/dashboard', req.url))
+      } else if (token.role === 'client') {
+        return NextResponse.redirect(new URL('/client/dashboard', req.url))
+      }
+    }
+
     // Protect dashboard routes - only photographers
     if (isDashboard && (!isAuth || token.role !== 'photographer')) {
       return NextResponse.redirect(new URL('/auth/photographer-login', req.url))
