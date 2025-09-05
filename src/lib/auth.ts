@@ -334,6 +334,23 @@ export const authOptions: NextAuthOptions = {
           // Ensure we have the user ID in the token
           token.id = user.id
         }
+      } else if (token.role === 'photographer' && token.photographerId) {
+        // For existing photographer tokens, re-validate status on each request
+        // This ensures that status changes (like approval) are reflected immediately
+        try {
+          const photographer = await prisma.photographer.findUnique({
+            where: { id: token.photographerId as string },
+            select: { status: true }
+          })
+          
+          if (!photographer || photographer.status !== 'approved') {
+            // If photographer no longer exists or is not approved, invalidate token
+            throw new Error('Account pending approval')
+          }
+        } catch (error) {
+          console.error('Error re-validating photographer status:', error)
+          throw error
+        }
       }
       return token
     },
