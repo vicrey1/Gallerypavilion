@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
         email: adminUser.email,
         name: adminUser.name,
         role: adminUser.role,
-        emailVerified: adminUser.emailVerified,
-        createdAt: adminUser.createdAt
+        emailVerified: adminUser.emailVerified
       },
       passwordTest: {
         hasPassword: !!adminUser.password,
