@@ -30,8 +30,7 @@ export async function POST(request: NextRequest) {
         admin: { 
           id: existingAdmin.id,
           email: existingAdmin.email, 
-          role: existingAdmin.role,
-          createdAt: existingAdmin.createdAt
+          role: existingAdmin.role
         }
       })
     }
@@ -58,8 +57,7 @@ export async function POST(request: NextRequest) {
       admin: {
         id: adminUser.id,
         email: adminUser.email,
-        role: adminUser.role,
-        createdAt: adminUser.createdAt
+        role: adminUser.role
       },
       credentials: {
         email: 'admin@gallerypavilion.com',
@@ -100,8 +98,7 @@ export async function GET(request: NextRequest) {
       admin: existingAdmin ? {
         id: existingAdmin.id,
         email: existingAdmin.email,
-        role: existingAdmin.role,
-        createdAt: existingAdmin.createdAt
+        role: existingAdmin.role
       } : null,
       message: existingAdmin ? 'Admin user exists' : 'Admin user not found',
       seedEndpoint: '/api/admin/seed (POST with ?secret=YOUR_SECRET)'
