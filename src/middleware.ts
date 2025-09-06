@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server'
 
 export default withAuth(
   function middleware(req) {
+    // Canonicalize domain: force www to keep __Host cookies consistent in production
+    const host = req.headers.get('host')
+    if (host === 'gallerypavilion.com') {
+      const url = new URL(req.url)
+      url.hostname = 'www.gallerypavilion.com'
+      return NextResponse.redirect(url)
+    }
+
     const token = req.nextauth.token
     const isAuth = !!token
     const isAuthPage = req.nextUrl.pathname.startsWith('/auth')

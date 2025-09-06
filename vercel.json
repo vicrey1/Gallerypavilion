@@ -5,5 +5,15 @@
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "gallerypavilion.com" }
+      ],
+      "destination": "https://www.gallerypavilion.com/:path*",
+      "permanent": true
+    }
+  ]
 }

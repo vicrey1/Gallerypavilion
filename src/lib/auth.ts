@@ -42,9 +42,11 @@ declare module 'next-auth' {
   }
 }
 
+const isHttps = (process.env.NEXTAUTH_URL || '').startsWith('https://')
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  useSecureCookies: process.env.NODE_ENV === 'production',
+  useSecureCookies: isHttps,
   providers: [
     // Credentials provider for photographer authentication
     CredentialsProvider({
@@ -313,27 +315,24 @@ export const authOptions: NextAuthOptions = {
   
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      name: isHttps ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production'
-        // Remove domain setting to avoid cookie issues
+        secure: isHttps,
       }
     },
     csrfToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
+      name: isHttps ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production'
-        // __Host- prefix requires domain to be undefined
+        secure: isHttps,
       }
-    }
+    },
   },
-  
   
   session: {
     strategy: 'jwt',
@@ -342,107 +341,35 @@ export const authOptions: NextAuthOptions = {
   },
   
   callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      // Always allow sign-ins for credentials providers
-      // This prevents NextAuth from trying to use callback URLs
+    async signIn({ user }) {
+      // Always allow sign-in if authorize returned a valid user
       return true
     },
-    
-    async jwt({ token, user, account }) {
-      // Persist user data in JWT token
+    async jwt({ token, user }) {
       if (user) {
-        // If signing in with email provider, check if user is a photographer
-        if (account?.provider === 'email' && user.email) {
-          try {
-            // First find the user by email
-            const dbUser = await prisma.user.findUnique({
-              where: { email: user.email.toLowerCase() },
-              include: { photographer: true }
-            })
-            
-            if (dbUser?.photographer) {
-              if (dbUser.photographer.status === 'approved') {
-                token.role = 'photographer'
-                token.photographerId = dbUser.photographer.id
-              } else {
-                // If photographer exists but not approved, deny access
-                throw new Error('Account pending approval')
-              }
-            } else {
-              // If not a photographer, this might be a regular user
-              token.role = 'client'
-            }
-          } catch (error) {
-            console.error('Error checking photographer status:', error)
-            throw error
-          }
-        } else {
-          // For credentials providers, use the role from user object
-          token.role = user.role
-          token.photographerId = user.photographerId
-          token.inviteCode = user.inviteCode
-          token.permissions = user.permissions
-          
-          // Ensure we have the user ID in the token
-          token.id = user.id
-        }
-      } else if (token.role === 'photographer' && token.photographerId) {
-        // For existing photographer tokens, re-validate status on each request
-        // This ensures that status changes (like approval) are reflected immediately
-        try {
-          const photographer = await prisma.photographer.findUnique({
-            where: { id: token.photographerId as string },
-            select: { status: true }
-          })
-          
-          if (!photographer || photographer.status !== 'approved') {
-            // If photographer no longer exists or is not approved, throw error to invalidate token
-            console.log('Photographer status changed, invalidating token:', { photographerId: token.photographerId, status: photographer?.status })
-            throw new Error('Photographer status changed')
-          }
-        } catch (error) {
-          console.error('Error re-validating photographer status:', error)
-          // Don't throw error during callback, just log it and continue
-          // This prevents breaking the authentication flow
-        }
-      } else if (token.role === 'admin') {
-        // For admin tokens, ensure persistence without additional validation
-        // Admin sessions should remain stable and not be invalidated
-        console.log('Admin token validated:', { id: token.id, email: token.email })
+        token.role = (user as any).role
+        token.photographerId = (user as any).photographerId
       }
       return token
     },
-    
     async session({ session, token }) {
-      // Send properties to the client from JWT token
-      if (token && session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as 'photographer' | 'client' | 'admin'
-        session.user.photographerId = token.photographerId as string
-        session.user.inviteCode = token.inviteCode as string
-        session.user.permissions = token.permissions as {
-          canView: boolean
-          canFavorite: boolean
-          canComment: boolean
-          canDownload: boolean
-          canRequestPurchase: boolean
-        }
+      if (session.user) {
+        ;(session.user as any).role = token.role as any
+        ;(session.user as any).photographerId = token.photographerId as any
       }
       return session
     },
-    
     async redirect({ url, baseUrl }) {
-      // Always allow access to signup pages, even when logged in
-      if (url.includes('/signup') || url.includes('/photographer-signup')) {
-        if (url.startsWith('/')) return `${baseUrl}${url}`
-        else if (new URL(url).origin === baseUrl) return url
+      // Enforce www canonical base url in production for cookie consistency
+      const prodBase = 'https://www.gallerypavilion.com'
+      if (process.env.NODE_ENV === 'production') {
+        if (url.startsWith('/')) return `${prodBase}${url}`
+        if (url.startsWith(baseUrl)) return url
+        // Allow callbackUrl to dashboard
+        return prodBase
       }
-      
-      // Default redirect logic
-      if (url.startsWith('/')) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
-    }
+      return url.startsWith(baseUrl) ? url : baseUrl
+    },
   },
   
   events: {
