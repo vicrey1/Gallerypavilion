@@ -530,6 +530,7 @@ Best regards`
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-4"
+                  autoComplete="current-password"
                   autoFocus
                 />
                 
