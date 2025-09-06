@@ -104,8 +104,7 @@ export const authOptions: NextAuthOptions = {
             console.log('📊 [PHOTOGRAPHER-LOGIN] User details:', {
               id: user.id,
               email: user.email,
-              role: user.role,
-              createdAt: user.createdAt
+              role: user.role
             })
             throw new Error('User is not a photographer')
           }
