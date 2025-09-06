@@ -16,7 +16,3 @@ export function formatDate(date: Date): string {
     day: 'numeric',
   }).format(date)
 }
-
-export function generateSecureUrl(baseUrl: string, token: string): string {
-  return `${baseUrl}?token=${token}&expires=${Date.now() + 24 * 60 * 60 * 1000}` // 24 hours
-}

@@ -59,11 +59,6 @@ export async function POST(request: NextRequest) {
         email: adminUser.email,
         role: adminUser.role
       },
-      credentials: {
-        email: 'admin@gallerypavilion.com',
-        password: 'admin123',
-        loginUrl: `${process.env.NEXTAUTH_URL || process.env.APP_URL}/auth/admin-login`
-      },
       warning: 'IMPORTANT: Change the admin password after first login!'
     })
     

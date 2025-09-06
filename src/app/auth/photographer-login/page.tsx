@@ -50,10 +50,8 @@ export default function PhotographerLogin() {
         // Successfully logged in - redirect to dashboard
         setError('')
         setSuccess('Successfully logged in! Redirecting to dashboard...')
-        // Redirect to dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 1500)
+        // Redirect to dashboard immediately
+        router.push('/dashboard')
       }
     } catch (error) {
       setError('An error occurred during login')

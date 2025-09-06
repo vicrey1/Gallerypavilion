@@ -75,30 +75,7 @@ function SignInContent() {
     }
   }
 
-  const handleEmailSignIn = async () => {
-    setIsLoading(true)
-    setError('')
-
-    try {
-      const result = await signIn('email', {
-        email,
-        callbackUrl,
-        redirect: false
-      })
-
-      if (result?.error) {
-        setError('Failed to send magic link')
-      } else {
-        setError('')
-        // Show success message
-        alert('Check your email for the magic link!')
-      }
-    } catch (error) {
-      setError('An error occurred sending the magic link')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Magic link functionality removed - not configured in auth providers
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -219,25 +196,7 @@ function SignInContent() {
                 </motion.button>
               </form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/20" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-slate-900 text-gray-400">or</span>
-                </div>
-              </div>
 
-              <motion.button
-                onClick={handleEmailSignIn}
-                disabled={isLoading || !email}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-white/10 border border-white/20 text-white py-3 px-4 rounded-lg font-semibold hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                <Mail className="h-5 w-5 mr-2" />
-                Send Magic Link
-              </motion.button>
 
               <div className="text-center">
                 <Link

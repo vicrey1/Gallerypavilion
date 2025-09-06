@@ -23,13 +23,14 @@ export default function AdminLogin() {
       const result = await signIn('admin-login', {
         email,
         password,
-        callbackUrl: '/admin',
-        redirect: true
+        redirect: false
       })
 
-      // If we reach here, there was an error (since redirect: true should redirect on success)
       if (result?.error) {
         setError('Invalid admin credentials')
+      } else if (result?.ok) {
+        // Successfully logged in - redirect to admin panel
+        router.push('/admin')
       } else {
         setError('Login failed')
       }
