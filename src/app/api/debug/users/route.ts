@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
         id: user.id,
         email: user.email,
         role: user.role,
-        createdAt: user.createdAt,
         photographer: user.photographer ? {
           id: user.photographer.id,
           name: user.photographer.name,
