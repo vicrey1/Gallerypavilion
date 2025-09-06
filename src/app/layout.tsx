@@ -53,10 +53,7 @@ export default async function RootLayout({
   let hasSessionError = false
   
   try {
-    // Temporarily disable session checking due to persistent JWT decryption errors
-    // This allows the application to function while we investigate the root cause
-    session = null
-    console.log('Session checking temporarily disabled to prevent JWT errors')
+    session = await getServerSession(authOptions)
   } catch (error) {
     console.warn('Session decryption failed:', error instanceof Error ? error.message : 'Unknown error')
     session = null

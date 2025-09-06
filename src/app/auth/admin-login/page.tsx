@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
+import { useSession } from '@/hooks/useSession'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Shield, Lock, User } from 'lucide-react'
@@ -22,32 +23,13 @@ export default function AdminLogin() {
       const result = await signIn('admin-login', {
         email,
         password,
-        redirect: false
+        callbackUrl: '/admin',
+        redirect: true
       })
 
+      // If we reach here, there was an error (since redirect: true should redirect on success)
       if (result?.error) {
         setError('Invalid admin credentials')
-      } else if (result?.ok) {
-        // Wait for session to be established with retry logic
-        let session = null
-        let retries = 0
-        const maxRetries = 5
-        
-        while (!session?.user?.role && retries < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          session = await getSession()
-          retries++
-          console.log(`Session check attempt ${retries}:`, session)
-        }
-        
-        if (session?.user?.role === 'admin') {
-          console.log('Admin session established successfully')
-          // Use window.location.href for a hard redirect to ensure middleware runs
-          window.location.href = '/admin'
-        } else {
-          console.error('Session validation failed:', session)
-          setError('Session establishment failed. Please try again.')
-        }
       } else {
         setError('Login failed')
       }
