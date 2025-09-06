@@ -416,11 +416,6 @@ export const authOptions: NextAuthOptions = {
     }
   },
   
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
-  },
-  
   // Disable callbacks for credentials providers
   useSecureCookies: process.env.NODE_ENV === 'production',
   
