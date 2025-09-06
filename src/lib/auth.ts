@@ -128,7 +128,7 @@ export const authOptions: NextAuthOptions = {
           
           return authResult
         } catch (error) {
-          console.error('💥 [PHOTOGRAPHER-LOGIN] Authentication error:', error.message)
+          console.error('💥 [PHOTOGRAPHER-LOGIN] Authentication error:', error instanceof Error ? error.message : String(error))
           console.error('💥 [PHOTOGRAPHER-LOGIN] Full error:', error)
           throw error
         }
