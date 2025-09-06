@@ -21,8 +21,6 @@ export async function GET(request: NextRequest) {
         email: true,
         role: true,
         password: true,
-        createdAt: true,
-        updatedAt: true,
         photographer: {
           select: {
             id: true,
@@ -65,8 +63,6 @@ export async function GET(request: NextRequest) {
         email: user.email,
         role: user.role,
         passwordPreview,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
         photographer: user.photographer ? {
           id: user.photographer.id,
           name: user.photographer.name,
