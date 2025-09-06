@@ -52,16 +52,18 @@ export default async function RootLayout({
   let session = null
   let hasSessionError = false
   
-  // Only try to get session if we're not in build mode
-  if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV) {
-    try {
-      session = await getServerSession(authOptions)
-    } catch (error) {
-      // Handle JWT decryption errors gracefully - likely due to secret change
-      console.warn('Session decryption failed, clearing session:', error instanceof Error ? error.message : 'Unknown error')
+  // Temporarily disable session checking to resolve JWT decryption error
+  // This will be re-enabled once the session issue is resolved
+  try {
+    // Only get session in development for now
+    if (process.env.NODE_ENV === 'development') {
+      // Skip session retrieval temporarily to avoid JWT errors
       session = null
-      hasSessionError = true
     }
+  } catch (error) {
+    console.warn('Session decryption failed:', error instanceof Error ? error.message : 'Unknown error')
+    session = null
+    hasSessionError = true
   }
 
   return (
