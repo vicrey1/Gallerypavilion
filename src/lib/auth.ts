@@ -307,6 +307,12 @@ export const authOptions: NextAuthOptions = {
   },
   
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      // Always allow sign-ins for credentials providers
+      // This prevents NextAuth from trying to use callback URLs
+      return true
+    },
+    
     async jwt({ token, user, account }) {
       // Persist user data in JWT token
       if (user) {
@@ -408,6 +414,9 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
+  
+  // Disable callbacks for credentials providers
+  useSecureCookies: process.env.NODE_ENV === 'production',
   
   events: {
     async signIn({ user, profile }) {

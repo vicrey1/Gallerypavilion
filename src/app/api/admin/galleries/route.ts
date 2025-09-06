@@ -85,20 +85,14 @@ export async function GET(request: NextRequest) {
         const viewCount = await prisma.analytics.count({
           where: {
             type: 'gallery_access',
-            metadata: {
-              path: ['galleryId'],
-              equals: gallery.id
-            }
+            galleryId: gallery.id
           }
         })
 
         const downloadCount = await prisma.analytics.count({
           where: {
             type: 'photo_download',
-            metadata: {
-              path: ['galleryId'],
-              equals: gallery.id
-            }
+            galleryId: gallery.id
           }
         })
 
