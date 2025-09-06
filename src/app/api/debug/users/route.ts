@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       },
       take: limit,
       orderBy: {
-        createdAt: 'desc'
+        id: 'desc'
       }
     });
     
