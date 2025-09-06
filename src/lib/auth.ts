@@ -286,8 +286,8 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? process.env.NEXTAUTH_URL?.replace(/https?:\/\//, '').split('/')[0] : undefined
+        secure: process.env.NODE_ENV === 'production'
+        // Remove domain setting to avoid cookie issues
       }
     },
     csrfToken: {
@@ -297,6 +297,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production'
+        // __Host- prefix requires domain to be undefined
       }
     }
   },
