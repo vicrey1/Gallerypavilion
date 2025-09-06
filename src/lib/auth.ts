@@ -326,7 +326,8 @@ export const authOptions: NextAuthOptions = {
     csrfToken: {
       name: isHttps ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
       options: {
-        httpOnly: true,
+        // Must NOT be HttpOnly so the client can read and send it back for CSRF verification
+        httpOnly: false,
         sameSite: 'lax',
         path: '/',
         secure: isHttps,
