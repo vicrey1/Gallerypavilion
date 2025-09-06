@@ -30,7 +30,7 @@ export default function PhotographerLogin() {
     setSuccess('')
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn('photographer-login', {
         email: formData.email,
         password: formData.password,
         redirect: false,
