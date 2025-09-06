@@ -44,6 +44,7 @@ declare module 'next-auth' {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  useSecureCookies: process.env.NODE_ENV === 'production',
   providers: [
     // Credentials provider for photographer authentication
     CredentialsProvider({
@@ -298,6 +299,11 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production'
       }
     }
+  },
+  
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error'
   },
   
   session: {
