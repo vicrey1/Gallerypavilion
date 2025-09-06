@@ -416,9 +416,6 @@ export const authOptions: NextAuthOptions = {
     }
   },
   
-  // Disable callbacks for credentials providers
-  useSecureCookies: process.env.NODE_ENV === 'production',
-  
   events: {
     async signIn({ user, profile }) {
       // Log sign in events for security
