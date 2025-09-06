@@ -78,7 +78,7 @@ async function testPhotographerLoginFlow() {
     const loginPageOptions = {
       hostname: 'www.gallerypavilion.com',
       port: 443,
-      path: '/photographer/login',
+      path: '/auth/photographer-login',
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -154,7 +154,7 @@ async function testPhotographerLoginFlow() {
         'Content-Length': Buffer.byteLength(loginPostData),
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Cookie': allCookies,
-        'Referer': 'https://www.gallerypavilion.com/photographer/login'
+        'Referer': 'https://www.gallerypavilion.com/auth/photographer-login'
       }
     };
     
@@ -214,14 +214,14 @@ async function main() {
     console.log('✅ SUCCESS: Photographer login is working!');
     console.log('📧 Email: test@photographer.com');
     console.log('🔑 Password: password123');
-    console.log('🌐 Login URL: https://www.gallerypavilion.com/photographer/login');
+    console.log('🌐 Login URL: https://www.gallerypavilion.com/auth/photographer-login');
   } else {
     console.log('❌ FAILED: Photographer login still has issues');
     console.log('💬 Error:', result.message);
   }
   
   console.log('\n📝 Manual Test Instructions:');
-  console.log('1. Open: https://www.gallerypavilion.com/photographer/login');
+  console.log('1. Open: https://www.gallerypavilion.com/auth/photographer-login');
   console.log('2. Enter email: test@photographer.com');
   console.log('3. Enter password: password123');
   console.log('4. Click Sign In');
