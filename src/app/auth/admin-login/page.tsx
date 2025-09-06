@@ -28,18 +28,25 @@ export default function AdminLogin() {
       if (result?.error) {
         setError('Invalid admin credentials')
       } else if (result?.ok) {
-        // Wait a moment for the session to be established
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Wait for session to be established with retry logic
+        let session = null
+        let retries = 0
+        const maxRetries = 5
         
-        // Get the updated session
-        const session = await getSession()
-        console.log('Session after login:', session)
+        while (!session?.user?.role && retries < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          session = await getSession()
+          retries++
+          console.log(`Session check attempt ${retries}:`, session)
+        }
         
         if (session?.user?.role === 'admin') {
+          console.log('Admin session established successfully')
           // Use window.location.href for a hard redirect to ensure middleware runs
           window.location.href = '/admin'
         } else {
-          setError('Access denied - Admin role required')
+          console.error('Session validation failed:', session)
+          setError('Session establishment failed. Please try again.')
         }
       } else {
         setError('Login failed')

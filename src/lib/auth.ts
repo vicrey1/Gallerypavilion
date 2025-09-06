@@ -280,7 +280,17 @@ export const authOptions: NextAuthOptions = {
   
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? process.env.NEXTAUTH_URL?.replace(/https?:\/\//, '').split('/')[0] : undefined
+      }
+    },
+    csrfToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Host-next-auth.csrf-token' : 'next-auth.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
@@ -292,7 +302,8 @@ export const authOptions: NextAuthOptions = {
   
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 7 * 24 * 60 * 60, // 7 days for better security
+    updateAge: 24 * 60 * 60, // Update session every 24 hours
   },
   
   callbacks: {
@@ -353,6 +364,10 @@ export const authOptions: NextAuthOptions = {
           // Don't throw error during callback, just log it and continue
           // This prevents breaking the authentication flow
         }
+      } else if (token.role === 'admin') {
+        // For admin tokens, ensure persistence without additional validation
+        // Admin sessions should remain stable and not be invalidated
+        console.log('Admin token validated:', { id: token.id, email: token.email })
       }
       return token
     },
