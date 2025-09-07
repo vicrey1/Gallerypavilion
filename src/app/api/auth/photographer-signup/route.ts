@@ -1,159 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
-import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
 
-// Validation schema for photographer registration
-const photographerSignupSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Valid email is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
-  phone: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
-  portfolio: z.string().min(1, 'Portfolio URL is required').url('Portfolio must be a valid URL'),
-  experience: z.string().min(1, 'Experience level is required'),
-  specialization: z.string().min(1, 'Specialization is required'),
-  businessName: z.string().optional(),
-  bio: z.string().optional(),
-  instagram: z.string().optional(),
-  equipment: z.string().optional(),
-  references: z.string().optional()
+// Validation schema
+const signupSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name is too long'),
+  email: z.string().email('Invalid email address').toLowerCase(),
+  password: z.string().min(8, 'Password must be at least 8 characters long')
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Validate input data
-    const validatedData = photographerSignupSchema.parse(body)
-    
+    // Validate input
+    const validationResult = signupSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { error: validationResult.error.errors[0].message },
+        { status: 400 }
+      )
+    }
+
+    const { name, email, password } = validationResult.data
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email.toLowerCase() }
+      where: { email }
     })
-    
+
     if (existingUser) {
       return NextResponse.json(
         { error: 'A user with this email already exists' },
-        { status: 400 }
+        { status: 409 }
       )
     }
-    
-    // Check if photographer already exists
-    const existingPhotographer = await prisma.photographer.findFirst({
-      where: { 
+
+    // Hash password
+    const saltRounds = 12
+    const hashedPassword = await bcrypt.hash(password, saltRounds)
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        name: name.trim(),
+        email,
+        password: hashedPassword,
+        role: 'PHOTOGRAPHER',
+        isApproved: false // Photographers need approval
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isApproved: true,
+        createdAt: true
+      }
+    })
+
+    return NextResponse.json(
+      {
+        message: 'Photographer account created successfully',
         user: {
-          email: validatedData.email.toLowerCase()
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isApproved: user.isApproved
         }
-      }
-    })
-    
-    if (existingPhotographer) {
-      return NextResponse.json(
-        { error: 'A photographer with this email already exists' },
-        { status: 400 }
-      )
-    }
-    
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 12)
-    
-    // Create user and photographer in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          name: `${validatedData.firstName} ${validatedData.lastName}`,
-          email: validatedData.email.toLowerCase(),
-          password: hashedPassword,
-          role: 'photographer'
-        }
-      })
-      
-      // Create photographer profile
-      const photographer = await tx.photographer.create({
-        data: {
-          userId: user.id,
-          name: `${validatedData.firstName} ${validatedData.lastName}`,
-          businessName: validatedData.businessName || null,
-          website: validatedData.website || null,
-          phone: validatedData.phone || null,
-          bio: validatedData.bio || null,
-          equipment: validatedData.equipment || null,
-          experience: validatedData.experience || null,
-          portfolio: validatedData.portfolio || null,
-          socialMedia: validatedData.instagram ? {
-            instagram: validatedData.instagram
-          } : Prisma.JsonNull,
-          status: 'pending' // Default status for admin approval
-        }
-      })
-      
-      return { user, photographer }
-    })
-    
-    
-    return NextResponse.json({
-      message: 'Photographer registration successful',
-      photographer: {
-        id: result.photographer.id,
-        name: result.photographer.name,
-        email: result.user.email,
-        status: result.photographer.status
-      }
-    }, { status: 201 })
-    
+      },
+      { status: 201 }
+    )
   } catch (error) {
-    console.error('Photographer registration error:', error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          error: 'Validation failed',
-          details: error.issues.map(err => ({
-            field: err.path.join('.'),
-            message: err.message
-          }))
-        },
-        { status: 400 }
-      )
-    }
+    console.error('Photographer signup error:', error)
     
     // Handle Prisma errors
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint')) {
         return NextResponse.json(
           { error: 'A user with this email already exists' },
-          { status: 400 }
+          { status: 409 }
         )
       }
-      console.error('Prisma error code:', error.code, 'Message:', error.message)
-      return NextResponse.json(
-        { error: 'Database error occurred' },
-        { status: 500 }
-      )
     }
-    
-    // Handle other database errors
-    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-      console.error('Unknown Prisma error:', error.message)
-      return NextResponse.json(
-        { error: 'Database connection error' },
-        { status: 500 }
-      )
-    }
-    
-    // Log the full error for debugging
-    console.error('Unexpected error during registration:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    })
-    
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error. Please try again later.' },
       { status: 500 }
     )
   }

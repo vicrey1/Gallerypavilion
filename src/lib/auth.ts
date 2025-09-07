@@ -48,7 +48,7 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   useSecureCookies: isHttps,
   providers: [
-    // Credentials provider for photographer authentication
+    // Clean photographer authentication provider
     CredentialsProvider({
       id: 'photographer-login',
       name: 'Photographer Login',
@@ -57,81 +57,48 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        console.log('🔍 [PHOTOGRAPHER-LOGIN] Starting authentication...')
-        console.log('📧 Email:', credentials?.email)
-        console.log('🔑 Password provided:', !!credentials?.password)
-        
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ [PHOTOGRAPHER-LOGIN] Missing credentials')
           throw new Error('Email and password are required')
         }
 
         try {
-          console.log('🔍 [PHOTOGRAPHER-LOGIN] Searching for user in database...')
           // Find the user by email
           const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
+            where: { email: credentials.email.toLowerCase() },
             include: {
               photographer: true
             }
           })
 
-          console.log('👤 [PHOTOGRAPHER-LOGIN] User found:', {
-            exists: !!user,
-            email: user?.email,
-            role: user?.role,
-            hasPassword: !!user?.password,
-            hasPhotographerRecord: !!user?.photographer,
-            photographerStatus: user?.photographer?.status
-          })
-
           if (!user || !user.password) {
-            console.log('❌ [PHOTOGRAPHER-LOGIN] User not found or no password')
             throw new Error('Invalid email or password')
           }
 
-          console.log('🔐 [PHOTOGRAPHER-LOGIN] Verifying password...')
           // Verify password
           const isValidPassword = await bcrypt.compare(credentials.password, user.password)
-          console.log('🔐 [PHOTOGRAPHER-LOGIN] Password valid:', isValidPassword)
-          
           if (!isValidPassword) {
-            console.log('❌ [PHOTOGRAPHER-LOGIN] Invalid password')
             throw new Error('Invalid email or password')
           }
 
           // Check if user is a photographer
           if (!user.photographer) {
-            console.log('❌ [PHOTOGRAPHER-LOGIN] User has no photographer record')
-            console.log('📊 [PHOTOGRAPHER-LOGIN] User details:', {
-              id: user.id,
-              email: user.email,
-              role: user.role
-            })
             throw new Error('User is not a photographer')
           }
 
           // Check photographer approval status
           if (user.photographer.status !== 'approved') {
-            console.log('❌ [PHOTOGRAPHER-LOGIN] Photographer not approved, status:', user.photographer.status)
             throw new Error('Account pending approval')
           }
 
-          console.log('✅ [PHOTOGRAPHER-LOGIN] Authentication successful!')
-          const authResult = {
+          return {
             id: user.id,
             email: user.email,
             name: user.name ?? undefined,
             role: user.role as 'photographer' | 'client' | 'admin',
-            photographerId: user.photographer.id,
-            photographerStatus: user.photographer.status
+            photographerId: user.photographer.id
           }
-          console.log('📤 [PHOTOGRAPHER-LOGIN] Returning user:', authResult)
-          
-          return authResult
         } catch (error) {
-          console.error('💥 [PHOTOGRAPHER-LOGIN] Authentication error:', error instanceof Error ? error.message : String(error))
-          console.error('💥 [PHOTOGRAPHER-LOGIN] Full error:', error)
+          console.error('Photographer authentication error:', error)
           throw error
         }
       }

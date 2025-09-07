@@ -55,11 +55,8 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex items-center space-x-2 sm:space-x-4"
           >
-            <Link 
-              href="/auth/photographer-login" 
-              className="text-white hover:text-purple-300 transition-colors"
-            >
-              For Photographers
+            <Link href="/auth/photographer-login" className="text-purple-400 hover:text-purple-300 transition-colors">
+              Photographer Login
             </Link>
           </motion.div>
         </div>

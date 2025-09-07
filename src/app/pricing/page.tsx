@@ -275,11 +275,12 @@ export default function PricingPage() {
             Join thousands of photographers who trust Gallery Pavilion to deliver exceptional client experiences.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* Photographer signup link will be restored after rebuilding auth */}
             <Link href="/auth/photographer-signup">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 Start Free Trial
               </motion.button>
