@@ -46,9 +46,13 @@ async function setupPhotographer() {
     }
     
     // Check if photographer profile exists
-    if (!user.photographer) {
+    let photographer = await prisma.photographer.findUnique({
+      where: { userId: user.id }
+    });
+    
+    if (!photographer) {
       console.log('Creating photographer profile...');
-      await prisma.photographer.create({
+      photographer = await prisma.photographer.create({
         data: {
           userId: user.id,
           name: 'Test Photographer',
@@ -57,16 +61,15 @@ async function setupPhotographer() {
           website: 'https://testphotographer.com',
           portfolio: 'https://portfolio.testphotographer.com',
           experience: 'Professional',
-          specialization: 'Wedding Photography',
-          bio: 'Professional photographer with years of experience',
+          bio: 'Professional photographer with years of experience in wedding photography',
           status: 'approved'
         }
       });
       console.log('Photographer profile created');
     } else {
       console.log('Photographer profile exists, updating status...');
-      await prisma.photographer.update({
-        where: { id: user.photographer.id },
+      photographer = await prisma.photographer.update({
+        where: { id: photographer.id },
         data: {
           status: 'approved'
         }
