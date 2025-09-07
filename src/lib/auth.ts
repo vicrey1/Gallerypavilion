@@ -361,15 +361,25 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Enforce www canonical base url in production for cookie consistency
+      // Handle redirects for both development and production
+      const isProduction = process.env.NODE_ENV === 'production'
       const prodBase = 'https://www.gallerypavilion.com'
-      if (process.env.NODE_ENV === 'production') {
-        if (url.startsWith('/')) return `${prodBase}${url}`
-        if (url.startsWith(baseUrl)) return url
-        // Allow callbackUrl to dashboard
-        return prodBase
+      const devBase = 'http://localhost:3001'
+      
+      const currentBase = isProduction ? prodBase : devBase
+      
+      // If URL is relative, prepend the current base
+      if (url.startsWith('/')) {
+        return `${currentBase}${url}`
       }
-      return url.startsWith(baseUrl) ? url : baseUrl
+      
+      // If URL starts with current base, allow it
+      if (url.startsWith(currentBase)) {
+        return url
+      }
+      
+      // Default to current base
+      return currentBase
     },
   },
   
