@@ -41,34 +41,39 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(password, saltRounds)
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        name: name.trim(),
-        email,
-        password: hashedPassword,
-        role: 'PHOTOGRAPHER',
-        isApproved: false // Photographers need approval
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isApproved: true,
-        createdAt: true
-      }
+    // Create user and photographer profile in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create user
+      const user = await tx.user.create({
+        data: {
+          name: name.trim(),
+          email,
+          password: hashedPassword,
+          role: 'photographer'
+        }
+      })
+
+      // Create photographer profile
+      const photographer = await tx.photographer.create({
+        data: {
+          userId: user.id,
+          name: name.trim(),
+          status: 'pending' // Photographers need approval
+        }
+      })
+
+      return { user, photographer }
     })
 
     return NextResponse.json(
       {
-        message: 'Photographer account created successfully',
+        message: 'Photographer account created successfully. Your account is pending approval.',
         user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          isApproved: user.isApproved
+          id: result.user.id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+          status: result.photographer.status
         }
       },
       { status: 201 }
