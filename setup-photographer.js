@@ -7,8 +7,14 @@ async function setupPhotographer() {
   try {
     console.log('Setting up photographer account...');
     
-    const email = 'vameh09@gmail.com';
-    const password = 'correctpassword123';
+    const email = process.env.PHOTOGRAPHER_EMAIL;
+    const password = process.env.PHOTOGRAPHER_PASSWORD;
+    
+    if (!email || !password) {
+      console.error('❌ Missing required environment variables:');
+      console.error('PHOTOGRAPHER_EMAIL and PHOTOGRAPHER_PASSWORD must be set');
+      process.exit(1);
+    }
     
     // Check if user already exists
     let user = await prisma.user.findUnique({
@@ -26,7 +32,7 @@ async function setupPhotographer() {
         data: {
           email,
           password: hashedPassword,
-          name: 'Test Photographer',
+          name: process.env.PHOTOGRAPHER_NAME || 'Photographer',
           role: 'photographer'
         }
       });
@@ -55,13 +61,13 @@ async function setupPhotographer() {
       photographer = await prisma.photographer.create({
         data: {
           userId: user.id,
-          name: 'Test Photographer',
-          businessName: 'Test Photography Business',
-          phone: '+1234567890',
-          website: 'https://testphotographer.com',
-          portfolio: 'https://portfolio.testphotographer.com',
-          experience: 'Professional',
-          bio: 'Professional photographer with years of experience in wedding photography',
+          name: process.env.PHOTOGRAPHER_NAME || user.name || 'Photographer',
+          businessName: process.env.PHOTOGRAPHER_BUSINESS_NAME || null,
+          phone: process.env.PHOTOGRAPHER_PHONE || null,
+          website: process.env.PHOTOGRAPHER_WEBSITE || null,
+          portfolio: process.env.PHOTOGRAPHER_PORTFOLIO || null,
+          experience: process.env.PHOTOGRAPHER_EXPERIENCE || 'Professional',
+          bio: process.env.PHOTOGRAPHER_BIO || null,
           status: 'approved'
         }
       });
