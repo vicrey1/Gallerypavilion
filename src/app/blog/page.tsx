@@ -1,9 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Calendar, User, Clock, ArrowRight, Search, Tag, TrendingUp, Eye, Heart, MessageCircle } from 'lucide-react'
+import { Search, TrendingUp, Eye, Heart, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
-import Link from 'next/link'
+// Link import removed (unused)
 
 export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('')

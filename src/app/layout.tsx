@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter, Playfair_Display } from 'next/font/google'
-import { AuthProvider } from '@/hooks/useAuth'
+import ClientAuthProvider from '@/components/ClientAuthProvider'
 import './globals.css'
 
 // Force dynamic rendering to prevent static generation issues with session
@@ -51,9 +51,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} antialiased`}
       >
-        <AuthProvider>
+        <ClientAuthProvider>
           {children}
-        </AuthProvider>
+        </ClientAuthProvider>
       </body>
     </html>
   )

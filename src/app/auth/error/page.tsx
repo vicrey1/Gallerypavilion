@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'

@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -24,8 +25,13 @@ export default function PhotographerLoginPage() {
     try {
       await login(email, password)
       router.push('/dashboard')
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred. Please try again.')
+    } catch (err: unknown) {
+      let message = 'An unexpected error occurred. Please try again.'
+      if (typeof err === 'object' && err !== null && 'message' in err) {
+        const m = (err as { message?: unknown }).message
+        if (typeof m === 'string') message = m
+      }
+      setError(message)
     } finally {
       setIsLoading(false)
     }

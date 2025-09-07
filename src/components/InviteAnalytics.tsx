@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -84,7 +84,7 @@ export default function InviteAnalytics({ galleryId }: InviteAnalyticsProps) {
   const [period, setPeriod] = useState(30);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/gallery/${galleryId}/invites/analytics?period=${period}`);
@@ -102,13 +102,13 @@ export default function InviteAnalytics({ galleryId }: InviteAnalyticsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [galleryId, period]);
 
   useEffect(() => {
     if (galleryId) {
       fetchAnalytics();
     }
-  }, [galleryId, period]);
+  }, [galleryId, period, fetchAnalytics]);
 
   if (loading) {
     return (

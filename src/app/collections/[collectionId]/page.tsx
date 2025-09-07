@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, ArrowLeft, Grid, List, Search, Filter, Plus, X, Heart, Download, Share, Edit, Trash2, Eye, EyeOff, ShoppingCart } from 'lucide-react'
+import { Camera, ArrowLeft, Grid, List, Search, Plus, X, Edit, Trash2, Eye, EyeOff, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -48,9 +48,8 @@ interface Collection {
 }
 
 export default function CollectionDetailPage() {
-  const { user, status } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const params = useParams()
-  const router = useRouter()
   const collectionId = params.collectionId as string
   
   const [collection, setCollection] = useState<Collection | null>(null)
@@ -70,13 +69,7 @@ export default function CollectionDetailPage() {
     isPublic: false
   })
 
-  useEffect(() => {
-    if (collectionId) {
-      fetchCollection()
-    }
-  }, [collectionId])
-
-  const fetchCollection = async () => {
+  const fetchCollection = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/collections/${collectionId}`)
@@ -101,9 +94,15 @@ export default function CollectionDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [collectionId])
 
-  const fetchAvailablePhotos = async () => {
+  useEffect(() => {
+  if (collectionId) fetchCollection()
+  // fetchCollection is memoized with useCallback and depends on collectionId.
+  // Keep dependency on fetchCollection and collectionId to satisfy exhaustive-deps.
+  }, [collectionId, fetchCollection])
+
+  const fetchAvailablePhotos = useCallback(async () => {
     try {
       setLoadingPhotos(true)
       // This would need to be implemented - fetch photos that can be added to collection
@@ -114,7 +113,7 @@ export default function CollectionDetailPage() {
     } finally {
       setLoadingPhotos(false)
     }
-  }
+  }, [])
 
   const updateCollection = async () => {
     if (!editData.name.trim()) return
@@ -179,7 +178,7 @@ export default function CollectionDetailPage() {
 
       if (response.ok) {
         // Refresh collection to get updated photos
-        fetchCollection()
+        await fetchCollection()
         setShowAddPhotosModal(false)
         setSelectedPhotos(new Set())
       } else {
@@ -210,9 +209,9 @@ export default function CollectionDetailPage() {
            photo.photographer.name.toLowerCase().includes(searchTerm.toLowerCase())
   }) || []
 
-  const isOwner = session?.user?.id === collection?.userId
+  const isOwner = user?.id === collection?.userId
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-center">

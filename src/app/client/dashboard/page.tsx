@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { motion } from 'framer-motion'
 import { Camera, ArrowLeft, Heart, Download, Eye, Calendar, User, Mail, Grid, List } from 'lucide-react'

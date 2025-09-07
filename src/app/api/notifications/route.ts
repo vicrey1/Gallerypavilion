@@ -149,7 +149,7 @@ export async function PATCH(request: NextRequest) {
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: payload.email }
     })
 
     if (!user) {

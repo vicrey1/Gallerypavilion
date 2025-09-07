@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { generateToken } from '@/lib/jwt'
-import { cookies } from 'next/headers'
+import { cookies as _cookies } from 'next/headers'
 
 const inviteLoginSchema = z.object({
   inviteCode: z.string().min(1, 'Invite code is required'),
@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
     const { inviteCode, email } = inviteLoginSchema.parse(body)
 
     // Find the invite
-    const invite = await prisma.invite.findUnique({
-      where: { code: inviteCode },
+    const invite = await prisma.invite.findFirst({
+      where: { inviteCode: inviteCode },
       include: {
         gallery: {
           include: {
@@ -78,14 +78,17 @@ export async function POST(request: NextRequest) {
 
           await tx.client.create({
             data: {
-              userId: clientUser.id
+              userId: clientUser.id,
+              email: clientUser.email,
+              name: clientUser.name || email.split('@')[0],
+              invitedBy: invite.gallery.photographer.id
             }
           })
         })
 
         // Refetch with client relation
         clientUser = await prisma.user.findUnique({
-          where: { id: clientUser.id },
+          where: { id: clientUser!.id },
           include: { client: true }
         })
       }
@@ -102,14 +105,17 @@ export async function POST(request: NextRequest) {
 
         await tx.client.create({
           data: {
-            userId: clientUser.id
+            userId: clientUser.id,
+            email: clientUser.email,
+            name: clientUser.name || `Guest ${Date.now()}`,
+            invitedBy: invite.gallery.photographer.id
           }
         })
       })
 
       // Refetch with client relation
       clientUser = await prisma.user.findUnique({
-        where: { id: clientUser.id },
+        where: { id: clientUser!.id },
         include: { client: true }
       })
     }
@@ -119,45 +125,49 @@ export async function POST(request: NextRequest) {
       where: { id: invite.id },
       data: {
         usedAt: new Date(),
-        usedBy: clientUser.email
+  clientEmail: clientUser!.email,
+        usageCount: (invite.usageCount || 0) + 1,
+        status: 'used'
       }
     })
 
     // Generate JWT token
     const token = generateToken({
-      userId: clientUser.id,
-      email: clientUser.email,
-      role: clientUser.role,
-      clientId: clientUser.client?.id
+      userId: clientUser!.id,
+      email: clientUser!.email,
+      role: String(clientUser!.role).toLowerCase() as 'photographer' | 'client' | 'admin',
+      clientId: clientUser!.client?.id
     })
 
-    // Set HTTP-only cookie
-    const cookieStore = cookies()
-    cookieStore.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 // 7 days
-    })
+    // Set HTTP-only cookie via response header (avoids cookies() typing differences)
+    const setCookie = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: clientUser.id,
-        email: clientUser.email,
-        name: clientUser.name,
-        role: clientUser.role,
-        client: clientUser.client
+    return NextResponse.json(
+      {
+        success: true,
+        user: {
+          id: clientUser!.id,
+          email: clientUser!.email,
+          name: clientUser!.name,
+          role: clientUser!.role,
+          client: clientUser!.client
+        },
+        galleryId: invite.galleryId
       },
-      galleryId: invite.galleryId
-    })
+      {
+        status: 200,
+        headers: {
+          'Set-Cookie': setCookie
+        }
+      }
+    )
 
   } catch (error) {
     console.error('Invite login error:', error)
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Invalid request data', details: error.issues },
         { status: 400 }
       )
     }

@@ -31,11 +31,16 @@ function SignInContent() {
     try {
       await login(email, password)
       router.push(callbackUrl)
-    } catch (error: any) {
-      if (error.message === 'Account pending approval') {
+    } catch (error: unknown) {
+      let message = 'Invalid email or password'
+      if (typeof error === 'object' && error !== null && 'message' in error) {
+        const m = (error as { message?: unknown }).message
+        if (typeof m === 'string') message = m
+      }
+      if (message === 'Account pending approval') {
         setError('Your account is pending admin approval. Please wait for approval before logging in.')
       } else {
-        setError(error.message || 'Invalid email or password')
+        setError(message)
       }
     } finally {
       setIsLoading(false)

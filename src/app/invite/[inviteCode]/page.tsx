@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, ArrowLeft, Eye, Heart, ShoppingCart, MessageCircle, AlertCircle, CheckCircle, Clock, X, Grid, List, Search, Filter, SortAsc, Share2, FileImage, Grid3X3, SlidersHorizontal, Award, Palette } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Heart, AlertCircle, CheckCircle, Clock, Search, Filter, Grid3X3, Grid, List, Camera, ShoppingCart, Award, Palette, Eye } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PhotoLightbox from '@/components/PhotoLightbox';
@@ -78,7 +78,6 @@ interface GalleryData {
 
 export default function InviteGalleryPage() {
   const params = useParams();
-  const router = useRouter();
   const [galleryData, setGalleryData] = useState<GalleryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,36 +102,38 @@ export default function InviteGalleryPage() {
     return Array.from(categories);
   };
 
-  useEffect(() => {
-    const validateInvite = async () => {
-      try {
-        const response = await fetch('/api/invite/validate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            inviteCode: params.inviteCode,
-          }),
-        });
+  const validateInvite = useCallback(async (inviteCode?: string) => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/invite/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inviteCode: inviteCode || params.inviteCode,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error('Invalid or expired invite');
-        }
-
-        const data = await response.json();
-        setGalleryData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load gallery');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Invalid or expired invite');
       }
-    };
 
-    if (params.inviteCode) {
-      validateInvite();
+      const data = await response.json();
+      setGalleryData(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load gallery');
+    } finally {
+      setLoading(false);
     }
   }, [params.inviteCode]);
+
+  useEffect(() => {
+    if (params.inviteCode) {
+  validateInvite(Array.isArray(params.inviteCode) ? params.inviteCode[0] : params.inviteCode);
+    }
+  }, [params.inviteCode, validateInvite]);
 
   const toggleFavorite = (photoId: string) => {
     if (!galleryData?.permissions.canFavorite) return;

@@ -7,6 +7,7 @@ import { useEffect } from 'react'
 export default function PhotographerDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { logout } = useAuth()
 
   useEffect(() => {
     if (status === 'loading') return // Still loading
@@ -49,7 +50,6 @@ export default function PhotographerDashboard() {
               <span className="text-sm text-gray-700">Welcome, {session.user.name || session.user.email}</span>
               <button
                 onClick={() => {
-                  const { logout } = useAuth()
                   logout()
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"

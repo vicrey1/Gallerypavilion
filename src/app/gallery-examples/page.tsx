@@ -1,9 +1,10 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { motion } from 'framer-motion'
 import { Camera, Heart, Download, Eye, Lock, Users } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+// Image import removed (unused)
 
 export default function GalleryExamplesPage() {
   const galleryTypes = [

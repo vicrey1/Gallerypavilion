@@ -22,9 +22,15 @@ export default function AdminLogin() {
     try {
       await login(email, password)
       router.push('/admin')
-    } catch (error: any) {
-      console.error('Login error:', error)
-      setError(error.message || 'Invalid admin credentials')
+    } catch (err) {
+      console.error('Login error:', err)
+      const unknownErr = err as unknown
+      let message = 'Invalid admin credentials'
+      if (typeof unknownErr === 'object' && unknownErr !== null && 'message' in unknownErr) {
+        const m = (unknownErr as { message?: unknown }).message
+        if (typeof m === 'string') message = m
+      }
+      setError(message)
     } finally {
       setIsLoading(false)
     }

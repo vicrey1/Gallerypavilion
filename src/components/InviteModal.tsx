@@ -88,8 +88,8 @@ export default function InviteModal({ isOpen, onClose, galleryId, galleryTitle }
     }
   };
 
-  const handleInputChange = (field: keyof InviteFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof InviteFormData, value: InviteFormData[keyof InviteFormData]) => {
+    setFormData(prev => ({ ...prev, [field]: value } as InviteFormData));
   };
 
   return (
@@ -117,7 +117,7 @@ export default function InviteModal({ isOpen, onClose, galleryId, galleryTitle }
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Invite Client</h2>
-                  <p className="text-gray-600 mt-1">Send an invitation to view "{galleryTitle}"</p>
+                  <p className="text-gray-600 mt-1">Send an invitation to view &quot;{galleryTitle}&quot;</p>
                 </div>
                 <button
                   onClick={onClose}

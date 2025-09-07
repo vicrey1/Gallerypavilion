@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Heart, ShoppingCart, MessageCircle, Share2, Eye, Calendar, MapPin, Tag, DollarSign, Award, FileText, Palette, Camera } from 'lucide-react'
@@ -73,51 +73,7 @@ export default function PhotoDetailPage() {
   const inviteCode = params.inviteCode as string
   const photoId = params.photoId as string
 
-  useEffect(() => {
-    const fetchPhotoDetails = async () => {
-      try {
-        setLoading(true)
-        
-        // First validate the invite
-        const inviteResponse = await fetch('/api/invite/validate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ inviteCode }),
-        })
-
-        if (!inviteResponse.ok) {
-          throw new Error('Invalid invite code')
-        }
-
-        const inviteData = await inviteResponse.json()
-        setGallery(inviteData.gallery)
-        setPermissions(inviteData.permissions)
-
-        // Find the specific photo
-        const foundPhoto = inviteData.gallery.photos.find((p: Photo) => p.id === photoId)
-        if (!foundPhoto) {
-          throw new Error('Photo not found')
-        }
-
-        setPhoto(foundPhoto)
-        
-        // Check if photo is already favorited
-        checkIfFavorited(foundPhoto, inviteData.gallery)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load photo')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (inviteCode && photoId) {
-      fetchPhotoDetails()
-    }
-  }, [inviteCode, photoId])
-
-  const checkIfFavorited = (photoData: Photo, galleryData: Gallery) => {
+  const checkIfFavorited = useCallback((photoData: Photo, galleryData: Gallery) => {
     try {
       const storageKey = `invite_favorites_${inviteCode}`
       const favoritesData = localStorage.getItem(storageKey)
@@ -132,7 +88,53 @@ export default function PhotoDetailPage() {
     } catch (error) {
       console.error('Error checking favorites:', error)
     }
-  }
+  }, [inviteCode])
+
+  const fetchPhotoDetails = useCallback(async () => {
+    try {
+      setLoading(true)
+      
+      // First validate the invite
+      const inviteResponse = await fetch('/api/invite/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inviteCode }),
+      })
+
+      if (!inviteResponse.ok) {
+        throw new Error('Invalid invite code')
+      }
+
+      const inviteData = await inviteResponse.json()
+      setGallery(inviteData.gallery)
+      setPermissions(inviteData.permissions)
+
+      // Find the specific photo
+      const foundPhoto = inviteData.gallery.photos.find((p: Photo) => p.id === photoId)
+      if (!foundPhoto) {
+        throw new Error('Photo not found')
+      }
+
+      setPhoto(foundPhoto)
+      
+      // Check if photo is already favorited
+      checkIfFavorited(foundPhoto, inviteData.gallery)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load photo')
+    } finally {
+      setLoading(false)
+    }
+  }, [inviteCode, photoId, checkIfFavorited])
+
+  useEffect(() => {
+    if (inviteCode && photoId) {
+      fetchPhotoDetails()
+    }
+  }, [fetchPhotoDetails, inviteCode, photoId, checkIfFavorited])
+
+  // checkIfFavorited is memoized above with useCallback to satisfy hook dependencies
 
   const handleBack = () => {
     router.push(`/invite/${inviteCode}`)
@@ -145,8 +147,28 @@ export default function PhotoDetailPage() {
       
       try {
         const storageKey = `invite_favorites_${inviteCode}`
+        type Favorite = {
+          id: string
+          title?: string
+          description?: string
+          url?: string
+          thumbnailUrl?: string
+          price?: number
+          isForSale?: boolean
+          gallery?: {
+            id: string
+            title: string
+            photographer: {
+              id: string
+              name: string
+              businessName?: string
+              user?: { email?: string }
+            }
+          }
+        }
+
         let favoritesData: {
-          favorites: any[],
+          favorites: Favorite[],
           addedAt: string
         } = {
           favorites: [],

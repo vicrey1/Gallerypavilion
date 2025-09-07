@@ -1,9 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
-import { Heart, Eye, Download, Star, DollarSign, Edit, Trash2 } from 'lucide-react'
+import { Heart, Download, Star, DollarSign, Edit, Trash2 } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -55,18 +55,18 @@ export default function MasonryGrid({
   showActions = false,
   columns = 4
 }: MasonryGridProps) {
-  const [columnHeights, setColumnHeights] = useState<number[]>(new Array(columns).fill(0))
+  // columnHeights tracking removed as it's unused in rendering
   const [photoColumns, setPhotoColumns] = useState<Photo[][]>(new Array(columns).fill(null).map(() => []))
   const containerRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
 
   // Calculate responsive columns
-  const getResponsiveColumns = () => {
+  const getResponsiveColumns = useCallback(() => {
     if (containerWidth < 640) return 2
     if (containerWidth < 1024) return 3
     if (containerWidth < 1280) return 4
     return 5
-  }
+  }, [containerWidth])
 
   // Update container width on resize
   useEffect(() => {
@@ -100,9 +100,8 @@ export default function MasonryGrid({
       newColumnHeights[shortestColumnIndex] += estimatedHeight
     })
 
-    setPhotoColumns(newPhotoColumns)
-    setColumnHeights(newColumnHeights)
-  }, [photos, containerWidth])
+  setPhotoColumns(newPhotoColumns)
+  }, [photos, containerWidth, getResponsiveColumns])
 
   const handlePhotoClick = (photo: Photo, e: React.MouseEvent) => {
     e.preventDefault()
@@ -171,7 +170,7 @@ export default function MasonryGrid({
                         <input
                           type="checkbox"
                           checked={selectedPhotos.has(photo.id)}
-                          onChange={(e) => handleSelectChange(photo.id, e.target.checked, e as any)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectChange(photo.id, e.target.checked, e.nativeEvent as unknown as React.MouseEvent)}
                           className="w-5 h-5 text-purple-600 bg-white/20 border-white/30 rounded focus:ring-purple-500 focus:ring-2"
                         />
                       </div>

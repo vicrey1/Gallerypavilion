@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Copy, Edit, Trash2, Plus, Clock, CheckCircle, XCircle, AlertCircle, BarChart3, Users } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { generateInviteCode } from '@/lib/utils'
 import CreateInviteModal from './CreateInviteModal'
 import InviteAnalytics from './InviteAnalytics'
@@ -44,7 +44,7 @@ export default function InviteManager({ galleryId, galleryTitle }: InviteManager
   const [activeTab, setActiveTab] = useState<'invites' | 'analytics'>('invites')
 
   // Fetch invites from API
-  const fetchInvites = async () => {
+  const fetchInvites = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -63,13 +63,13 @@ export default function InviteManager({ galleryId, galleryTitle }: InviteManager
     } finally {
       setLoading(false)
     }
-  }
+  }, [galleryId, filterStatus, filterType])
 
   useEffect(() => {
     if (galleryId) {
       fetchInvites()
     }
-  }, [galleryId, filterStatus, filterType])
+  }, [galleryId, filterStatus, filterType, fetchInvites])
 
   // Filter invites based on gallery and filters
   const filteredInvites = invites.filter(invite => {

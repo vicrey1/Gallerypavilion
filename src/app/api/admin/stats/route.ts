@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch statistics from database
-    const [photographers, clients, galleries, photos, pendingPhotographers, activeInvites, analytics] = await Promise.all([
+  const [photographers, clients, galleries, photos, pendingPhotographers, activeInvites, _analytics] = await Promise.all([
       // Total photographers
       prisma.photographer.count(),
       
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const stats = {
+  const stats = {
       totalPhotographers: photographers,
       totalClients: clients,
       totalGalleries: galleries,

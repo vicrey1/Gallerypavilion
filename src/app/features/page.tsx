@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { Camera, Shield, Users, Zap, Download, Eye, Lock, Smartphone, Globe, BarChart3, Palette, Heart } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
+// Image import removed (unused)
 
 export default function FeaturesPage() {
   const mainFeatures = [

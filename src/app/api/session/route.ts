@@ -5,9 +5,9 @@ import { getUserFromRequest } from '@/lib/jwt'
  * Return a NextAuth-compatible session object mapped from our JWT payload.
  * The client `useSession` hook expects either null or a session object.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = getUserFromRequest(_request)
 
     if (!payload) {
       return NextResponse.json(null, {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         id: payload.userId,
         email: payload.email,
         // name is optional — keep undefined if not present
-        name: (payload as any).name || undefined,
+        name: payload.name || undefined,
         role: payload.role,
       },
       // Provide an expires field to mimic NextAuth session shape

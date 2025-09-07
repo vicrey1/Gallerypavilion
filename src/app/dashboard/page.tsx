@@ -4,10 +4,10 @@
 export const dynamic = 'force-dynamic'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Plus, Upload, Eye, Heart, Download, Settings, Users, BarChart3, Calendar, Search, Filter, Grid, List, X, Edit, Trash2, Share, Copy, Mail } from 'lucide-react'
+import { Camera, Plus, Eye, Heart, Download, Settings, Users, BarChart3, Search, Grid, List, X, Edit, Trash2, Mail } from 'lucide-react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
+// Image import removed (unused)
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import NotificationCenter from '@/components/NotificationCenter'
@@ -84,7 +84,7 @@ interface PhotographerProfile {
 }
 
 export default function DashboardPage() {
-  const { user, status, logout } = useAuth()
+  const { user, loading: authLoading, logout } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'galleries' | 'analytics' | 'settings'>('galleries')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -129,15 +129,15 @@ export default function DashboardPage() {
 
   // Redirect if not authenticated or not a photographer
   useEffect(() => {
-    if (status === 'loading') return
+    if (authLoading) return
     if (!user || user.role !== 'photographer') {
       router.push('/auth/photographer-login')
       return
     }
-  }, [session, status, router])
+  }, [authLoading, user, router])
 
   // Fetch galleries
-  const fetchGalleries = async () => {
+  const fetchGalleries = useCallback(async () => {
     try {
       const response = await fetch('/api/photographer/galleries')
       if (!response.ok) {
@@ -156,10 +156,10 @@ export default function DashboardPage() {
       console.error('Error fetching galleries:', error)
       setError(error instanceof Error ? error.message : 'Failed to load galleries')
     }
-  }
+  }, [router])
 
   // Fetch analytics
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const response = await fetch('/api/photographer/stats')
       if (!response.ok) {
@@ -178,10 +178,10 @@ export default function DashboardPage() {
       console.error('Error fetching analytics:', error)
       setError(error instanceof Error ? error.message : 'Failed to load analytics')
     }
-  }
+  }, [router])
 
   // Fetch profile
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setProfileLoading(true)
       const response = await fetch('/api/photographer/profile')
@@ -214,7 +214,7 @@ export default function DashboardPage() {
      } finally {
        setProfileLoading(false)
      }
-   }
+  }, [router])
 
    // Save profile
    const saveProfile = async () => {
@@ -261,7 +261,7 @@ export default function DashboardPage() {
       Promise.all([fetchGalleries(), fetchAnalytics(), fetchProfile()])
         .finally(() => setLoading(false))
     }
-  }, [session])
+  }, [user, fetchGalleries, fetchAnalytics, fetchProfile])
 
   const filteredGalleries = galleries.filter(gallery => {
     const matchesSearch = gallery.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -345,7 +345,7 @@ export default function DashboardPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-white text-center">
@@ -1034,7 +1034,7 @@ export default function DashboardPage() {
               </div>
               
               <p className="text-gray-300 mb-6">
-                Are you sure you want to delete "{showDeleteModal.title}"? This will permanently remove the gallery and all its photos.
+                Are you sure you want to delete &quot;{showDeleteModal.title}&quot;? This will permanently remove the gallery and all its photos.
               </p>
               
               <div className="flex gap-3">

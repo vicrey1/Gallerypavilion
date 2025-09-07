@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, Download, Eye, Search, Grid, List, X, Share, Image as ImageIcon, Lock, Calendar, DollarSign, ShoppingCart, Tag, FileImage } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 
@@ -99,33 +99,7 @@ export default function InviteGalleryPage() {
   const galleryId = params.id as string
   const inviteCode = searchParams.get('code')
 
-  useEffect(() => {
-    // Try to get gallery data from sessionStorage first
-    const storedData = sessionStorage.getItem('inviteGalleryData')
-    if (storedData) {
-      try {
-        const data = JSON.parse(storedData) as InviteData
-        if (data.gallery.id === galleryId && data.invite.code === inviteCode) {
-          setGalleryData(data)
-          setLoading(false)
-          return
-        }
-      } catch (e) {
-        console.error('Error parsing stored gallery data:', e)
-      }
-    }
-
-    // If no valid stored data, redirect back to invite page
-    if (!inviteCode) {
-      router.push('/invite')
-      return
-    }
-
-    // Validate invite code again
-    validateInviteCode()
-  }, [galleryId, inviteCode, router])
-
-  const validateInviteCode = async () => {
+  const validateInviteCode = useCallback(async () => {
     try {
       const response = await fetch('/api/invite/validate', {
         method: 'POST',
@@ -153,7 +127,35 @@ export default function InviteGalleryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [galleryId, inviteCode])
+
+  useEffect(() => {
+    // Try to get gallery data from sessionStorage first
+    const storedData = sessionStorage.getItem('inviteGalleryData')
+    if (storedData) {
+      try {
+        const data = JSON.parse(storedData) as InviteData
+        if (data.gallery.id === galleryId && data.invite.code === inviteCode) {
+          setGalleryData(data)
+          setLoading(false)
+          return
+        }
+      } catch (e) {
+        console.error('Error parsing stored gallery data:', e)
+      }
+    }
+
+    // If no valid stored data, redirect back to invite page
+    if (!inviteCode) {
+      router.push('/invite')
+      return
+    }
+
+    // Validate invite code again
+    validateInviteCode()
+  }, [galleryId, inviteCode, router, validateInviteCode])
+
+  
 
   // Handle favorite toggle
   const toggleFavorite = async (photoId: string) => {
@@ -391,7 +393,7 @@ Best regards`
               {/* Sort By */}
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'newest' | 'oldest' | 'price' | 'popularity')}
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="newest" className="bg-gray-800">Newest</option>
@@ -403,7 +405,7 @@ Best regards`
               {/* Filter By Availability */}
               <select
                 value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterBy(e.target.value as 'all' | 'for-sale' | 'free')}
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all" className="bg-gray-800">All Photos</option>
@@ -415,7 +417,7 @@ Best regards`
               {categories.length > 1 && (
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCategory(e.target.value)}
                   className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   {categories.map(category => (

@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { useState } from 'react'
 import { X, Download, Shield, Award, FileText, Calendar, User, Palette } from 'lucide-react'

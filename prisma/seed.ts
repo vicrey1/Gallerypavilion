@@ -48,7 +48,7 @@ async function main() {
 
   // Create admin user
   const hashedAdminPassword = await bcrypt.hash('admin123', 12)
-  const adminUser = await prisma.user.upsert({
+  const _adminUser = await prisma.user.upsert({
     where: { email: 'admin@gallerypavilion.com' },
     update: {},
     create: {
@@ -61,7 +61,7 @@ async function main() {
 
   // Create a test user and photographer
   const hashedPassword = await bcrypt.hash('password123', 12)
-  const testUser = await prisma.user.upsert({
+  const _testUser = await prisma.user.upsert({
     where: { email: 'photographer@test.com' },
     update: {},
     create: {
@@ -72,11 +72,11 @@ async function main() {
     }
   })
 
-  const testPhotographer = await prisma.photographer.upsert({
-    where: { userId: testUser.id },
+  const _testPhotographer = await prisma.photographer.upsert({
+    where: { userId: _testUser.id },
     update: {},
     create: {
-      userId: testUser.id,
+      userId: _testUser.id,
       name: 'Test Photographer',
       businessName: 'Test Photography Studio',
       bio: 'Professional photographer specializing in portraits and events',
@@ -85,14 +85,14 @@ async function main() {
   })
 
   // Create a test gallery
-  const testGallery = await prisma.gallery.upsert({
+  const _testGallery = await prisma.gallery.upsert({
     where: { id: 'test-gallery-1' },
     update: {},
     create: {
       id: 'test-gallery-1',
       title: 'Wedding Portfolio',
       description: 'Beautiful wedding photography collection',
-      photographerId: testPhotographer.id,
+      photographerId: _testPhotographer.id,
       visibility: 'private',
       status: 'active',
       isPublic: false,
@@ -110,10 +110,10 @@ async function main() {
       title: 'Ceremony Moment',
       description: 'Beautiful ceremony capture',
       tags: ['wedding', 'ceremony', 'romantic'],
-      price: 25.00,
+      price: 25.0,
       isForSale: true,
       isPrivate: false,
-      galleryId: testGallery.id,
+      galleryId: _testGallery.id,
       fileSize: 2048000,
       width: 1920,
       height: 1280,
@@ -127,10 +127,10 @@ async function main() {
       title: 'Reception Dance',
       description: 'First dance moment',
       tags: ['wedding', 'reception', 'dance'],
-      price: 30.00,
+      price: 30.0,
       isForSale: true,
       isPrivate: false,
-      galleryId: testGallery.id,
+      galleryId: _testGallery.id,
       fileSize: 1856000,
       width: 1920,
       height: 1080,
@@ -144,10 +144,10 @@ async function main() {
       title: 'Portrait Session',
       description: 'Couple portrait in garden',
       tags: ['wedding', 'portrait', 'outdoor'],
-      price: 35.00,
+      price: 35.0,
       isForSale: true,
       isPrivate: false,
-      galleryId: testGallery.id,
+      galleryId: _testGallery.id,
       fileSize: 2304000,
       width: 1920,
       height: 1440,
@@ -162,14 +162,13 @@ async function main() {
       create: photo
     })
   }
-
   // Create test invite
-  const testInvite = await prisma.invite.upsert({
+  const _testInvite = await prisma.invite.upsert({
     where: { inviteCode: 'TEST123' },
     update: {},
     create: {
       inviteCode: 'TEST123',
-      galleryId: testGallery.id,
+  galleryId: _testGallery.id,
       clientEmail: 'client@test.com',
       type: 'multi_use',
       status: 'active',
@@ -190,7 +189,7 @@ async function main() {
   console.log('Role: admin')
   console.log('\n=== TEST DATA ===')
   console.log('Test invite code: TEST123')
-  console.log('Test gallery ID:', testGallery.id)
+  console.log('Test gallery ID:', _testGallery.id)
 }
 
 main()

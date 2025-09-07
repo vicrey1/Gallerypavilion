@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from '@/hooks/useAuth'
 import Image from 'next/image'
@@ -88,13 +88,7 @@ export default function PhotographerProfilePage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [isFollowing, setIsFollowing] = useState(false)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPhotographerData()
-    }
-  }, [params.id])
-
-  const fetchPhotographerData = async () => {
+  const fetchPhotographerData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -168,7 +162,14 @@ export default function PhotographerProfilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchPhotographerData()
+    }
+  }, [fetchPhotographerData, params.id])
+
 
   const handleFollow = async () => {
     if (!session) {
@@ -193,7 +194,7 @@ export default function PhotographerProfilePage() {
   const filteredAndSortedPhotos = () => {
     if (!photographer) return []
     
-    let filtered = photographer.photos.filter(photo => {
+    const filtered = photographer.photos.filter(photo => {
       if (selectedCategory !== 'all' && photo.category !== selectedCategory) {
         return false
       }
@@ -392,7 +393,7 @@ export default function PhotographerProfilePage() {
                   
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'newest' | 'popular' | 'price-low' | 'price-high')}
                     className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="newest">Newest First</option>

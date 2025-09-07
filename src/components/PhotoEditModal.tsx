@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, DollarSign, Tag, MapPin, Image, Award, FileText } from 'lucide-react'
+import NextImage from 'next/image'
+import { X, DollarSign, Tag, MapPin, Image as IconImage, Award, FileText } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -148,9 +149,11 @@ export default function PhotoEditModal({ photo, isOpen, onClose, onSave }: Photo
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Photo Preview */}
           <div className="flex items-center space-x-4">
-            <img
+            <NextImage
               src={photo.thumbnailUrl}
-              alt={photo.title || 'Photo'}
+              alt={photo.title ? `Thumbnail for ${photo.title}` : 'Photo thumbnail'}
+              width={80}
+              height={80}
               className="w-20 h-20 object-cover rounded-lg"
             />
             <div>
@@ -162,7 +165,7 @@ export default function PhotoEditModal({ photo, isOpen, onClose, onSave }: Photo
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
-              <Image className="w-5 h-5 mr-2" />
+              <IconImage className="w-5 h-5 mr-2" />
               Basic Information
             </h3>
             

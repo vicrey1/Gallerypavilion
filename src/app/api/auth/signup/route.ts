@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
       const photographer = await tx.photographer.create({
         data: {
           userId: user.id,
-          email: user.email,
           name: user.name || '',
           status: 'pending' // Requires admin approval
         }
@@ -82,8 +81,9 @@ export async function POST(request: NextRequest) {
 
     const token = generateToken(tokenPayload)
 
-    // Create response
-    const response = NextResponse.json({
+    const setCookie = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+
+    return NextResponse.json({
       success: true,
       message: 'Account created successfully. Pending admin approval.',
       user: {
@@ -94,17 +94,12 @@ export async function POST(request: NextRequest) {
         photographerId: result.photographer.id,
         status: result.photographer.status
       }
+    }, {
+      status: 200,
+      headers: {
+        'Set-Cookie': setCookie
+      }
     })
-
-    // Set HTTP-only cookie
-    response.cookies.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    })
-
-    return response
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(

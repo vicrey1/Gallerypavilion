@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         role: dbUser.role,
         photographerId: dbUser.photographer?.id,
         clientId: dbUser.client?.id,
-        status: dbUser.photographer?.status || dbUser.client?.status,
+  status: dbUser.photographer?.status || null,
         permissions: user.permissions
       }
     })

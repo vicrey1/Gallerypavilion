@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Bell, X, Check, CheckCheck, Trash2, Eye } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Bell, X, Check } from 'lucide-react'
 import { useSession } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -27,39 +27,11 @@ export default function NotificationCenter() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
+  // hasMore is not currently used but kept in the API response shape
   const [fetchError, setFetchError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (status === 'loading') {
-      console.log('Session is loading, waiting...')
-      return
-    }
-    
-    if (status === 'authenticated' && session) {
-      console.log('Session authenticated, fetching notifications')
-      fetchNotifications()
-      // Set up polling for new notifications
-      const interval = setInterval(fetchNotifications, 30000) // Poll every 30 seconds
-      return () => clearInterval(interval)
-    } else {
-      console.log('Session not authenticated, status:', status)
-    }
-  }, [session, status])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!session || !session.user) {
       console.log('No session or user found, skipping notification fetch')
       return
@@ -83,9 +55,8 @@ export default function NotificationCenter() {
       if (response.ok) {
         const data: NotificationData = await response.json()
         console.log('Notifications data:', data)
-        setNotifications(data.notifications)
-        setUnreadCount(data.unreadCount)
-        setHasMore(data.hasMore)
+  setNotifications(data.notifications)
+  setUnreadCount(data.unreadCount)
         setFetchError(null)
       } else {
         const errorMessage = `Failed to fetch notifications: ${response.status} ${response.statusText}`
@@ -108,7 +79,30 @@ export default function NotificationCenter() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [session])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (status === 'loading') {
+      return
+    }
+
+    if (status === 'authenticated' && session) {
+      fetchNotifications()
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [status, session, fetchNotifications])
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
@@ -220,7 +214,7 @@ export default function NotificationCenter() {
                     className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                     title="Mark all as read"
                   >
-                    <CheckCheck className="w-4 h-4" />
+                    <Check className="w-4 h-4" />
                   </button>
                 )}
                 <button
@@ -255,7 +249,7 @@ export default function NotificationCenter() {
                 <div className="p-8 text-center text-gray-500">
                   <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p>No notifications yet</p>
-                  <p className="text-sm mt-1">We'll notify you when something happens</p>
+                  <p className="text-sm mt-1">We&apos;ll notify you when something happens</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">

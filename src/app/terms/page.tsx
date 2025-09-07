@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react/no-unescaped-entities */
 
 import { motion } from 'framer-motion'
 import { Scale, FileText, Shield, AlertTriangle, Users, Globe } from 'lucide-react'

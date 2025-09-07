@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const gallery = await prisma.gallery.findFirst({
       where: {
         id: galleryId,
-        photographerId: session.user.photographerId,
+        photographerId: payload.photographerId,
       },
     })
 
@@ -131,10 +131,10 @@ export async function POST(request: NextRequest) {
     await writeFile(thumbnailPath, buffer)
 
     // Process tags if provided
-    let processedTags: any = null
+    let processedTags: string[] | null = null
     if (tags) {
       try {
-        processedTags = JSON.parse(tags)
+        processedTags = JSON.parse(tags) as string[]
       } catch {
         // If tags is not valid JSON, treat as comma-separated string
         processedTags = tags.split(',').map(tag => tag.trim()).filter(tag => tag)
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         mimeType: file.type,
         price: price ? parseFloat(price) : null,
         isForSale: isForSale === 'true',
-        tags: processedTags,
+  tags: processedTags ?? undefined,
         category: category || null,
         location: location || null,
         editionNumber: editionNumber ? parseInt(editionNumber) : 1,
@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
     const gallery = await prisma.gallery.findFirst({
       where: {
         id: galleryId,
-        photographerId: session.user.photographerId,
+        photographerId: payload.photographerId,
       },
     })
 

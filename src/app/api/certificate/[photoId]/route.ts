@@ -17,6 +17,8 @@ export async function POST(
   try {
   const { photoId } = await params
   const payload = getUserFromRequest(request)
+  // Resolve user name from DB if JWT doesn't include name
+  const dbPayloadUser = payload ? await prisma.user.findUnique({ where: { id: payload.userId } }) : null
   const body = await request.json()
     const { requestType, clientEmail, clientName } = certificateRequestSchema.parse(body)
 
@@ -76,9 +78,9 @@ export async function POST(
         provenance: photo.provenance,
         photographerEmail: photo.gallery.photographer.user.email,
         galleryTitle: photo.gallery.title,
-        issuedAt: new Date(),
+    issuedAt: new Date(),
   clientEmail: clientEmail || payload?.email,
-  clientName: clientName || payload?.name,
+  clientName: clientName || dbPayloadUser?.name || payload?.email,
   verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${photoId}/verify?id=${certificateId}`
       }
 

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
-  const { path } = await params
+  const { path: _path } = await params
   const payload = getUserFromRequest(request)
     const url = new URL(request.url)
     const photoId = url.searchParams.get('photoId')
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // Handle OPTIONS for CORS
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {

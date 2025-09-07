@@ -1,11 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ArrowLeft, Heart, Award, Star, DollarSign, Mail, Share, Eye, Calendar, Camera, MapPin, Tag, FileText, Palette } from 'lucide-react'
+import { ArrowLeft, Heart, Award, Star, DollarSign, Mail, Share, Eye, Calendar, Camera, Tag, FileText, Palette } from 'lucide-react'
 import ReviewSection from '@/components/ReviewSection'
 import CertificateModal from '@/components/CertificateModal'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -58,32 +58,12 @@ export default function PhotoDetailPage() {
   const [gallery, setGallery] = useState<Gallery | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedLicense, setSelectedLicense] = useState('standard')
+  const [selectedLicense, _setSelectedLicense] = useState('standard')
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [showFullImage, setShowFullImage] = useState(false)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
 
-  useEffect(() => {
-    fetchPhotoDetails()
-    checkWishlistStatus()
-  }, [photoId, galleryId, user])
-
-  const checkWishlistStatus = async () => {
-    if (!user?.email || !photoId) return
-    
-    try {
-      const response = await fetch('/api/wishlist')
-      if (response.ok) {
-        const data = await response.json()
-        const isPhotoInWishlist = data.wishlist.some((item: { id: string }) => item.id === photoId)
-        setIsInWishlist(isPhotoInWishlist)
-      }
-    } catch (error) {
-      console.error('Error checking wishlist status:', error)
-    }
-  }
-
-  const fetchPhotoDetails = async () => {
+  const fetchPhotoDetails = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -107,7 +87,30 @@ export default function PhotoDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [galleryId, photoId])
+
+  const checkWishlistStatus = useCallback(async () => {
+    if (!user?.email || !photoId) return
+    
+    try {
+      const response = await fetch('/api/wishlist')
+      if (response.ok) {
+        const data = await response.json()
+        const isPhotoInWishlist = data.wishlist.some((item: { id: string }) => item.id === photoId)
+        setIsInWishlist(isPhotoInWishlist)
+      }
+    } catch (error) {
+      console.error('Error checking wishlist status:', error)
+    }
+  }, [user?.email, photoId])
+
+  useEffect(() => {
+    fetchPhotoDetails()
+    checkWishlistStatus()
+    // both functions are memoized with useCallback and depend on galleryId, photoId, and user.email
+  }, [fetchPhotoDetails, checkWishlistStatus])
+
+  // ...existing code...
 
   const handleBuyPhoto = () => {
     if (!photo || !gallery || !gallery.photographer) return

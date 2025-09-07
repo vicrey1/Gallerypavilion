@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { promises as fs } from 'fs'
 import path from 'path'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const healthChecks = {
       database: { status: 'unknown', responseTime: 0, error: null as string | null },
@@ -38,23 +38,22 @@ export async function GET(request: NextRequest) {
       
       try {
         // Just check if we can read the directory structure
-        await fs.access(uploadsDir)
-        const stats = await fs.stat(uploadsDir)
+  await fs.access(uploadsDir)
         
         healthChecks.storage = {
           status: 'healthy',
           freeSpace: 0, // Not applicable in serverless environments
           error: null
         }
-      } catch (accessError) {
-        // Directory doesn't exist, but that's okay in serverless environments
-        // The uploads are typically handled by external storage services
-        healthChecks.storage = {
-          status: 'healthy',
-          freeSpace: 0,
-          error: null
-        }
+    } catch {
+      // Directory doesn't exist, but that's okay in serverless environments
+      // The uploads are typically handled by external storage services
+      healthChecks.storage = {
+        status: 'healthy',
+        freeSpace: 0,
+        error: null
       }
+    }
     } catch (error) {
       healthChecks.storage = {
         status: 'unhealthy',

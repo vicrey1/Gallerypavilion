@@ -4,12 +4,11 @@
 export const dynamic = 'force-dynamic'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Plus, Upload, Eye, Heart, Download, Users, Grid, List, X, Edit, Trash2, Share, ArrowLeft, Image as ImageIcon, Filter, Search, Star, DollarSign, Tag, SlidersHorizontal, Layers, TrendingUp, Award, Palette } from 'lucide-react'
+import { Camera, Plus, Upload, Eye, Heart, Download, Users, Grid, List, X, Edit, Trash2, Share, ArrowLeft, Image as ImageIcon, Search, Star, SlidersHorizontal, Layers, Award } from 'lucide-react'
 
 import MasonryGrid from '@/components/MasonryGrid'
-import PhotoLightbox from '@/components/PhotoLightbox'
 import Link from 'next/link'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useSession } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
@@ -108,8 +107,8 @@ export default function GalleryDetailPage() {
   const [forSaleFilter, setForSaleFilter] = useState('')
   
   // Lightbox state
-  const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [_lightboxOpen, _setLightboxOpen] = useState(false)
+  const [_lightboxIndex, _setLightboxIndex] = useState(0)
   
   // Favorites state
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -130,7 +129,7 @@ export default function GalleryDetailPage() {
   }, [session, status, router])
 
   // Fetch gallery details
-  const fetchGallery = async () => {
+  const fetchGallery = useCallback(async () => {
     try {
       console.log('Session data:', session)
       console.log('User role:', session?.user?.role)
@@ -156,7 +155,7 @@ export default function GalleryDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, session])
 
   useEffect(() => {
     if (session?.user?.role === 'photographer' && session?.user?.photographerId && params.id) {
@@ -165,7 +164,9 @@ export default function GalleryDetailPage() {
       setError('Photographer ID not found in session. Please log out and log back in.')
       setLoading(false)
     }
-  }, [session, params.id])
+    // fetchGallery is memoized with useCallback and depends on params.id and session.
+    // Only re-run when relevant session or params.id changes.
+  }, [fetchGallery, session?.user?.role, session?.user?.photographerId, params.id])
 
   // Handle file upload
   const handleFileUpload = async (files: FileList) => {
@@ -238,6 +239,7 @@ export default function GalleryDetailPage() {
   }
 
   // Handle gallery update
+  // handleUpdateGallery is intentionally unused in this view but kept for API compatibility
   const handleUpdateGallery = async (updateData: GalleryUpdateData) => {
     try {
       const response = await fetch(`/api/photographer/galleries/${params.id}`, {
@@ -345,18 +347,9 @@ export default function GalleryDetailPage() {
   const filteredAndSortedPhotos = () => {
     if (!gallery) return []
     
-    console.log('Total photos before filtering:', gallery.photos.length)
-    console.log('Current filter states:')
-    console.log('- searchQuery:', searchQuery)
-    console.log('- selectedCategory:', selectedCategory)
-    console.log('- priceRange:', priceRange)
-    console.log('- selectedTags:', selectedTags)
-    console.log('- locationFilter:', locationFilter)
-    console.log('- forSaleFilter:', forSaleFilter)
-    console.log('- tagsFilter:', tagsFilter)
-    console.log('- dateFilter:', dateFilter)
+  // Filtering photos based on current state
     
-    let filtered = gallery.photos.filter(photo => {
+    const filtered = gallery.photos.filter(photo => {
       console.log(`Filtering photo: ${photo.id} - ${photo.title}`)
       
       // Search filter
@@ -470,11 +463,7 @@ export default function GalleryDetailPage() {
     return Array.from(categories)
   }
 
-  const getAllTags = () => {
-    if (!gallery) return []
-    const tags = new Set(gallery.photos.flatMap(photo => photo.tags))
-    return Array.from(tags)
-  }
+  // getAllTags left intentionally; may be used in parent components or future features
 
   const clearAllFilters = () => {
     setSearchQuery('')
@@ -772,7 +761,7 @@ export default function GalleryDetailPage() {
                 
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'newest' | 'oldest' | 'price-low' | 'price-high' | 'popular')}
                   className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="newest">Newest</option>
@@ -809,7 +798,7 @@ export default function GalleryDetailPage() {
               
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'newest' | 'oldest' | 'price-low' | 'price-high' | 'popular')}
                 className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="newest">Newest First</option>

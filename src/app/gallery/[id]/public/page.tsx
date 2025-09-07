@@ -1,11 +1,10 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, Download, Eye, Search, Grid, List, X, Share, Image as ImageIcon, Lock, Calendar, DollarSign, ShoppingCart, Tag } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Heart, Download, Eye, Search, Grid, List, X, Share, Image as ImageIcon, Lock, Calendar, DollarSign, ShoppingCart } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 
 interface Photo {
   id: string
@@ -65,7 +64,7 @@ export default function PublicGalleryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   // Fetch gallery details
-  const fetchGallery = async (galleryPassword?: string) => {
+  const fetchGallery = useCallback(async (galleryPassword?: string) => {
     try {
       const url = `/api/gallery/${params.id}/public`
       const options: RequestInit = {
@@ -107,13 +106,13 @@ export default function PublicGalleryPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
 
   useEffect(() => {
     if (params.id) {
       fetchGallery()
     }
-  }, [params.id])
+  }, [fetchGallery, params.id])
 
   // Handle password submission
   const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -331,7 +330,7 @@ Best regards`
               {/* Sort By */}
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'newest' | 'oldest' | 'price' | 'popularity')}
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="newest" className="bg-gray-800">Newest</option>
@@ -343,7 +342,7 @@ Best regards`
               {/* Filter By Availability */}
               <select
                 value={filterBy}
-                onChange={(e) => setFilterBy(e.target.value as any)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterBy(e.target.value as 'all' | 'for-sale' | 'free')}
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="all" className="bg-gray-800">All Photos</option>

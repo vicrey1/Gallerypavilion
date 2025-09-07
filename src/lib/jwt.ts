@@ -8,7 +8,9 @@ export interface JWTPayload {
   userId: string
   email: string
   role: 'photographer' | 'client' | 'admin'
+  name?: string
   photographerId?: string
+  clientId?: string
   inviteCode?: string
   permissions?: {
     canView: boolean
