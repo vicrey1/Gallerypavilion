@@ -4,8 +4,8 @@ import { useState, Suspense } from 'react'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
-import { signIn, getProviders } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import { motion } from 'framer-motion'
 import { Camera, Mail, Key, User, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -21,6 +21,7 @@ function SignInContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const { login } = useAuth()
 
   const handlePhotographerLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,23 +29,14 @@ function SignInContent() {
     setError('')
 
     try {
-      const result = await signIn('photographer-login', {
-        email,
-        password,
-        redirect: false
-      })
-
-      if (result?.error) {
-        if (result.error === 'Account pending approval') {
-          setError('Your account is pending admin approval. Please wait for approval before logging in.')
-        } else {
-          setError('Invalid email or password')
-        }
-      } else if (result?.url) {
-        router.push(result.url)
+      await login(email, password)
+      router.push(callbackUrl)
+    } catch (error: any) {
+      if (error.message === 'Account pending approval') {
+        setError('Your account is pending admin approval. Please wait for approval before logging in.')
+      } else {
+        setError(error.message || 'Invalid email or password')
       }
-    } catch (error) {
-      setError('An error occurred during login')
     } finally {
       setIsLoading(false)
     }
@@ -56,17 +48,19 @@ function SignInContent() {
     setError('')
 
     try {
-      const result = await signIn('invite-code', {
-        inviteCode,
-        email: clientEmail,
-        callbackUrl,
-        redirect: false
+      const response = await fetch('/api/auth/invite-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode, email: clientEmail })
       })
 
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.url) {
-        router.push(result.url)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid invite code')
+      } else {
+        // Refresh auth state and redirect
+        window.location.href = callbackUrl
       }
     } catch (error) {
       setError('An error occurred during login')

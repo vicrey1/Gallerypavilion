@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
       )
     }
 
-    const photographerId = session.user.photographerId
+    const photographerId = payload.photographerId
 
     // Get basic statistics
     const [totalGalleries, activeGalleries, totalPhotos, totalViews, totalFavorites, totalDownloads] = await Promise.all([

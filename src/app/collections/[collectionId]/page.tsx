@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/hooks/useAuth'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, ArrowLeft, Grid, List, Search, Filter, Plus, X, Heart, Download, Share, Edit, Trash2, Eye, EyeOff, ShoppingCart } from 'lucide-react'
@@ -48,7 +48,7 @@ interface Collection {
 }
 
 export default function CollectionDetailPage() {
-  const { data: session, status } = useSession()
+  const { user, status } = useAuth()
   const params = useParams()
   const router = useRouter()
   const collectionId = params.collectionId as string

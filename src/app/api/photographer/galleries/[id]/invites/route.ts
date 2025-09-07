@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { z } from 'zod'
 import { createNotification, NotificationTemplates } from '@/lib/notifications'
 
@@ -23,9 +22,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -40,7 +39,7 @@ export async function POST(
     const gallery = await prisma.gallery.findFirst({
       where: {
         id: galleryId,
-        photographerId: session.user.photographerId,
+        photographerId: payload.photographerId,
       },
     })
 
@@ -77,7 +76,7 @@ export async function POST(
     
     // Notify photographer that invitation was created
     try {
-      const photographerUserId = session.user.id;
+  const photographerUserId = payload.userId;
       const notificationTemplate = NotificationTemplates.inviteSent('Generated invite code', gallery.title);
       
       await createNotification({
@@ -109,7 +108,7 @@ export async function POST(
       },
       status: invite.status,
       inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
-    }, { status: 201 })
+  }, { status: 201 })
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -134,9 +133,9 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const sessionPayload = getUserFromRequest(request)
+
+    if (!sessionPayload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -148,8 +147,8 @@ export async function GET(
     // Verify the gallery belongs to the photographer
     const gallery = await prisma.gallery.findFirst({
       where: {
-        id: galleryId,
-        photographerId: session.user.photographerId,
+  id: galleryId,
+  photographerId: sessionPayload.photographerId,
       },
     })
 

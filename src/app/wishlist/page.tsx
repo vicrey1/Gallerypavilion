@@ -8,7 +8,7 @@ import { Heart, ArrowLeft, Eye, DollarSign, Trash2, ShoppingBag } from 'lucide-r
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 
 interface WishlistPhoto {

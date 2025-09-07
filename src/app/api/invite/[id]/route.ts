@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
 const updateInviteSchema = z.object({
@@ -24,9 +23,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const { id } = await params;
+  const payload = getUserFromRequest(request)
+  if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -39,7 +38,7 @@ export async function GET(
         gallery: {
           photographer: {
             user: {
-              email: session.user.email,
+              email: payload.email,
             },
           },
         },
@@ -100,8 +99,8 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const sessionPayload = getUserFromRequest(request)
+  if (!sessionPayload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -118,7 +117,7 @@ export async function PUT(
         gallery: {
           photographer: {
             user: {
-              email: session.user.email,
+              email: sessionPayload.email,
             },
           },
         },
@@ -206,8 +205,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const sessionPayload = getUserFromRequest(request)
+  if (!sessionPayload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -221,7 +220,7 @@ export async function DELETE(
         gallery: {
           photographer: {
             user: {
-              email: session.user.email,
+              email: sessionPayload.email,
             },
           },
         },

@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/jwt'
 import { InviteType, InviteStatus } from '@prisma/client';
 
 // Get all invites for a gallery
@@ -11,8 +10,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -29,7 +28,7 @@ export async function GET(
         id: id,
         photographer: {
           user: {
-            email: session.user.email,
+            email: payload.email,
           },
         },
       },

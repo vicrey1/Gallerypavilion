@@ -7,7 +7,7 @@ import CertificateModal from '@/components/CertificateModal'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
 
@@ -48,7 +48,7 @@ interface Gallery {
 }
 
 export default function PhotoDetailPage() {
-  const { data: session } = useSession()
+  const { user } = useAuth()
   const router = useRouter()
   const params = useParams()
   const galleryId = params.id as string
@@ -66,10 +66,10 @@ export default function PhotoDetailPage() {
   useEffect(() => {
     fetchPhotoDetails()
     checkWishlistStatus()
-  }, [photoId, galleryId, session])
+  }, [photoId, galleryId, user])
 
   const checkWishlistStatus = async () => {
-    if (!session?.user?.email || !photoId) return
+    if (!user?.email || !photoId) return
     
     try {
       const response = await fetch('/api/wishlist')
@@ -131,7 +131,7 @@ Best regards`
   }
 
   const toggleWishlist = async () => {
-    if (!session?.user?.email) {
+    if (!user?.email) {
       // Redirect to login or show login modal
       router.push('/auth/signin')
       return

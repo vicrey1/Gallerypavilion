@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { z } from 'zod'
 import { sendInviteEmail } from '@/lib/email'
 import { createNotification, NotificationTemplates } from '@/lib/notifications'
@@ -31,9 +30,9 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -48,7 +47,7 @@ export async function POST(
     const gallery = await prisma.gallery.findFirst({
       where: {
         id: galleryId,
-        photographerId: session.user.photographerId,
+        photographerId: payload.photographerId,
       },
       include: {
         photographer: {

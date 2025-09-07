@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -15,9 +14,9 @@ const createNotificationSchema = z.object({
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: payload.email }
     })
 
     if (!user) {
@@ -85,9 +84,9 @@ export async function GET(request: NextRequest) {
 // POST /api/notifications - Create a new notification (admin/system use)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -101,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user has permission to create notifications
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: payload.email }
     })
 
     if (!user || user.role !== 'admin') {
@@ -136,9 +135,9 @@ export async function POST(request: NextRequest) {
 // PATCH /api/notifications - Mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }

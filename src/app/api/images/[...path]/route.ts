@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { generateSignedUrl, verifyImageAccessToken, logSecurityEvent, checkRateLimit } from '@/lib/security'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
-    const { path } = await params
-    const session = await getServerSession(authOptions)
+  const { path } = await params
+  const payload = getUserFromRequest(request)
     const url = new URL(request.url)
     const photoId = url.searchParams.get('photoId')
     const token = url.searchParams.get('token')
@@ -60,22 +59,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let hasAccess = false
     let isPhotographer = false
 
-    if (session) {
+    if (payload) {
       // Check if user is the photographer who owns this photo
-      if (session.user.role === 'photographer' && 
-          photo.collection && session.user.photographerId === photo.collection.gallery.photographerId) {
+      if (payload.role === 'photographer' && 
+          photo.collection && payload.photographerId === photo.collection.gallery.photographerId) {
         hasAccess = true
         isPhotographer = true
       }
-      
+
       // Check if user is a client with valid invite
-      if (session.user.role === 'client' && session.user.inviteCode && photo.collection) {
+      if (payload.role === 'client' && payload.inviteCode && photo.collection) {
         const invite = photo.collection.gallery.invites.find(
-          inv => inv.inviteCode === session.user.inviteCode && 
+          inv => inv.inviteCode === payload.inviteCode && 
                  inv.status === 'active' &&
                  inv.canView
         )
-        
+
         if (invite) {
           // Check invite expiry
           if (invite.expiresAt && new Date() > invite.expiresAt) {
@@ -83,19 +82,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
               reason: 'invite_expired',
               ip: clientIp,
               photoId,
-              inviteCode: session.user.inviteCode,
+              inviteCode: payload.inviteCode,
             })
             return new NextResponse('Invite expired', { status: 403 })
           }
-          
+
           hasAccess = true
         }
       }
     }
 
     // Check token-based access (for direct links)
-    if (!hasAccess && token && session?.user.role === 'client') {
-      const isValidToken = verifyImageAccessToken(token, photoId, session.user.id)
+    if (!hasAccess && token && payload?.role === 'client') {
+      const isValidToken = verifyImageAccessToken(token, photoId, payload.userId)
       if (isValidToken) {
         hasAccess = true
       } else {
@@ -113,7 +112,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         reason: 'no_permission',
         ip: clientIp,
         photoId,
-        userId: session?.user?.id || null,
+        userId: payload?.userId || null,
       })
       return new NextResponse('Access denied', { status: 403 })
     }
@@ -121,8 +120,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Log successful access
     logSecurityEvent('gallery_access', {
       photoId,
-      userId: session?.user?.id || null,
-      userRole: session?.user?.role || null,
+      userId: payload?.userId || null,
+      userRole: payload?.role || null,
       ip: clientIp,
     })
 
@@ -132,7 +131,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         type: 'photo_view',
         photoId,
         galleryId: photo.collection?.galleryId || null,
-        clientId: session?.user?.role === 'client' ? session.user.id : null,
+  clientId: payload?.role === 'client' ? payload.userId : null,
         metadata: {
           userAgent: request.headers.get('user-agent'),
           ip: clientIp,

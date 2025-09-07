@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
 // Resend invite email
@@ -10,9 +9,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const { id } = await params;
+  const payload = getUserFromRequest(request)
+  if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -26,7 +25,7 @@ export async function POST(
         gallery: {
           photographer: {
             user: {
-              email: session.user.email,
+              email: payload.email,
             },
           },
         },

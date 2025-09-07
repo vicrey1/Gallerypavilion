@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Inter, Playfair_Display } from 'next/font/google'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
-import SessionProvider from '@/components/SessionProvider'
-import SessionErrorHandler from '@/components/SessionErrorHandler'
+import { AuthProvider } from '@/hooks/useAuth'
 import './globals.css'
 
 // Force dynamic rendering to prevent static generation issues with session
@@ -44,31 +41,19 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  let session = null
-  let hasSessionError = false
-  
-  try {
-    session = await getServerSession(authOptions)
-  } catch (error) {
-    console.warn('Session decryption failed:', error instanceof Error ? error.message : 'Unknown error')
-    session = null
-    hasSessionError = true
-  }
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} antialiased`}
       >
-        <SessionProvider session={session}>
-          <SessionErrorHandler hasSessionError={hasSessionError} />
+        <AuthProvider>
           {children}
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   )

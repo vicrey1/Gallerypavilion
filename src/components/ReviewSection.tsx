@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Star, MessageCircle, Edit, Trash2, Send } from 'lucide-react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useAuth'
 
 interface Review {
   id: string

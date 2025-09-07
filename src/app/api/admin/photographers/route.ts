@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { PhotographerStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== 'admin') {
+  const payload = getUserFromRequest(request)
+
+  if (!payload || payload.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -76,9 +75,9 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== 'admin') {
+    const payload = getUserFromRequest(request)
+
+    if (!payload || payload.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -157,9 +156,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session || session.user.role !== 'admin') {
+    const payload = getUserFromRequest(request)
+
+    if (!payload || payload.role !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -217,7 +216,7 @@ export async function DELETE(request: NextRequest) {
         metadata: {
           action: 'photographer_deleted',
           photographerId,
-          adminId: session.user.id,
+          adminId: payload.userId,
           timestamp: new Date().toISOString()
         }
       }

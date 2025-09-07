@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -62,9 +61,9 @@ export async function POST(
 ) {
   try {
     const { photoId } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -78,7 +77,7 @@ export async function POST(
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: payload.email }
     })
 
     if (!user) {
@@ -176,9 +175,9 @@ export async function DELETE(
 ) {
   try {
     const { photoId } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -187,7 +186,7 @@ export async function DELETE(
 
     // Get user
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { email: payload.email }
     })
 
     if (!user) {

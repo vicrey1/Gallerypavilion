@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -12,8 +11,8 @@ export async function POST(
 ) {
   try {
     const { collectionId } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const payload = getUserFromRequest(request)
+    if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -31,7 +30,7 @@ export async function POST(
     const collection = await prisma.collection.findFirst({
       where: {
         id: collectionId,
-        userId: session.user.id
+        userId: payload.userId
       }
     })
 
@@ -108,8 +107,8 @@ export async function DELETE(
 ) {
   const { collectionId } = await params
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const payload = getUserFromRequest(request)
+    if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -127,7 +126,7 @@ export async function DELETE(
     const collection = await prisma.collection.findFirst({
       where: {
         id: collectionId,
-        userId: session.user.id
+        userId: payload.userId
       }
     })
 

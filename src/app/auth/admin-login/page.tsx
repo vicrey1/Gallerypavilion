@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useSession } from '@/hooks/useSession'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import { motion } from 'framer-motion'
 import { Shield, Lock, User } from 'lucide-react'
 
@@ -13,6 +12,7 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,23 +20,11 @@ export default function AdminLogin() {
     setError('')
 
     try {
-      const result = await signIn('admin-login', {
-        email,
-        password,
-        redirect: false
-      })
-
-      if (result?.error) {
-        setError('Invalid admin credentials')
-      } else if (result?.ok) {
-        // Successfully logged in - redirect to admin panel
-        router.push('/admin')
-      } else {
-        setError('Login failed')
-      }
-    } catch (error) {
+      await login(email, password)
+      router.push('/admin')
+    } catch (error: any) {
       console.error('Login error:', error)
-      setError('An error occurred during login')
+      setError(error.message || 'Invalid admin credentials')
     } finally {
       setIsLoading(false)
     }

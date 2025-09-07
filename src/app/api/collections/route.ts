@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -8,8 +7,8 @@ const prisma = new PrismaClient()
 // GET /api/collections - Get user's collections
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const payload = getUserFromRequest(request)
+    if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const collections = await prisma.collection.findMany({
       where: {
-        userId: session.user.id
+        userId: payload.userId
       },
       include: {
         photos: includePhotos ? {
@@ -57,8 +56,8 @@ export async function GET(request: NextRequest) {
 // POST /api/collections - Create a new collection
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const payload = getUserFromRequest(request)
+    if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -78,7 +77,7 @@ export async function POST(request: NextRequest) {
         description: description?.trim() || null,
         isPrivate: !Boolean(isPublic),
         galleryId: galleryId,
-        userId: session.user.id
+  userId: payload.userId
       },
       include: {
         _count: {

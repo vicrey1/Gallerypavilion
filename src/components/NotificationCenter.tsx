@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Bell, X, Check, CheckCheck, Trash2, Eye } from 'lucide-react'
-import { useSession } from '@/hooks/useSession'
+import { useSession } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface Notification {

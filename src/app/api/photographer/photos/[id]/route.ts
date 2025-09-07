@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { unlink } from 'fs/promises'
@@ -29,10 +28,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+  const { id } = await params;
+  const payload = getUserFromRequest(request)
+
+  if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -53,7 +52,7 @@ export async function PUT(
       where: {
         id: id,
         gallery: {
-          photographerId: session.user.photographerId,
+          photographerId: payload.photographerId,
         },
       },
       include: {
@@ -154,9 +153,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+  const payload = getUserFromRequest(request)
+
+  if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -168,7 +167,7 @@ export async function DELETE(
       where: {
         id: id,
         gallery: {
-          photographerId: session.user.photographerId,
+          photographerId: payload.photographerId,
         },
       },
     })
@@ -218,9 +217,9 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+  const payload = getUserFromRequest(request)
+
+  if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -231,7 +230,7 @@ export async function GET(
       where: {
         id: id,
         gallery: {
-          photographerId: session.user.photographerId,
+          photographerId: payload.photographerId,
         },
       },
       include: {

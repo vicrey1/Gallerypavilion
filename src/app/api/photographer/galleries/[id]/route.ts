@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -21,9 +20,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -33,7 +32,7 @@ export async function GET(
     const gallery = await prisma.gallery.findFirst({
       where: {
         id: id,
-        photographerId: session.user.photographerId,
+  photographerId: payload.photographerId,
       },
       include: {
         photographer: {
@@ -165,9 +164,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -179,16 +178,16 @@ export async function PUT(
 
     // Find the gallery to ensure it belongs to the photographer
     console.log('DELETE Gallery - Session user:', {
-      userId: session.user.id,
-      photographerId: session.user.photographerId,
-      role: session.user.role
+      userId: payload.userId,
+      photographerId: payload.photographerId,
+      role: payload.role
     })
     console.log('DELETE Gallery - Gallery ID:', id)
     
     const existingGallery = await prisma.gallery.findFirst({
       where: {
-        id: id,
-        photographerId: session.user.photographerId,
+  id: id,
+  photographerId: payload.photographerId,
       },
     })
     
@@ -279,9 +278,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -292,7 +291,7 @@ export async function DELETE(
     const existingGallery = await prisma.gallery.findFirst({
       where: {
         id: id,
-        photographerId: session.user.photographerId,
+  photographerId: payload.photographerId,
       },
     })
 

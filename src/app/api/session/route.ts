@@ -1,12 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 
+/**
+ * Return a NextAuth-compatible session object mapped from our JWT payload.
+ * The client `useSession` hook expects either null or a session object.
+ */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    return NextResponse.json(session || null, {
+    const payload = getUserFromRequest(request)
+
+    if (!payload) {
+      return NextResponse.json(null, {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+          'Content-Type': 'application/json',
+        },
+      })
+    }
+
+    // Map JWTPayload to a NextAuth-like Session shape expected by the client
+    const session = {
+      user: {
+        id: payload.userId,
+        email: payload.email,
+        // name is optional — keep undefined if not present
+        name: (payload as any).name || undefined,
+        role: payload.role,
+      },
+      // Provide an expires field to mimic NextAuth session shape
+      expires: undefined,
+    }
+
+    return NextResponse.json(session, {
       status: 200,
       headers: {
         'Cache-Control': 'no-store, max-age=0',
@@ -26,6 +52,5 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Handle POST requests the same way as GET for compatibility
   return GET(request)
 }

@@ -4,8 +4,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { signOut } from 'next-auth/react'
-import { useSession } from '@/hooks/useSession'
+import { useAuth, useSession } from '@/hooks/useAuth'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { 
@@ -121,6 +120,7 @@ interface Activity {
 
 export default function AdminPanel() {
   const { data: session } = useSession()
+  const { logout } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -989,7 +989,7 @@ export default function AdminPanel() {
                 </span>
               </div>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => logout()}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
                 title="Sign Out"
               >

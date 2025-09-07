@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import crypto from 'crypto'
@@ -16,9 +15,9 @@ export async function POST(
   { params }: { params: Promise<{ photoId: string }> }
 ) {
   try {
-    const { photoId } = await params
-    const session = await getServerSession(authOptions)
-    const body = await request.json()
+  const { photoId } = await params
+  const payload = getUserFromRequest(request)
+  const body = await request.json()
     const { requestType, clientEmail, clientName } = certificateRequestSchema.parse(body)
 
     // Get photo details with gallery and photographer info
@@ -78,9 +77,9 @@ export async function POST(
         photographerEmail: photo.gallery.photographer.user.email,
         galleryTitle: photo.gallery.title,
         issuedAt: new Date(),
-        clientEmail: clientEmail || session?.user?.email,
-        clientName: clientName || session?.user?.name,
-        verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${photoId}/verify?id=${certificateId}`
+  clientEmail: clientEmail || payload?.email,
+  clientName: clientName || payload?.name,
+  verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${photoId}/verify?id=${certificateId}`
       }
 
       return NextResponse.json({

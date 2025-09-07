@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -25,9 +24,9 @@ const updateProfileSchema = z.object({
 // GET /api/photographer/profile - Get photographer profile
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     const photographer = await prisma.photographer.findUnique({
-      where: { id: session.user.photographerId },
+      where: { id: payload.photographerId },
       include: {
         user: {
           select: {
@@ -82,9 +81,9 @@ export async function GET(request: NextRequest) {
 // PUT /api/photographer/profile - Update photographer profile
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -96,7 +95,7 @@ export async function PUT(request: NextRequest) {
 
     // Check if photographer exists
     const existingPhotographer = await prisma.photographer.findUnique({
-      where: { id: session.user.photographerId },
+      where: { id: payload.photographerId },
       include: { user: true }
     })
 
@@ -120,7 +119,7 @@ export async function PUT(request: NextRequest) {
     if (validatedData.socialMedia !== undefined) updateData.socialMedia = validatedData.socialMedia
 
     const updatedPhotographer = await prisma.photographer.update({
-      where: { id: session.user.photographerId },
+      where: { id: payload.photographerId },
       data: updateData,
       include: {
         user: {

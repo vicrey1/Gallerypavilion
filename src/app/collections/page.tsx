@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Plus, Grid, List, Eye, Heart, Share, Edit, Trash2, ArrowLeft, Search, Filter, X } from 'lucide-react'
 import Link from 'next/link'

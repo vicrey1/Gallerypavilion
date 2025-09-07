@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 import { motion } from 'framer-motion'
 import { Camera, Mail, Lock, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ export default function PhotographerLoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,19 +22,10 @@ export default function PhotographerLoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await signIn('photographer-login', {
-        email,
-        password,
-        redirect: false
-      })
-
-      if (result?.error) {
-        setError(result.error)
-      } else if (result?.ok) {
-        router.push('/dashboard')
-      }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      await login(email, password)
+      router.push('/dashboard')
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }

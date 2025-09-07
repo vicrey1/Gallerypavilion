@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/jwt'
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { sendInviteEmail } from '@/lib/email';
@@ -22,8 +21,8 @@ const createInviteSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const payload = getUserFromRequest(request)
+  if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
         id: data.galleryId,
         photographer: {
           user: {
-            email: session.user.email,
+            email: payload.email,
           },
         },
       },
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send invitation email using the proper template
-    const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${inviteCode}`;
+  const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${inviteCode}`;
     
     const emailSent = await sendInviteEmail({
       recipientEmail: data.clientEmail,
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Notify photographer that invitation was sent
     try {
-      const photographerUserId = gallery.photographer.user.id;
+  const photographerUserId = gallery.photographer.user.id;
       const notificationTemplate = NotificationTemplates.inviteSent(data.clientEmail, gallery.title);
       
       await createNotification({
@@ -152,8 +151,8 @@ export async function POST(request: NextRequest) {
 // Get invites for a gallery
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+  const payload = getUserFromRequest(request)
+  if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -176,7 +175,7 @@ export async function GET(request: NextRequest) {
         id: galleryId,
         photographer: {
           user: {
-            email: session.user.email,
+            email: payload.email,
           },
         },
       },

@@ -8,8 +8,7 @@ import { Camera, Plus, Upload, Eye, Heart, Download, Settings, Users, BarChart3,
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { signOut } from 'next-auth/react'
-import { useSession } from '@/hooks/useSession'
+import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import NotificationCenter from '@/components/NotificationCenter'
 import InviteModal from '@/components/InviteModal'
@@ -85,7 +84,7 @@ interface PhotographerProfile {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession()
+  const { user, status, logout } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'galleries' | 'analytics' | 'settings'>('galleries')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -131,7 +130,7 @@ export default function DashboardPage() {
   // Redirect if not authenticated or not a photographer
   useEffect(() => {
     if (status === 'loading') return
-    if (!session || session.user?.role !== 'photographer') {
+    if (!user || user.role !== 'photographer') {
       router.push('/auth/photographer-login')
       return
     }
@@ -258,7 +257,7 @@ export default function DashboardPage() {
 
   // Initial data load
   useEffect(() => {
-    if (session?.user?.role === 'photographer') {
+    if (user?.role === 'photographer') {
       Promise.all([fetchGalleries(), fetchAnalytics(), fetchProfile()])
         .finally(() => setLoading(false))
     }
@@ -357,7 +356,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!session || session.user?.role !== 'photographer') {
+  if (!user || user.role !== 'photographer') {
     return null
   }
 
@@ -377,7 +376,7 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-2">
                 <NotificationCenter />
                 <button 
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => logout()}
                   className="text-white hover:text-purple-300 transition-colors p-2 rounded-lg"
                 >
                   <X className="h-5 w-5" />
@@ -435,7 +434,7 @@ export default function DashboardPage() {
               <NotificationCenter />
               
               <button 
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => logout()}
                 className="text-white hover:text-purple-300 transition-colors"
               >
                 Sign Out

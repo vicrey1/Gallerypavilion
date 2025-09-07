@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { getUserFromRequest } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { GalleryStatus } from '@prisma/client'
 import { z } from 'zod'
@@ -18,9 +17,9 @@ const createGallerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest) {
         description?: { contains: string; mode: 'insensitive' }
       }>
     } = {
-      photographerId: session.user.photographerId,
+      photographerId: payload.photographerId,
     }
 
     if (status && status !== 'all' && (status === 'draft' || status === 'active' || status === 'archived')) {
@@ -115,9 +114,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+    const payload = getUserFromRequest(request)
+
+    if (!payload?.photographerId) {
       return NextResponse.json(
         { error: 'Unauthorized - Photographer access required' },
         { status: 401 }
@@ -130,7 +129,7 @@ export async function POST(request: NextRequest) {
     const gallery = await prisma.gallery.create({
       data: {
         ...validatedData,
-        photographerId: session.user.photographerId,
+  photographerId: payload.photographerId,
         expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
         status: 'active',
         visibility: validatedData.visibility || (validatedData.isPublic ? 'public' : 'private'),
