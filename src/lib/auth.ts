@@ -361,25 +361,33 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirects for both development and production
-      const isProduction = process.env.NODE_ENV === 'production'
-      const prodBase = 'https://www.gallerypavilion.com'
-      const devBase = 'http://localhost:3001'
+      // Use environment variables for proper URL handling
+      const nextAuthUrl = process.env.NEXTAUTH_URL || process.env.NEXTAUTH_URL_INTERNAL || baseUrl
       
-      const currentBase = isProduction ? prodBase : devBase
-      
-      // If URL is relative, prepend the current base
+      // If URL is relative, prepend the base URL
       if (url.startsWith('/')) {
-        return `${currentBase}${url}`
+        return `${nextAuthUrl}${url}`
       }
       
-      // If URL starts with current base, allow it
-      if (url.startsWith(currentBase)) {
+      // If URL starts with the configured base URL, allow it
+      if (url.startsWith(nextAuthUrl) || url.startsWith(baseUrl)) {
         return url
       }
       
-      // Default to current base
-      return currentBase
+      // For security, only allow URLs that match our domain
+      try {
+        const urlObj = new URL(url)
+        const baseUrlObj = new URL(nextAuthUrl)
+        
+        if (urlObj.hostname === baseUrlObj.hostname) {
+          return url
+        }
+      } catch (error) {
+        console.warn('Invalid URL in redirect:', url)
+      }
+      
+      // Default to configured base URL
+      return nextAuthUrl
     },
   },
   
