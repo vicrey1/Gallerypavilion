@@ -81,35 +81,48 @@ export async function POST(request: NextRequest) {
 
     const token = generateToken(tokenPayload)
 
+  const isProd = process.env.NODE_ENV === 'production'
   const maxAge = 60 * 60 * 24 * 7
-  const parts: string[] = []
-  parts.push(`auth-token=${token}`)
-  parts.push('HttpOnly')
-  parts.push('Path=/')
-  parts.push(`Max-Age=${maxAge}`)
-  parts.push('SameSite=None')
-  if (process.env.NODE_ENV === 'production') parts.push('Secure')
-  if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+  const response = NextResponse.json({
+    success: true,
+    message: 'Account created successfully. Pending admin approval.',
+    user: {
+      id: result.user.id,
+      email: result.user.email,
+      name: result.user.name,
+      role: result.user.role,
+      photographerId: result.photographer.id,
+      status: result.photographer.status
+    }
+  }, { status: 200 })
 
-  const setCookie = parts.join('; ')
-
-    return NextResponse.json({
-      success: true,
-      message: 'Account created successfully. Pending admin approval.',
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        name: result.user.name,
-        role: result.user.role,
-        photographerId: result.photographer.id,
-        status: result.photographer.status
-      }
-    }, {
-      status: 200,
-      headers: {
-        'Set-Cookie': setCookie
-      }
+  try {
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      path: '/',
+      maxAge
     })
+  } catch (e) {
+    /* ignore */
+  }
+
+  try {
+    const parts: string[] = []
+    parts.push(`auth-token=${token}`)
+    parts.push('HttpOnly')
+    parts.push('Path=/')
+    parts.push(`Max-Age=${maxAge}`)
+    parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+    if (isProd) parts.push('Secure')
+    if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+    response.headers.set('Set-Cookie', parts.join('; '))
+  } catch (e) {
+    /* ignore */
+  }
+
+  return response
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(

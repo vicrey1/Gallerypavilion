@@ -20,10 +20,11 @@ export async function POST(_request: NextRequest) {
 
     // Clear the auth token cookie (explicit path) and set immediate expiry
     try {
-  const cookieOptions: CookieOptions = {
+      const isProd = process.env.NODE_ENV === 'production'
+      const cookieOptions: CookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         path: '/',
         maxAge: 0 // Expire immediately
       }
@@ -35,8 +36,9 @@ export async function POST(_request: NextRequest) {
 
     // Also set header fallback
     try {
-      const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0','SameSite=None']
-      if (process.env.NODE_ENV === 'production') parts.push('Secure')
+      const isProd = process.env.NODE_ENV === 'production'
+      const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', isProd ? 'SameSite=None' : 'SameSite=Lax']
+      if (isProd) parts.push('Secure')
       if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       clientUser = await prisma.user.findFirst({
         where: {
           email,
-          role: 'CLIENT'
+          role: 'client'
         },
         include: {
           client: true
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
           clientUser = await tx.user.create({
             data: {
               email,
-              role: 'CLIENT',
+              role: 'client',
               name: email.split('@')[0] // Use email prefix as name
             }
           })
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         clientUser = await tx.user.create({
           data: {
             email: `guest_${Date.now()}@temp.com`,
-            role: 'CLIENT',
+            role: 'client',
             name: `Guest ${Date.now()}`
           }
         })
@@ -139,20 +139,9 @@ export async function POST(request: NextRequest) {
       clientId: clientUser!.client?.id
     })
 
-    // Set HTTP-only cookie via response header (avoids cookies() typing differences)
-  const maxAge = 7 * 24 * 60 * 60
-  const parts: string[] = []
-  parts.push(`auth-token=${token}`)
-  parts.push('HttpOnly')
-  parts.push('Path=/')
-  parts.push(`Max-Age=${maxAge}`)
-  parts.push('SameSite=None')
-  if (process.env.NODE_ENV === 'production') parts.push('Secure')
-  if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
-
-  const setCookie = parts.join('; ')
-
-    return NextResponse.json(
+    const isProd = process.env.NODE_ENV === 'production'
+    const maxAge = 7 * 24 * 60 * 60
+    const response = NextResponse.json(
       {
         success: true,
         user: {
@@ -164,13 +153,36 @@ export async function POST(request: NextRequest) {
         },
         galleryId: invite.galleryId
       },
-      {
-        status: 200,
-        headers: {
-          'Set-Cookie': setCookie
-        }
-      }
+      { status: 200 }
     )
+
+    try {
+      response.cookies.set('auth-token', token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+        path: '/',
+        maxAge
+      })
+    } catch (e) {
+      /* ignore */
+    }
+
+    try {
+      const parts: string[] = []
+      parts.push(`auth-token=${token}`)
+      parts.push('HttpOnly')
+      parts.push('Path=/')
+      parts.push(`Max-Age=${maxAge}`)
+      parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+      if (isProd) parts.push('Secure')
+      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+      response.headers.set('Set-Cookie', parts.join('; '))
+    } catch (e) {
+      /* ignore */
+    }
+
+    return response
 
   } catch (error) {
     console.error('Invite login error:', error)

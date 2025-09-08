@@ -121,30 +121,31 @@ export async function POST(request: NextRequest) {
       /* ignore logging errors */
     }
 
-    // Set HTTP-only cookie (explicit path) so browsers include it for subsequent requests
+    // Set HTTP-only cookie consistently. In production we require Secure and SameSite=None to support cross-site flows;
+    // in development use SameSite=Lax and secure=false for local testing.
+    const isProd = process.env.NODE_ENV === 'production'
+    const maxAge = 60 * 60 * 24 * 7 // 7 days
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      // Use 'none' in production so cross-site requests (if any) work; use 'lax' locally for convenience.
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge
     })
 
-    // Also set a 'Set-Cookie' header fallback string. Use SameSite=None for cross-site use and allow domain override via COOKIE_DOMAIN.
+    // Also set a single Set-Cookie header fallback for environments where the cookies API may not be applied.
     try {
-      const maxAge = 60 * 60 * 24 * 7
       const parts: string[] = []
       parts.push(`auth-token=${token}`)
       parts.push('HttpOnly')
       parts.push('Path=/')
       parts.push(`Max-Age=${maxAge}`)
-      // Allow cross-site cookie (needed if your app uses different subdomains or CDNs)
-      parts.push('SameSite=None')
-      if (process.env.NODE_ENV === 'production') parts.push('Secure')
+      parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+      if (isProd) parts.push('Secure')
       if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
 
-      const setCookie = parts.join('; ')
-      response.headers.set('Set-Cookie', setCookie)
+      response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore header set errors */
     }
