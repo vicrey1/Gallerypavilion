@@ -23,6 +23,13 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password, type } = validationResult.data
+    // Log email and incoming cookie header presence for debugging (do not log password)
+    try {
+      const cookieHeader = request.headers.get('cookie') || ''
+      console.debug('[auth/login] attempt for email:', email.toLowerCase(), 'cookieHeaderPresent:', !!cookieHeader)
+    } catch (logE) {
+      /* ignore logging errors */
+    }
 
     // Find user by email
     const user = await prisma.user.findUnique({
@@ -34,6 +41,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user || !user.password) {
+      console.debug('[auth/login] user not found or missing password for email:', email.toLowerCase())
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -43,6 +51,7 @@ export async function POST(request: NextRequest) {
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password)
     if (!isValidPassword) {
+      console.debug('[auth/login] invalid password for user:', user.id, 'email:', user.email)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -51,6 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Check user role matches login type
     if (type === 'photographer' && user.role !== 'photographer') {
+      console.debug('[auth/login] role mismatch for login type=photographer userRole=', user.role, 'userId=', user.id)
       return NextResponse.json(
         { error: 'Invalid credentials for photographer login' },
         { status: 401 }
@@ -67,6 +77,7 @@ export async function POST(request: NextRequest) {
     // For photographers, check approval status
     if (user.role === 'photographer' && user.photographer) {
       if (user.photographer.status !== 'approved') {
+        console.debug('[auth/login] photographer pending approval for user:', user.id, 'status:', user.photographer.status)
         return NextResponse.json(
           { error: 'Account pending approval' },
           { status: 401 }
