@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { z } from 'zod'
 import { createNotification, NotificationTemplates } from '@/lib/notifications'
 
@@ -22,7 +22,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(
@@ -136,7 +136,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const sessionPayload = getUserFromRequest(request)
+  const sessionPayload = await getUserFromRequestAsync(request)
 
     if (!sessionPayload?.photographerId) {
       return NextResponse.json(

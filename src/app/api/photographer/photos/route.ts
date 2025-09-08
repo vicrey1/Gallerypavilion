@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { writeFile, mkdir } from 'fs/promises'
@@ -27,7 +27,7 @@ const uploadPhotoSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(

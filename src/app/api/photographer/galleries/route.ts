@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { GalleryStatus } from '@prisma/client'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ const createGallerySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+    const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(

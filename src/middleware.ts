@@ -1,10 +1,28 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getUserFromRequest } from './lib/jwt'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const user = getUserFromRequest(request)
+
+  // Lightweight auth presence check for middleware.
+  // Avoid calling into jwt helpers (which call jwt.verify) because
+  // Next.js middleware runs in the Edge runtime and Node's crypto is unavailable.
+  // Instead, detect whether an auth token is present (auth header or auth cookies).
+  let hasToken = false
+  try {
+    const authHeader = request.headers.get('authorization')
+    const cookieHeader = request.headers.get('cookie') || ''
+    const cookieNames = cookieHeader
+      .split(';')
+      .map(c => c.split('=')[0].trim())
+      .filter(Boolean)
+    const hasAuthHeader = !!authHeader && authHeader.startsWith('Bearer ')
+    const hasAuthCookie = cookieNames.includes('auth-token') || cookieNames.includes('_vercel_jwt')
+    hasToken = hasAuthHeader || hasAuthCookie
+    console.debug('[middleware] hasAuthHeader:', hasAuthHeader, 'hasAuthCookie:', hasAuthCookie, 'cookieNames:', cookieNames)
+  } catch (e) {
+    console.debug('[middleware] token presence check failed')
+  }
 
   // Allow access to public routes
   if (
@@ -19,30 +37,34 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Protect admin routes
+  // For middleware we only do a conservative presence check. Detailed role-based
+  // checks (admin vs photographer vs client) are enforced in API routes which run
+  // in the Node runtime and can safely verify JWTs.
+
+  // Protect admin routes: require an auth token (full role check happens server-side)
   if (pathname.startsWith('/admin')) {
-    if (!user || user.role !== 'admin') {
+    if (!hasToken) {
       return NextResponse.redirect(new URL('/auth/admin-login', request.url))
     }
   }
 
   // Protect photographer routes
   if (pathname.startsWith('/photographer') || pathname.startsWith('/dashboard')) {
-    if (!user || user.role !== 'photographer') {
+    if (!hasToken) {
       return NextResponse.redirect(new URL('/auth/photographer-login', request.url))
     }
   }
 
   // Protect client routes (gallery access)
   if (pathname.startsWith('/gallery/') && !pathname.includes('/public')) {
-    if (!user || (user.role !== 'client' && user.role !== 'photographer' && user.role !== 'admin')) {
+    if (!hasToken) {
       return NextResponse.redirect(new URL('/auth/invite', request.url))
     }
   }
 
-  // Protect API routes
+  // Protect API routes (require token presence; detailed verification occurs in API handlers)
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/auth') && !pathname.startsWith('/api/public')) {
-    if (!user) {
+    if (!hasToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
   }
