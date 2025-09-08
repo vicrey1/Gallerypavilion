@@ -30,7 +30,17 @@ export function verifyToken(token: string): JWTPayload | null {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
     return decoded
   } catch (error) {
-    console.error('JWT verification failed:', error)
+    // Log structured verification failure info to help debug production 401s.
+    try {
+      const errName = error && (error as Error).name ? (error as Error).name : 'UnknownError'
+      const errMsg = error && (error as Error).message ? (error as Error).message : String(error)
+      // Attempt to decode header (no verification) to surface alg/kid for debugging
+      const decodedComplete = jwt.decode(token, { complete: true }) as { header?: Record<string, unknown>; payload?: Record<string, unknown> } | null
+      const headerInfo = decodedComplete?.header ? { alg: decodedComplete.header['alg'], kid: decodedComplete.header['kid'] } : null
+      console.error('[jwt] verifyToken failed', { name: errName, message: errMsg, header: headerInfo })
+    } catch (logError) {
+      console.error('[jwt] verifyToken failed and additional logging failed', error)
+    }
     return null
   }
 }
