@@ -131,7 +131,8 @@ export async function POST(request: NextRequest) {
       // Prefer SameSite=Lax in production to avoid Vercel's _vercel_jwt interception and still allow navigation-based auth.
       sameSite: 'lax',
       path: '/',
-      maxAge
+      maxAge,
+      domain: isProd ? (process.env.COOKIE_DOMAIN || '.gallerypavilion.com') : undefined
     })
 
     // Also set a single Set-Cookie header fallback for environments where the cookies API may not be applied.
@@ -143,8 +144,8 @@ export async function POST(request: NextRequest) {
       parts.push(`Max-Age=${maxAge}`)
   // Use SameSite=Lax to prefer our auth-token cookie during navigation.
   parts.push('SameSite=Lax')
-      if (isProd) parts.push('Secure')
-      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+  if (isProd) parts.push('Secure')
+  parts.push(`Domain=${process.env.COOKIE_DOMAIN || '.gallerypavilion.com'}`)
 
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {

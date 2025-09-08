@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       response.cookies.set('auth-token', token, {
         httpOnly: true,
         secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
+  sameSite: 'lax',
         path: '/',
         maxAge
       })
@@ -174,9 +174,9 @@ export async function POST(request: NextRequest) {
       parts.push('HttpOnly')
       parts.push('Path=/')
       parts.push(`Max-Age=${maxAge}`)
-      parts.push('SameSite=Lax')
-      if (isProd) parts.push('Secure')
-      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+  parts.push('SameSite=Lax')
+  if (isProd) parts.push('Secure')
+  parts.push(`Domain=${process.env.COOKIE_DOMAIN || '.gallerypavilion.com'}`)
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore */

@@ -24,11 +24,11 @@ export async function POST(_request: NextRequest) {
       const cookieOptions: CookieOptions = {
         httpOnly: true,
         secure: isProd,
-        sameSite: isProd ? 'none' : 'lax',
+        sameSite: 'lax',
         path: '/',
         maxAge: 0 // Expire immediately
       }
-      if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN
+      cookieOptions.domain = process.env.COOKIE_DOMAIN || (isProd ? '.gallerypavilion.com' : undefined)
       response.cookies.set('auth-token', '', cookieOptions)
     } catch (e) {
       /* ignore cookie API errors */
@@ -38,8 +38,8 @@ export async function POST(_request: NextRequest) {
     try {
       const isProd = process.env.NODE_ENV === 'production'
   const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', 'SameSite=Lax']
-      if (isProd) parts.push('Secure')
-      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+  if (isProd) parts.push('Secure')
+  parts.push(`Domain=${process.env.COOKIE_DOMAIN || '.gallerypavilion.com'}`)
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore */
