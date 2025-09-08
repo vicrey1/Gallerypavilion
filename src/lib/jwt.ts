@@ -199,5 +199,40 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
     console.debug('[jwt] fallback mapping from decoded token failed', e)
   }
 
+  // If mapping from token failed, also attempt to map NextAuth session cookies to a user.
+  try {
+    const nextAuthCookie = request.cookies.get('__Secure-next-auth.session-token') || request.cookies.get('__Host-next-auth.session-token') || request.cookies.get('next-auth.session-token')
+    if (nextAuthCookie) {
+      const sessionToken = nextAuthCookie.value
+      try {
+        const session = await withPrismaRetry(() => prisma.session.findUnique({ where: { sessionToken }, include: { user: true } }))
+        if (session && session.user) {
+          const u = session.user
+          const payload: JWTPayload = {
+            userId: u.id,
+            email: u.email,
+            role: u.role as 'photographer' | 'client' | 'admin',
+            name: u.name || undefined,
+            photographerId: u.photographer?.id || undefined,
+            clientId: u.client?.id || undefined,
+            permissions: {
+              canView: true,
+              canFavorite: true,
+              canComment: true,
+              canDownload: u.role === 'photographer' || u.role === 'admin',
+              canRequestPurchase: true
+            }
+          }
+          console.debug('[jwt] Mapped NextAuth session cookie to local user:', { email: u.email, id: u.id })
+          return payload
+        }
+      } catch (prismaErr) {
+        console.debug('[jwt] mapping from NextAuth session cookie failed', prismaErr)
+      }
+    }
+  } catch (e) {
+    console.debug('[jwt] next-auth cookie check failed', e)
+  }
+
   return null
 }
