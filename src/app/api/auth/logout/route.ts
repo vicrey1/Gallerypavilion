@@ -18,16 +18,22 @@ export async function POST(_request: NextRequest) {
       message: 'Logged out successfully'
     })
 
-    // Clear the auth token cookie (explicit path) and set immediate expiry
+    // Clear the auth token cookie (explicit path) and set immediate expiry.
     try {
-  const cookieOptions: CookieOptions = {
+      const isProd = process.env.NODE_ENV === 'production'
+      let cookieDomain: string | undefined = process.env.COOKIE_DOMAIN || undefined
+      if (cookieDomain) {
+        if (!cookieDomain.startsWith('.')) cookieDomain = `.${cookieDomain}`
+      }
+
+      const cookieOptions: CookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
         path: '/',
         maxAge: 0 // Expire immediately
       }
-      if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN
+      if (cookieDomain) cookieOptions.domain = cookieDomain
       response.cookies.set('auth-token', '', cookieOptions)
     } catch (e) {
       /* ignore cookie API errors */
@@ -35,9 +41,13 @@ export async function POST(_request: NextRequest) {
 
     // Also set header fallback
     try {
-  const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0','SameSite=Lax']
-      if (process.env.NODE_ENV === 'production') parts.push('Secure')
-      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+      const isProd = process.env.NODE_ENV === 'production'
+      let cookieDomain: string | undefined = process.env.COOKIE_DOMAIN || undefined
+      if (cookieDomain && !cookieDomain.startsWith('.')) cookieDomain = `.${cookieDomain}`
+
+      const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', `SameSite=${isProd ? 'None' : 'Lax'}`]
+      if (isProd) parts.push('Secure')
+      if (cookieDomain) parts.push(`Domain=${cookieDomain}`)
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore */

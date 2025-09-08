@@ -124,34 +124,39 @@ export async function POST(request: NextRequest) {
       /* ignore logging errors */
     }
 
-    // Set HTTP-only cookie consistently. In production we require Secure and SameSite=None to support cross-site flows;
-    // in development use SameSite=Lax and secure=false for local testing.
+    // Set HTTP-only cookie consistently. Use a conservative but compatible production policy:
+    // - Secure=true in production
+    // - SameSite=None in production to allow cross-subdomain redirects / navigation flows
+    // - If COOKIE_DOMAIN is provided, ensure it's prefixed with a leading dot to cover subdomains
     const isProd = process.env.NODE_ENV === 'production'
     const maxAge = 60 * 60 * 24 * 7 // 7 days
+    let cookieDomain: string | undefined = process.env.COOKIE_DOMAIN || undefined
+    if (cookieDomain) {
+      // Normalize so `.example.com` is used when a bare domain is provided
+      if (!cookieDomain.startsWith('.')) cookieDomain = `.${cookieDomain}`
+    }
+
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: isProd,
-      // Prefer SameSite=Lax in production to avoid Vercel's _vercel_jwt interception and still allow navigation-based auth.
-      sameSite: 'lax',
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       maxAge,
-      // Only set Domain explicitly if COOKIE_DOMAIN is configured; otherwise leave host-scoped.
-      domain: process.env.COOKIE_DOMAIN || undefined
+      domain: cookieDomain
     })
 
     // Also set a single Set-Cookie header fallback for environments where the cookies API may not be applied.
     try {
-      const parts: string[] = []
-      parts.push(`auth-token=${token}`)
-      parts.push('HttpOnly')
-      parts.push('Path=/')
-      parts.push(`Max-Age=${maxAge}`)
-  // Use SameSite=Lax to prefer our auth-token cookie during navigation.
-  parts.push('SameSite=Lax')
+  const parts: string[] = []
+  parts.push(`auth-token=${token}`)
+  parts.push('HttpOnly')
+  parts.push('Path=/')
+  parts.push(`Max-Age=${maxAge}`)
+  parts.push(`SameSite=${isProd ? 'None' : 'Lax'}`)
   if (isProd) parts.push('Secure')
-  if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+  if (cookieDomain) parts.push(`Domain=${cookieDomain}`)
 
-      response.headers.set('Set-Cookie', parts.join('; '))
+  response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore header set errors */
     }
