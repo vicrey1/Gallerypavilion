@@ -41,8 +41,10 @@ export function getTokenFromRequest(request: NextRequest): string | null {
   try {
     // Debug: print whether authorization header and cookie are present (do NOT log token contents)
     const hasAuthHeader = !!authHeader
+    // Prefer our auth cookie but fall back to Vercel's `_vercel_jwt` if present
     const tokenCookie = request.cookies.get('auth-token')
-    const hasCookie = !!tokenCookie
+    const vercelJwtCookie = request.cookies.get('_vercel_jwt')
+    const hasCookie = !!tokenCookie || !!vercelJwtCookie
     // Also log cookie header keys length (not values) to help diagnose production reverse-proxy cookie stripping
     const cookieHeader = request.headers.get('cookie') || ''
     const cookieNames = cookieHeader
@@ -50,7 +52,8 @@ export function getTokenFromRequest(request: NextRequest): string | null {
       .map(c => c.split('=')[0].trim())
       .filter(Boolean)
     // Use console.debug so logs are visible during local dev without exposing secrets
-    console.debug('[jwt] getTokenFromRequest - hasAuthHeader:', hasAuthHeader, 'hasCookie:', hasCookie, 'cookieNames:', cookieNames)
+    // Also indicate whether `_vercel_jwt` was present (but never log token contents)
+    console.debug('[jwt] getTokenFromRequest - hasAuthHeader:', hasAuthHeader, 'hasCookie:', hasCookie, 'has_vercel_jwt:', !!vercelJwtCookie, 'cookieNames:', cookieNames)
   } catch (e) {
     // Swallow any cookie-access errors in edge environments
     console.debug('[jwt] getTokenFromRequest - cookie check failed')
@@ -60,9 +63,17 @@ export function getTokenFromRequest(request: NextRequest): string | null {
   }
 
   // Try to get token from cookie
-  const tokenCookie = request.cookies.get('auth-token')
-  if (tokenCookie) {
-  return tokenCookie.value
+  // Prefer our auth-token, otherwise try Vercel's `_vercel_jwt`.
+  const tokenCookiePrimary = request.cookies.get('auth-token')
+  if (tokenCookiePrimary) {
+    return tokenCookiePrimary.value
+  }
+
+  const tokenCookieVercel = request.cookies.get('_vercel_jwt')
+  if (tokenCookieVercel) {
+    // WARNING: `_vercel_jwt` may be signed by Vercel. We attempt to verify it as a JWT here.
+    // If you rely on Vercel's JWT feature, ensure the signing secret is compatible with `JWT_SECRET`.
+    return tokenCookieVercel.value
   }
 
   return null
