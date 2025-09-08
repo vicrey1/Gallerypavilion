@@ -87,6 +87,27 @@ export function getTokenFromRequest(request: NextRequest): string | null {
     return tokenCookieVercel.value
   }
 
+  // Fallback: some runtime environments may not populate request.cookies as expected.
+  // As a last resort, parse the Cookie header manually for `auth-token` or `_vercel_jwt`.
+  try {
+    const cookieHeader = request.headers.get('cookie') || ''
+    if (cookieHeader) {
+      // Simple parse: look for key=value pairs separated by ';'
+      const cookies = cookieHeader.split(';').map(c => c.trim())
+      for (const c of cookies) {
+        if (c.startsWith('auth-token=')) {
+          // Do not log token contents; return value only
+          return c.substring('auth-token='.length)
+        }
+        if (c.startsWith('_vercel_jwt=')) {
+          return c.substring('_vercel_jwt='.length)
+        }
+      }
+    }
+  } catch (e) {
+    console.debug('[jwt] manual cookie header parse failed', e)
+  }
+
   return null
 }
 

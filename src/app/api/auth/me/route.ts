@@ -4,6 +4,17 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
+    // Debug: surface header and cookie-name info to help diagnose 401s in production
+    try {
+      const cookieHeader = request.headers.get('cookie') || ''
+      const cookieNames = cookieHeader
+        .split(';')
+        .map(c => c.split('=')[0].trim())
+        .filter(Boolean)
+      console.debug('[api/auth/me] headers:', { hasAuthHeader: !!request.headers.get('authorization'), cookieNames })
+    } catch (e) {
+      console.debug('[api/auth/me] header debug failed')
+    }
   const user = await getUserFromRequestAsync(request)
 
     if (!user) {
