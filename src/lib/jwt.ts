@@ -140,9 +140,37 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
   try {
     const decoded = jwt.decode(token) as Record<string, unknown> | null
     if (decoded) {
-      const emailCandidate = (decoded['email'] || decoded['email_address'] || decoded['sub'] || decoded['userId']) as string | undefined
+      // Attempt to find an email anywhere in the decoded token payload.
+      // Vercel / other identity providers sometimes use nested claim names.
+      const isEmail = (s: unknown) => typeof s === 'string' && /@/.test(s)
+
+      function findEmailInObject(obj: unknown): string | undefined {
+        if (!obj) return undefined
+        if (typeof obj === 'string') {
+          return isEmail(obj) ? obj : undefined
+        }
+        if (Array.isArray(obj)) {
+          for (const v of obj) {
+            const found = findEmailInObject(v)
+            if (found) return found
+          }
+          return undefined
+        }
+        if (typeof obj === 'object') {
+          for (const [_k, v] of Object.entries(obj as Record<string, unknown>)) {
+            const found = findEmailInObject(v)
+            if (found) return found
+          }
+          return undefined
+        }
+        return undefined
+      }
+
+      const claimKeys = Object.keys(decoded)
+      const emailCandidate = (decoded['email'] || decoded['email_address'] || decoded['sub'] || decoded['userId']) as string | undefined || findEmailInObject(decoded)
       if (emailCandidate) {
         const normalizedEmail = String(emailCandidate).toLowerCase()
+        console.debug('[jwt] decoded claim keys:', claimKeys, 'foundEmailCandidate:', normalizedEmail)
         const user = await withPrismaRetry(() =>
           prisma.user.findUnique({ where: { email: normalizedEmail }, include: { photographer: true, client: true } })
         )
