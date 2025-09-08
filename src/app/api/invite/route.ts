@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/jwt'
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
@@ -35,23 +35,13 @@ export async function POST(request: NextRequest) {
     const data = createInviteSchema.parse(body);
 
     // Verify the user owns the gallery
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: data.galleryId,
-        photographer: {
-          user: {
-            email: payload.email,
-          },
-        },
-      },
-      include: {
-        photographer: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: data.galleryId, photographer: { user: { email: payload.email } } }, include: { photographer: { include: { user: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error verifying gallery in /api/invite POST:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -64,21 +54,13 @@ export async function POST(request: NextRequest) {
     const inviteCode = nanoid(12);
 
     // Create the invite
-    const invite = await prisma.invite.create({
-      data: {
-        inviteCode,
-        galleryId: data.galleryId,
-        clientEmail: data.clientEmail,
-        type: data.type,
-        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-        maxUsage: data.maxUsage,
-        canView: data.canView,
-        canFavorite: data.canFavorite,
-        canComment: data.canComment,
-        canDownload: data.canDownload,
-        canRequestPurchase: data.canRequestPurchase,
-      },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.create({ data: { inviteCode, galleryId: data.galleryId, clientEmail: data.clientEmail, type: data.type, expiresAt: data.expiresAt ? new Date(data.expiresAt) : null, maxUsage: data.maxUsage, canView: data.canView, canFavorite: data.canFavorite, canComment: data.canComment, canDownload: data.canDownload, canRequestPurchase: data.canRequestPurchase } }))
+    } catch (dbErr) {
+      console.error('DB error creating invite in /api/invite POST:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Send invitation email using the proper template
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'http://localhost:3000'
@@ -173,16 +155,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify the user owns the gallery
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: galleryId,
-        photographer: {
-          user: {
-            email: payload.email,
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({
+        where: {
+          id: galleryId,
+          photographer: {
+            user: {
+              email: payload.email,
+            },
           },
         },
-      },
-    });
+      }))
+    } catch (dbErr) {
+      console.error('DB error verifying gallery in /api/invite GET:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -192,14 +180,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all invites for the gallery
-    const invites = await prisma.invite.findMany({
-      where: {
-        galleryId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    let invites
+    try {
+      invites = await withPrismaRetry(() => prisma.invite.findMany({ where: { galleryId }, orderBy: { createdAt: 'desc' } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invites in /api/invite GET:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       success: true,

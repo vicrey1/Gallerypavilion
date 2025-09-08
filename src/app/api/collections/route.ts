@@ -2,9 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 // GET /api/collections - Get user's collections
 export async function GET(request: NextRequest) {
@@ -17,11 +15,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includePhotos = searchParams.get('includePhotos') === 'true'
 
-    const collections = await prisma.collection.findMany({
-      where: {
-        userId: payload.userId
-      },
-      include: {
+    let collections
+    try {
+      collections = await withPrismaRetry(() => prisma.collection.findMany({
+        where: { userId: payload.userId },
+        include: {
         photos: includePhotos ? {
           select: {
             id: true,
@@ -43,7 +41,11 @@ export async function GET(request: NextRequest) {
       orderBy: {
         updatedAt: 'desc'
       }
-    })
+      }))
+    } catch (dbErr) {
+      console.error('DB error fetching collections in GET /api/collections:', dbErr)
+      return NextResponse.json({ error: 'Failed to fetch collections' }, { status: 503 })
+    }
 
     return NextResponse.json({ collections })
   } catch (error) {
@@ -73,22 +75,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const collection = await prisma.collection.create({
-      data: {
-        title: name.trim(),
-        description: description?.trim() || null,
-        isPrivate: !Boolean(isPublic),
-        galleryId: galleryId,
-  userId: payload.userId
-      },
-      include: {
-        _count: {
-          select: {
-            photos: true
-          }
-        }
-      }
-    })
+    let collection
+    try {
+      collection = await withPrismaRetry(() => prisma.collection.create({ data: { title: name.trim(), description: description?.trim() || null, isPrivate: !Boolean(isPublic), galleryId: galleryId, userId: payload.userId }, include: { _count: { select: { photos: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error creating collection in POST /api/collections:', dbErr)
+      return NextResponse.json({ error: 'Failed to create collection' }, { status: 503 })
+    }
 
     return NextResponse.json({ collection }, { status: 201 })
   } catch (error) {

@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/jwt'
 import { InviteType, InviteStatus } from '@prisma/client';
 
@@ -25,16 +25,13 @@ export async function GET(
     const type = searchParams.get('type');
 
     // Verify the user owns the gallery
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: id,
-        photographer: {
-          user: {
-            email: payload.email,
-          },
-        },
-      },
-    });
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: id, photographer: { user: { email: payload.email } } } }))
+    } catch (dbErr) {
+      console.error('DB error verifying gallery in GET /api/gallery/[id]/invites:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -56,19 +53,13 @@ export async function GET(
       whereClause.type = type as InviteType;
     }
 
-    const invites = await prisma.invite.findMany({
-      where: whereClause,
-      include: {
-        gallery: {
-          select: {
-            title: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    let invites
+    try {
+      invites = await withPrismaRetry(() => prisma.invite.findMany({ where: whereClause, include: { gallery: { select: { title: true } } }, orderBy: { createdAt: 'desc' } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invites in GET /api/gallery/[id]/invites:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     const formattedInvites = invites.map(invite => ({
       id: invite.id,

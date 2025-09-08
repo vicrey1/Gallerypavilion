@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken'
 import { NextRequest } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 const JWT_EXPIRES_IN = '7d'
@@ -143,10 +143,9 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
       const emailCandidate = (decoded['email'] || decoded['email_address'] || decoded['sub'] || decoded['userId']) as string | undefined
       if (emailCandidate) {
         const normalizedEmail = String(emailCandidate).toLowerCase()
-        const user = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
-          include: { photographer: true, client: true }
-        })
+        const user = await withPrismaRetry(() =>
+          prisma.user.findUnique({ where: { email: normalizedEmail }, include: { photographer: true, client: true } })
+        )
         if (user) {
           const payload: JWTPayload = {
             userId: user.id,

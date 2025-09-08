@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,15 +32,7 @@ export async function GET(request: NextRequest) {
     }> = []
 
     // Recent photographer registrations
-    const recentPhotographers = await prisma.photographer.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        }
-      }
-    })
+  const recentPhotographers = await withPrismaRetry(() => prisma.photographer.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true, email: true } } } }))
 
     recentPhotographers.forEach((photographer: {
       id: string
@@ -67,19 +59,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Recent galleries
-    const recentGalleries = await prisma.gallery.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        photographer: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        }
-      }
-    })
+  const recentGalleries = await withPrismaRetry(() => prisma.gallery.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { photographer: { include: { user: { select: { name: true, email: true } } } } } }))
 
     recentGalleries.forEach((gallery: {
       id: string
@@ -111,22 +91,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Recent clients
-    const recentClients = await prisma.client.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        },
-        photographer: {
-          include: {
-            user: {
-              select: { name: true }
-            }
-          }
-        }
-      }
-    })
+  const recentClients = await withPrismaRetry(() => prisma.client.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { user: { select: { name: true, email: true } }, photographer: { include: { user: { select: { name: true } } } } } }))
 
     recentClients.forEach((client: {
       id: string
@@ -160,22 +125,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Recent purchase requests
-    const recentPurchases = await prisma.purchaseRequest.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        client: {
-          include: {
-            user: {
-              select: { name: true, email: true }
-            }
-          }
-        },
-        photo: {
-          select: { id: true, title: true, filename: true }
-        }
-      }
-    })
+  const recentPurchases = await withPrismaRetry(() => prisma.purchaseRequest.findMany({ take: 5, orderBy: { createdAt: 'desc' }, include: { client: { include: { user: { select: { name: true, email: true } } } }, photo: { select: { id: true, title: true, filename: true } } } }))
 
     recentPurchases.forEach((purchase: {
       id: string

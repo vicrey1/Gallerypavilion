@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 
 const validateInviteSchema = z.object({
   inviteCode: z.string().optional(),
@@ -21,11 +21,13 @@ export async function POST(request: NextRequest) {
     console.log('Parsed invite code:', inviteCode, 'email:', email);
 
     // Find the invite by code or email
-    const invite = await prisma.invite.findFirst({
-      where: inviteCode 
-        ? { inviteCode }
-        : { clientEmail: email },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.findFirst({ where: inviteCode ? { inviteCode } : { clientEmail: email } }))
+    } catch (dbErr) {
+      console.error('DB error finding invite in POST /api/invite/validate:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!invite) {
       return NextResponse.json(
@@ -35,38 +37,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get gallery details
-    const gallery = await prisma.gallery.findUnique({
-      where: { id: invite.galleryId },
-      include: {
-        photographer: {
-          select: {
-            id: true,
-            name: true,
-            businessName: true,
-            user: {
-              select: {
-                email: true,
-              },
-            },
-          },
-        },
-        photos: {
-          select: {
-            id: true,
-            filename: true,
-            url: true,
-            thumbnailUrl: true,
-            title: true,
-            description: true,
-            tags: true,
-            price: true,
-            isForSale: true,
-            isPrivate: true,
-            createdAt: true,
-          },
-        },
-      },
-    });
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findUnique({ where: { id: invite.galleryId }, include: { photographer: { select: { id: true, name: true, businessName: true, user: { select: { email: true } } } }, photos: { select: { id: true, filename: true, url: true, thumbnailUrl: true, title: true, description: true, tags: true, price: true, isForSale: true, isPrivate: true, createdAt: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching gallery in POST /api/invite/validate:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -107,13 +84,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count
-    await prisma.invite.update({
-      where: { id: invite.id },
-      data: {
-        usageCount: invite.usageCount + 1,
-        usedAt: new Date(),
-      },
-    });
+    try {
+      await withPrismaRetry(() => prisma.invite.update({ where: { id: invite.id }, data: { usageCount: invite.usageCount + 1, usedAt: new Date() } }))
+    } catch (dbErr) {
+      console.error('DB error incrementing invite usage in POST /api/invite/validate:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Return gallery data with invite permissions
     // If accessed via email, indicate client dashboard redirect

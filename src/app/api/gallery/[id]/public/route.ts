@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 const paramsSchema = z.object({
@@ -16,37 +16,43 @@ export async function GET(
     const password = request.headers.get('X-Gallery-Password')
 
     // Find the gallery
-    const gallery = await prisma.gallery.findUnique({
-      where: { id },
-      include: {
-        photos: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            _count: {
-              select: {
-                photoFavorites: true,
-                photoDownloads: true,
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findUnique({
+        where: { id },
+        include: {
+          photos: {
+            orderBy: { createdAt: 'desc' },
+            include: {
+              _count: {
+                select: {
+                  photoFavorites: true,
+                  photoDownloads: true,
+                },
               },
             },
           },
-        },
-        photographer: {
-          include: {
-            user: {
-              select: {
-                name: true,
+          photographer: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                },
               },
             },
           },
-        },
-        _count: {
-          select: {
-            photos: true,
-            invites: true,
+          _count: {
+            select: {
+              photos: true,
+              invites: true,
+            },
           },
         },
-      },
-    })
+      }))
+    } catch (dbErr) {
+      console.error('DB error fetching public gallery in GET /api/gallery/[id]/public:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -81,15 +87,12 @@ export async function GET(
       }
     }
 
-    // Increment view count
-    await prisma.gallery.update({
-      where: { id },
-      data: {
-        views: {
-          increment: 1,
-        },
-      },
-    })
+    // Increment view count (best-effort)
+    try {
+      await withPrismaRetry(() => prisma.gallery.update({ where: { id }, data: { views: { increment: 1 } } }))
+    } catch (dbErr) {
+      console.error('DB error incrementing gallery views in GET /api/gallery/[id]/public:', dbErr)
+    }
 
     // Format response
     const response = {

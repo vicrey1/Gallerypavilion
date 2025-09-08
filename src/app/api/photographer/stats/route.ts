@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,122 +18,45 @@ export async function GET(request: NextRequest) {
     const photographerId = payload.photographerId
 
     // Get basic statistics
-    const [totalGalleries, activeGalleries, totalPhotos, totalViews, totalFavorites, totalDownloads] = await Promise.all([
-      prisma.gallery.count({
-        where: { photographerId },
-      }),
-      prisma.gallery.count({
-        where: { 
-          photographerId,
-          status: 'active',
-        },
-      }),
-      prisma.photo.count({
-        where: {
-          gallery: {
-            photographerId,
-          },
-        },
-      }),
-      // Use Analytics model for view tracking
-      prisma.analytics.count({
-        where: {
-          type: 'gallery_view',
-          gallery: {
-            photographerId,
-          },
-        },
-      }),
-      prisma.photoFavorite.count({
-        where: {
-          photo: {
-            gallery: {
-              photographerId,
-            },
-          },
-        },
-      }),
-      prisma.photoDownload.count({
-        where: {
-          photo: {
-            gallery: {
-              photographerId,
-            },
-          },
-        },
-      }),
-    ])
+    let totalGalleries, activeGalleries, totalPhotos, totalViews, totalFavorites, totalDownloads
+    try {
+      [totalGalleries, activeGalleries, totalPhotos, totalViews, totalFavorites, totalDownloads] = await Promise.all([
+        withPrismaRetry(() => prisma.gallery.count({ where: { photographerId } })),
+        withPrismaRetry(() => prisma.gallery.count({ where: { photographerId, status: 'active' } })),
+        withPrismaRetry(() => prisma.photo.count({ where: { gallery: { photographerId } } })),
+        withPrismaRetry(() => prisma.analytics.count({ where: { type: 'gallery_view', gallery: { photographerId } } })),
+        withPrismaRetry(() => prisma.photoFavorite.count({ where: { photo: { gallery: { photographerId } } } })),
+        withPrismaRetry(() => prisma.photoDownload.count({ where: { photo: { gallery: { photographerId } } } })),
+      ])
+    } catch (dbErr) {
+      console.error('DB error fetching photographer stats in GET /api/photographer/stats:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Get recent activity
-    const recentViews = await prisma.analytics.findMany({
-      where: {
-        type: 'gallery_view',
-        gallery: {
-          photographerId,
-        },
-      },
-      include: {
-        gallery: {
-          select: {
-            title: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 5,
-    })
+    let recentViews
+    try {
+      recentViews = await withPrismaRetry(() => prisma.analytics.findMany({ where: { type: 'gallery_view', gallery: { photographerId } }, include: { gallery: { select: { title: true } } }, orderBy: { createdAt: 'desc' }, take: 5 }))
+    } catch (dbErr) {
+      console.error('DB error fetching recent views in GET /api/photographer/stats:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
-    const recentFavorites = await prisma.photoFavorite.findMany({
-      where: {
-        photo: {
-          gallery: {
-            photographerId,
-          },
-        },
-      },
-      include: {
-        photo: {
-          select: {
-            gallery: {
-              select: {
-                title: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 5,
-    })
+    let recentFavorites
+    try {
+      recentFavorites = await withPrismaRetry(() => prisma.photoFavorite.findMany({ where: { photo: { gallery: { photographerId } } }, include: { photo: { select: { gallery: { select: { title: true } } } } }, orderBy: { createdAt: 'desc' }, take: 5 }))
+    } catch (dbErr) {
+      console.error('DB error fetching recent favorites in GET /api/photographer/stats:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
-    const recentDownloads = await prisma.photoDownload.findMany({
-      where: {
-        photo: {
-          gallery: {
-            photographerId,
-          },
-        },
-      },
-      include: {
-        photo: {
-          select: {
-            gallery: {
-              select: {
-                title: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 5,
-    })
+    let recentDownloads
+    try {
+      recentDownloads = await withPrismaRetry(() => prisma.photoDownload.findMany({ where: { photo: { gallery: { photographerId } } }, include: { photo: { select: { gallery: { select: { title: true } } } } }, orderBy: { createdAt: 'desc' }, take: 5 }))
+    } catch (dbErr) {
+      console.error('DB error fetching recent downloads in GET /api/photographer/stats:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Combine and format recent activity
     const recentActivity = [
@@ -164,21 +87,13 @@ export async function GET(request: NextRequest) {
       }))
 
     // Get monthly statistics for charts - simplified for SQLite
-    const monthlyStats = await prisma.analytics.groupBy({
-      by: ['createdAt'],
-      where: {
-        type: 'gallery_view',
-        gallery: {
-          photographerId,
-        },
-        createdAt: {
-          gte: new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000), // 12 months ago
-        },
-      },
-      _count: {
-        id: true,
-      },
-    })
+    let monthlyStats
+    try {
+      monthlyStats = await withPrismaRetry(() => prisma.analytics.groupBy({ by: ['createdAt'], where: { type: 'gallery_view', gallery: { photographerId }, createdAt: { gte: new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000) } }, _count: { id: true } }))
+    } catch (dbErr) {
+      console.error('DB error fetching monthly stats in GET /api/photographer/stats:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       totalGalleries,

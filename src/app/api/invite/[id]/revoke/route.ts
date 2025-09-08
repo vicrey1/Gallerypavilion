@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/jwt'
 
 // Revoke invite
@@ -20,18 +20,13 @@ export async function POST(
     }
 
     // Verify the user owns the gallery
-    const invite = await prisma.invite.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographer: {
-            user: {
-              email: payload.email,
-            },
-          },
-        },
-      },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { id: id, gallery: { photographer: { user: { email: payload.email } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invite in POST /api/invite/[id]/revoke:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!invite) {
       return NextResponse.json(
@@ -48,12 +43,13 @@ export async function POST(
     }
 
     // Update invite status to revoked
-    const revokedInvite = await prisma.invite.update({
-      where: { id: id },
-      data: {
-        status: 'revoked',
-      },
-    });
+    let revokedInvite
+    try {
+      revokedInvite = await withPrismaRetry(() => prisma.invite.update({ where: { id: id }, data: { status: 'revoked' } }))
+    } catch (dbErr) {
+      console.error('DB error updating invite in POST /api/invite/[id]/revoke:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       success: true,

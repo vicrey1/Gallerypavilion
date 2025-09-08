@@ -3,7 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
 import { generateSignedUrl, verifyImageAccessToken, logSecurityEvent, checkRateLimit } from '@/lib/security'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
@@ -30,23 +30,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Get photo details
-    const photo = await prisma.photo.findUnique({
-      where: { id: photoId },
-      select: {
-        id: true,
-        url: true,
-        collection: {
-          include: {
-            gallery: {
-              include: {
-                photographer: true,
-                invites: true,
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.findUnique({
+        where: { id: photoId },
+        select: {
+          id: true,
+          url: true,
+          collection: {
+            include: {
+              gallery: {
+                include: {
+                  photographer: true,
+                  invites: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo in GET /api/images:', dbErr)
+      return new NextResponse('Service temporarily unavailable', { status: 503 })
+    }
 
     if (!photo) {
       logSecurityEvent('unauthorized_access', {
@@ -127,20 +133,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       ip: clientIp,
     })
 
-    // Record analytics
-    await prisma.analytics.create({
-      data: {
-        type: 'photo_view',
-        photoId,
-        galleryId: photo.collection?.galleryId || null,
-  clientId: payload?.role === 'client' ? payload.userId : null,
-        metadata: {
-          userAgent: request.headers.get('user-agent'),
-          ip: clientIp,
-          timestamp: new Date().toISOString(),
-        },
-      },
-    })
+    // Record analytics (best-effort)
+    try {
+      await withPrismaRetry(() => prisma.analytics.create({ data: { type: 'photo_view', photoId, galleryId: photo.collection?.galleryId || null, clientId: payload?.role === 'client' ? payload.userId : null, metadata: { userAgent: request.headers.get('user-agent'), ip: clientIp, timestamp: new Date().toISOString() } } }))
+    } catch (dbErr) {
+      // Do not block image delivery on analytics failure, but log it.
+      console.error('DB error recording analytics in GET /api/images:', dbErr)
+    }
 
     // Generate signed URL for the image
     const imageKey = photo.url.replace(/^https?:\/\/[^\/]+\//, '') // Extract S3 key from URL

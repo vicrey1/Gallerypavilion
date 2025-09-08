@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequestAsync } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
@@ -88,12 +88,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if gallery exists and belongs to photographer
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: galleryId,
-        photographerId: payload.photographerId,
-      },
-    })
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: galleryId, photographerId: payload.photographerId } }))
+    } catch (dbErr) {
+      console.error('DB error fetching gallery in POST /api/photographer/photos:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -142,31 +143,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Save photo record to database
-    const photo = await prisma.photo.create({
-      data: {
-        galleryId,
-        title: title || file.name,
-        description,
-        url: `/uploads/photos/${fileName}`,
-        thumbnailUrl: `/uploads/thumbnails/${thumbnailName}`,
-        filename: fileName,
-        fileSize: file.size,
-        mimeType: file.type,
-        price: price ? parseFloat(price) : null,
-        isForSale: isForSale === 'true',
-  tags: processedTags ?? undefined,
-        category: category || null,
-        location: location || null,
-        editionNumber: editionNumber ? parseInt(editionNumber) : 1,
-        totalEditions: totalEditions ? parseInt(totalEditions) : 1,
-        medium: medium || null,
-        technique: technique || null,
-        materials: materials || null,
-        artistStatement: artistStatement || null,
-        provenance: provenance || null,
-        certificateId: certificateId || null,
-      },
-    })
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.create({ data: { galleryId, title: title || file.name, description, url: `/uploads/photos/${fileName}`, thumbnailUrl: `/uploads/thumbnails/${thumbnailName}`, filename: fileName, fileSize: file.size, mimeType: file.type, price: price ? parseFloat(price) : null, isForSale: isForSale === 'true', tags: processedTags ?? undefined, category: category || null, location: location || null, editionNumber: editionNumber ? parseInt(editionNumber) : 1, totalEditions: totalEditions ? parseInt(totalEditions) : 1, medium: medium || null, technique: technique || null, materials: materials || null, artistStatement: artistStatement || null, provenance: provenance || null, certificateId: certificateId || null } }))
+    } catch (dbErr) {
+      console.error('DB error creating photo in POST /api/photographer/photos:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
+
 
     return NextResponse.json({
       id: photo.id,
@@ -224,12 +208,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if gallery belongs to photographer
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: galleryId,
-        photographerId: payload.photographerId,
-      },
-    })
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: galleryId, photographerId: payload.photographerId } }))
+    } catch (dbErr) {
+      console.error('DB error fetching gallery in GET /api/photographer/photos:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -240,23 +225,17 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const [photos, total] = await Promise.all([
-      prisma.photo.findMany({
-        where: { galleryId },
-        include: {
-          _count: {
-          select: {
-            favorites: true,
-            photoDownloads: true,
-          },
-        },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.photo.count({ where: { galleryId } }),
-    ])
+    let photos
+    let total
+    try {
+      [photos, total] = await Promise.all([
+        withPrismaRetry(() => prisma.photo.findMany({ where: { galleryId }, include: { _count: { select: { favorites: true, photoDownloads: true } } }, orderBy: { createdAt: 'desc' }, skip, take: limit })),
+        withPrismaRetry(() => prisma.photo.count({ where: { galleryId } })),
+      ])
+    } catch (dbErr) {
+      console.error('DB error fetching photos in GET /api/photographer/photos:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     const formattedPhotos = photos.map(photo => ({
       id: photo.id,

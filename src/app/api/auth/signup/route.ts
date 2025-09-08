@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { generateToken } from '@/lib/jwt'
 
 const signupSchema = z.object({
@@ -26,9 +26,13 @@ export async function POST(request: NextRequest) {
     const { email, password, name, type } = validationResult.data
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
-    })
+    let existingUser
+    try {
+      existingUser = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: email.toLowerCase() } }))
+    } catch (dbErr) {
+      console.error('DB error during signup existence check:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (existingUser) {
       return NextResponse.json(
@@ -40,29 +44,20 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user and photographer in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          email: email.toLowerCase(),
-          password: hashedPassword,
-          name,
-          role: 'photographer'
-        }
-      })
-
-      // Create photographer profile
-      const photographer = await tx.photographer.create({
-        data: {
-          userId: user.id,
-          name: user.name || '',
-          status: 'pending' // Requires admin approval
-        }
-      })
-
-      return { user, photographer }
-    })
+    // Create user and photographer in a transaction (with retry)
+    let result
+    try {
+      result = await withPrismaRetry(() =>
+        prisma.$transaction(async (tx) => {
+          const user = await tx.user.create({ data: { email: email.toLowerCase(), password: hashedPassword, name, role: 'photographer' } })
+          const photographer = await tx.photographer.create({ data: { userId: user.id, name: user.name || '', status: 'pending' } })
+          return { user, photographer }
+        })
+      )
+    } catch (dbErr) {
+      console.error('DB error creating user during signup:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Generate JWT token (even for pending photographers)
     const tokenPayload = {

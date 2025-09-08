@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export interface CreateNotificationData {
   type: string
@@ -12,17 +10,8 @@ export interface CreateNotificationData {
 
 export async function createNotification(notificationData: CreateNotificationData) {
   try {
-    const notification = await prisma.notification.create({
-      data: {
-        type: notificationData.type,
-        title: notificationData.title,
-        message: notificationData.message,
-        userId: notificationData.userId,
-        data: notificationData.data ? JSON.stringify(notificationData.data) : undefined,
-        isRead: false
-      }
-    })
-    return notification
+  const notification = await withPrismaRetry(() => prisma.notification.create({ data: { type: notificationData.type, title: notificationData.title, message: notificationData.message, userId: notificationData.userId, data: notificationData.data ? JSON.stringify(notificationData.data) : undefined, isRead: false } }))
+  return notification
   } catch (error) {
     console.error('Error creating notification:', error)
     throw error
@@ -31,17 +20,8 @@ export async function createNotification(notificationData: CreateNotificationDat
 
 export async function createBulkNotifications(notifications: CreateNotificationData[]) {
   try {
-    const createdNotifications = await prisma.notification.createMany({
-      data: notifications.map(notif => ({
-        type: notif.type,
-        title: notif.title,
-        message: notif.message,
-        userId: notif.userId,
-        data: notif.data ? JSON.stringify(notif.data) : undefined,
-        isRead: false
-      }))
-    })
-    return createdNotifications
+  const createdNotifications = await withPrismaRetry(() => prisma.notification.createMany({ data: notifications.map(notif => ({ type: notif.type, title: notif.title, message: notif.message, userId: notif.userId, data: notif.data ? JSON.stringify(notif.data) : undefined, isRead: false })) }))
+  return createdNotifications
   } catch (error) {
     console.error('Error creating bulk notifications:', error)
     throw error
@@ -102,23 +82,13 @@ export async function notifyGalleryInvitees(
 ) {
   try {
     // Get all users who have access to this gallery
-    const invites = await prisma.invite.findMany({
-      where: {
-        galleryId,
-        status: 'active'
-      },
-      include: {
-        clientInvites: {
-          include: {
-            client: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    })
+    let invites
+    try {
+      invites = await withPrismaRetry(() => prisma.invite.findMany({ where: { galleryId, status: 'active' }, include: { clientInvites: { include: { client: { include: { user: true } } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invites in notifyGalleryInvitees:', dbErr)
+      throw dbErr
+    }
 
     const notifications = invites
       .flatMap(invite => invite.clientInvites)
@@ -167,18 +137,13 @@ export async function checkExpiringGalleries() {
     const threeDaysFromNow = new Date()
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
 
-    const expiringGalleries = await prisma.gallery.findMany({
-      where: {
-        expiresAt: {
-          lte: threeDaysFromNow,
-          gte: new Date()
-        },
-        status: 'active'
-      },
-      include: {
-        photographer: true
-      }
-    })
+    let expiringGalleries
+    try {
+      expiringGalleries = await withPrismaRetry(() => prisma.gallery.findMany({ where: { expiresAt: { lte: threeDaysFromNow, gte: new Date() }, status: 'active' }, include: { photographer: true } }))
+    } catch (dbErr) {
+      console.error('DB error fetching expiring galleries in checkExpiringGalleries:', dbErr)
+      throw dbErr
+    }
 
     const notifications = expiringGalleries.map(gallery => {
       const daysLeft = Math.ceil(

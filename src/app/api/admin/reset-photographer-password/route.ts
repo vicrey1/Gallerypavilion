@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,11 +21,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Find the photographer
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { photographer: true }
-    });
+  // Find the photographer
+  const user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email }, include: { photographer: true } }))
     
     if (!user || user.role !== 'photographer') {
       return NextResponse.json(
@@ -37,11 +34,8 @@ export async function POST(request: NextRequest) {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     
-    // Update the password
-    await prisma.user.update({
-      where: { email },
-      data: { password: hashedPassword }
-    });
+  // Update the password
+  await withPrismaRetry(() => prisma.user.update({ where: { email }, data: { password: hashedPassword } }))
     
     return NextResponse.json({
       success: true,
@@ -84,10 +78,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { photographer: true }
-    });
+  const user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email }, include: { photographer: true } }))
     
     if (!user) {
       return NextResponse.json(

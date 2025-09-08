@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { generateToken } from '@/lib/jwt'
 import { cookies as _cookies } from 'next/headers'
 
@@ -15,20 +15,9 @@ export async function POST(request: NextRequest) {
     const { inviteCode, email } = inviteLoginSchema.parse(body)
 
     // Find the invite
-    const invite = await prisma.invite.findFirst({
-      where: { inviteCode: inviteCode },
-      include: {
-        gallery: {
-          include: {
-            photographer: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    })
+    const invite = await withPrismaRetry(() =>
+      prisma.invite.findFirst({ where: { inviteCode: inviteCode }, include: { gallery: { include: { photographer: { include: { user: true } } } } } })
+    )
 
     if (!invite) {
       return NextResponse.json(
@@ -55,81 +44,43 @@ export async function POST(request: NextRequest) {
     let clientUser
     if (email) {
       // Try to find existing client user
-      clientUser = await prisma.user.findFirst({
-        where: {
-          email,
-          role: 'client'
-        },
-        include: {
-          client: true
-        }
-      })
+      clientUser = await withPrismaRetry(() =>
+        prisma.user.findFirst({ where: { email, role: 'client' }, include: { client: true } })
+      )
 
       if (!clientUser) {
         // Create new client user
-        await prisma.$transaction(async (tx) => {
-          clientUser = await tx.user.create({
-            data: {
-              email,
-              role: 'client',
-              name: email.split('@')[0] // Use email prefix as name
-            }
-          })
-
-          await tx.client.create({
-            data: {
-              userId: clientUser.id,
-              email: clientUser.email,
-              name: clientUser.name || email.split('@')[0],
-              invitedBy: invite.gallery.photographer.id
-            }
-          })
-        })
+        await withPrismaRetry(() => prisma.$transaction(async (tx) => {
+          clientUser = await tx.user.create({ data: { email, role: 'client', name: email.split('@')[0] } })
+          await tx.client.create({ data: { userId: clientUser.id, email: clientUser.email, name: clientUser.name || email.split('@')[0], invitedBy: invite.gallery.photographer.id } })
+        }))
 
         // Refetch with client relation
-        clientUser = await prisma.user.findUnique({
-          where: { id: clientUser!.id },
-          include: { client: true }
-        })
+        try {
+          clientUser = await withPrismaRetry(() => prisma.user.findUnique({ where: { id: clientUser!.id }, include: { client: true } }))
+        } catch (dbErr) {
+          console.error('DB error refetching clientUser in POST /api/auth/invite-login:', dbErr)
+          return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+        }
       }
     } else {
       // Create anonymous client user
-      await prisma.$transaction(async (tx) => {
-        clientUser = await tx.user.create({
-          data: {
-            email: `guest_${Date.now()}@temp.com`,
-            role: 'client',
-            name: `Guest ${Date.now()}`
-          }
-        })
-
-        await tx.client.create({
-          data: {
-            userId: clientUser.id,
-            email: clientUser.email,
-            name: clientUser.name || `Guest ${Date.now()}`,
-            invitedBy: invite.gallery.photographer.id
-          }
-        })
-      })
+        await withPrismaRetry(() => prisma.$transaction(async (tx) => {
+          clientUser = await tx.user.create({ data: { email: `guest_${Date.now()}@temp.com`, role: 'client', name: `Guest ${Date.now()}` } })
+          await tx.client.create({ data: { userId: clientUser.id, email: clientUser.email, name: clientUser.name || `Guest ${Date.now()}`, invitedBy: invite.gallery.photographer.id } })
+        }))
 
       // Refetch with client relation
-      clientUser = await prisma.user.findUnique({
-        where: { id: clientUser!.id },
-        include: { client: true }
-      })
+      try {
+        clientUser = await withPrismaRetry(() => prisma.user.findUnique({ where: { id: clientUser!.id }, include: { client: true } }))
+      } catch (dbErr) {
+        console.error('DB error refetching clientUser in POST /api/auth/invite-login (anonymous):', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
     }
 
-    // Mark invite as used
-    await prisma.invite.update({
-      where: { id: invite.id },
-      data: {
-        usedAt: new Date(),
-  clientEmail: clientUser!.email,
-        usageCount: (invite.usageCount || 0) + 1,
-        status: 'used'
-      }
-    })
+  // Mark invite as used
+  await withPrismaRetry(() => prisma.invite.update({ where: { id: invite.id }, data: { usedAt: new Date(), clientEmail: clientUser!.email, usageCount: (invite.usageCount || 0) + 1, status: 'used' } }))
 
     // Generate JWT token
     const token = generateToken({

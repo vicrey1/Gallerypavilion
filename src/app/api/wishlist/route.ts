@@ -2,9 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,34 +13,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's wishlist
-    const user = await prisma.user.findUnique({
-  where: { email: payload.email },
-      include: {
-        wishlist: {
-          include: {
-            photo: {
-              include: {
-                gallery: {
-                  include: {
-                    photographer: {
-                      select: {
-                        id: true,
-                        name: true,
-                        user: {
-                          select: {
-                            email: true
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email }, include: { wishlist: { include: { photo: { include: { gallery: { include: { photographer: { select: { id: true, name: true, user: { select: { email: true } } } } } } } } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching wishlist user in GET /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -86,44 +63,52 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: payload.email }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email } }))
+    } catch (dbErr) {
+      console.error('DB error fetching user in POST /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check if photo exists
-    const photo = await prisma.photo.findUnique({
-      where: { id: photoId }
-    })
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.findUnique({ where: { id: photoId } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo in POST /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!photo) {
       return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
     }
 
     // Check if already in wishlist
-    const existingWishlistItem = await prisma.wishlistItem.findUnique({
-      where: {
-        userId_photoId: {
-          userId: user.id,
-          photoId: photoId
-        }
-      }
-    })
+    let existingWishlistItem
+    try {
+      existingWishlistItem = await withPrismaRetry(() => prisma.wishlistItem.findUnique({ where: { userId_photoId: { userId: user.id, photoId: photoId } } }))
+    } catch (dbErr) {
+      console.error('DB error checking wishlist item in POST /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (existingWishlistItem) {
       return NextResponse.json({ error: 'Photo already in wishlist' }, { status: 400 })
     }
 
     // Add to wishlist
-    const wishlistItem = await prisma.wishlistItem.create({
-      data: {
-        userId: user.id,
-        photoId: photoId
-      }
-    })
+    let wishlistItem
+    try {
+      wishlistItem = await withPrismaRetry(() => prisma.wishlistItem.create({ data: { userId: user.id, photoId: photoId } }))
+    } catch (dbErr) {
+      console.error('DB error creating wishlist item in POST /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({ 
       message: 'Photo added to wishlist',
@@ -155,21 +140,26 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: payload.email }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email } }))
+    } catch (dbErr) {
+      console.error('DB error fetching user in DELETE /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Remove from wishlist
-    const deletedItem = await prisma.wishlistItem.deleteMany({
-      where: {
-        userId: user.id,
-        photoId: photoId
-      }
-    })
+    let deletedItem
+    try {
+      deletedItem = await withPrismaRetry(() => prisma.wishlistItem.deleteMany({ where: { userId: user.id, photoId: photoId } }))
+    } catch (dbErr) {
+      console.error('DB error deleting wishlist item in DELETE /api/wishlist:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (deletedItem.count === 0) {
       return NextResponse.json({ error: 'Photo not found in wishlist' }, { status: 404 })

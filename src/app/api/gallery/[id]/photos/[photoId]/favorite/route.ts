@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 const paramsSchema = z.object({
@@ -29,19 +29,13 @@ export async function POST(
                     'unknown'
 
     // Verify the photo belongs to the gallery and gallery is accessible
-    const photo = await prisma.photo.findFirst({
-      where: {
-        id: photoId,
-        galleryId,
-        gallery: {
-          status: 'active',
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } },
-          ],
-        },
-      },
-    })
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.findFirst({ where: { id: photoId, galleryId, gallery: { status: 'active', OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo in POST /api/gallery/[id]/photos/[photoId]/favorite:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!photo) {
       return NextResponse.json(
@@ -51,43 +45,44 @@ export async function POST(
     }
 
     // Check if this IP has already favorited this photo
-    const existingFavorite = await prisma.photoFavorite.findUnique({
-      where: {
-        photoId_clientIp: {
-          photoId,
-          clientIp,
-        },
-      },
-    })
+    let existingFavorite
+    try {
+      existingFavorite = await withPrismaRetry(() => prisma.photoFavorite.findUnique({ where: { photoId_clientIp: { photoId, clientIp } } }))
+    } catch (dbErr) {
+      console.error('DB error checking existing favorite in POST /api/gallery/[id]/photos/[photoId]/favorite:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     let action: 'added' | 'removed'
     
     if (existingFavorite) {
       // Remove favorite
-      await prisma.photoFavorite.delete({
-        where: {
-          photoId_clientIp: {
-            photoId,
-            clientIp,
-          },
-        },
-      })
+      try {
+        await withPrismaRetry(() => prisma.photoFavorite.delete({ where: { photoId_clientIp: { photoId, clientIp } } }))
+      } catch (dbErr) {
+        console.error('DB error deleting favorite in POST /api/gallery/[id]/photos/[photoId]/favorite:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
       action = 'removed'
     } else {
       // Add favorite
-      await prisma.photoFavorite.create({
-        data: {
-          photoId,
-          clientIp,
-        },
-      })
+      try {
+        await withPrismaRetry(() => prisma.photoFavorite.create({ data: { photoId, clientIp } }))
+      } catch (dbErr) {
+        console.error('DB error creating favorite in POST /api/gallery/[id]/photos/[photoId]/favorite:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
       action = 'added'
     }
 
     // Get updated favorite count
-    const favoriteCount = await prisma.photoFavorite.count({
-      where: { photoId },
-    })
+    let favoriteCount
+    try {
+      favoriteCount = await withPrismaRetry(() => prisma.photoFavorite.count({ where: { photoId } }))
+    } catch (dbErr) {
+      console.error('DB error counting favorites in POST /api/gallery/[id]/photos/[photoId]/favorite:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       success: true,

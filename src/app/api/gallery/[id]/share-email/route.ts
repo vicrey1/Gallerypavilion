@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { getUserFromRequestAsync } from '@/lib/jwt'
 import { z } from 'zod'
 import { sendInviteEmail } from '@/lib/email'
@@ -44,7 +44,7 @@ export async function POST(
     const galleryId = id
 
     // Verify the gallery belongs to the photographer
-    const gallery = await prisma.gallery.findFirst({
+  const gallery = await withPrismaRetry(() => prisma.gallery.findFirst({
       where: {
         id: galleryId,
         photographerId: payload.photographerId,
@@ -62,7 +62,7 @@ export async function POST(
           }
         }
       }
-    })
+  }))
 
     if (!gallery) {
       return NextResponse.json(
@@ -72,13 +72,7 @@ export async function POST(
     }
 
     // Check if an active invite already exists for this email and gallery
-    const existingInvite = await prisma.invite.findFirst({
-      where: {
-        galleryId,
-        clientEmail: validatedData.email,
-        status: 'active'
-      }
-    })
+  const existingInvite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { galleryId, clientEmail: validatedData.email, status: 'active' } }))
 
     if (existingInvite) {
       return NextResponse.json(
@@ -91,23 +85,7 @@ export async function POST(
     const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 
     // Create the invite with email
-    const invite = await prisma.invite.create({
-      data: {
-        inviteCode,
-        galleryId,
-        clientEmail: validatedData.email,
-        type: validatedData.type,
-        expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null,
-        maxUsage: validatedData.type === 'single_use' ? 1 : null,
-        usageCount: 0,
-        canView: validatedData.permissions.canView,
-        canFavorite: validatedData.permissions.canFavorite,
-        canComment: validatedData.permissions.canComment,
-        canDownload: validatedData.permissions.canDownload,
-        canRequestPurchase: validatedData.permissions.canRequestPurchase,
-        status: 'active',
-      },
-    })
+  const invite = await withPrismaRetry(() => prisma.invite.create({ data: { inviteCode, galleryId, clientEmail: validatedData.email, type: validatedData.type, expiresAt: validatedData.expiresAt ? new Date(validatedData.expiresAt) : null, maxUsage: validatedData.type === 'single_use' ? 1 : null, usageCount: 0, canView: validatedData.permissions.canView, canFavorite: validatedData.permissions.canFavorite, canComment: validatedData.permissions.canComment, canDownload: validatedData.permissions.canDownload, canRequestPurchase: validatedData.permissions.canRequestPurchase, status: 'active' } }))
 
     // Resolve base URL for invite links with sensible fallbacks
     const baseUrl =

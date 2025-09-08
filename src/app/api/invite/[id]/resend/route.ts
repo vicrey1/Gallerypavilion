@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
@@ -21,29 +21,13 @@ export async function POST(
     }
 
     // Get the invite with gallery and photographer details
-    const invite = await prisma.invite.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographer: {
-            user: {
-              email: payload.email,
-            },
-          },
-        },
-      },
-      include: {
-        gallery: {
-          include: {
-            photographer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { id: id, gallery: { photographer: { user: { email: payload.email } } } }, include: { gallery: { include: { photographer: { include: { user: true } } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invite in POST /api/invite/[id]/resend:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!invite) {
       return NextResponse.json(

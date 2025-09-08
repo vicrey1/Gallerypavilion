@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { PhotographerStatus } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
@@ -24,48 +24,37 @@ export async function GET(request: NextRequest) {
 
     const where = status ? { status: status as PhotographerStatus } : {}
 
-    const [photographers, total] = await Promise.all([
-      prisma.photographer.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true
-            }
-          },
-          galleries: {
-            select: {
-              id: true,
-              title: true,
-              status: true
-            }
-          },
-          _count: {
-            select: {
-              galleries: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      }),
-      prisma.photographer.count({ where })
-    ])
+    try {
+      const [photographers, total] = await withPrismaRetry(async () =>
+        Promise.all([
+          prisma.photographer.findMany({
+            where,
+            skip,
+            take: limit,
+            include: {
+              user: { select: { id: true, email: true, name: true } },
+              galleries: { select: { id: true, title: true, status: true } },
+              _count: { select: { galleries: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.photographer.count({ where })
+        ])
+      )
 
-    return NextResponse.json({
-      photographers,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    })
+      return NextResponse.json({
+        photographers,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      })
+    } catch (dbErr) {
+      console.error('DB error fetching photographers:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error fetching photographers:', error)
     return NextResponse.json(
@@ -129,24 +118,20 @@ export async function PUT(request: NextRequest) {
         )
     }
 
-    const photographer = await prisma.photographer.update({
-      where: { id: photographerId },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true
-          }
-        }
-      }
-    })
+    try {
+      const photographer = await withPrismaRetry(() =>
+        prisma.photographer.update({
+          where: { id: photographerId },
+          data: updateData,
+          include: { user: { select: { id: true, email: true, name: true } } }
+        })
+      )
 
-    return NextResponse.json({
-      message: `Photographer ${action} successful`,
-      photographer
-    })
+      return NextResponse.json({ message: `Photographer ${action} successful`, photographer })
+    } catch (dbErr) {
+      console.error('DB error updating photographer:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error updating photographer:', error)
     return NextResponse.json(
@@ -178,55 +163,37 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if photographer has galleries
-    const galleryCount = await prisma.gallery.count({
-      where: { photographerId }
-    })
+    try {
+      const galleryCount = await withPrismaRetry(() => prisma.gallery.count({ where: { photographerId } }))
 
-    if (galleryCount > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete photographer with existing galleries. Archive galleries first.' },
-        { status: 400 }
-      )
-    }
-
-    // Delete photographer and associated user
-    const photographer = await prisma.photographer.findUnique({
-      where: { id: photographerId },
-      include: { user: true }
-    })
-
-    if (!photographer) {
-      return NextResponse.json(
-        { error: 'Photographer not found' },
-        { status: 404 }
-      )
-    }
-
-    await prisma.$transaction([
-      prisma.photographer.delete({
-        where: { id: photographerId }
-      }),
-      prisma.user.delete({
-        where: { id: photographer.userId }
-      })
-    ])
-
-    // Log the admin action
-    await prisma.analytics.create({
-      data: {
-        type: 'admin_action',
-        metadata: {
-          action: 'photographer_deleted',
-          photographerId,
-          adminId: payload.userId,
-          timestamp: new Date().toISOString()
-        }
+      if (galleryCount > 0) {
+        return NextResponse.json({ error: 'Cannot delete photographer with existing galleries. Archive galleries first.' }, { status: 400 })
       }
-    })
 
-    return NextResponse.json({
-      message: 'Photographer deleted successfully'
-    })
+      const photographer = await withPrismaRetry(() =>
+        prisma.photographer.findUnique({ where: { id: photographerId }, include: { user: true } })
+      )
+
+      if (!photographer) {
+        return NextResponse.json({ error: 'Photographer not found' }, { status: 404 })
+      }
+
+      await withPrismaRetry(() =>
+        prisma.$transaction([
+          prisma.photographer.delete({ where: { id: photographerId } }),
+          prisma.user.delete({ where: { id: photographer.userId } })
+        ])
+      )
+
+      await withPrismaRetry(() =>
+        prisma.analytics.create({ data: { type: 'admin_action', metadata: { action: 'photographer_deleted', photographerId, adminId: payload.userId, timestamp: new Date().toISOString() } } })
+      )
+
+      return NextResponse.json({ message: 'Photographer deleted successfully' })
+    } catch (dbErr) {
+      console.error('DB error deleting photographer:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error deleting photographer:', error)
     return NextResponse.json(

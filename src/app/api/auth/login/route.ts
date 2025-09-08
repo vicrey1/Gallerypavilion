@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { generateToken } from '@/lib/jwt'
 
 const loginSchema = z.object({
@@ -31,14 +31,17 @@ export async function POST(request: NextRequest) {
       /* ignore logging errors */
     }
 
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-      include: {
-        photographer: true,
-        client: true
-      }
-    })
+    // Find user by email (with transient retry)
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+        include: { photographer: true, client: true }
+      }))
+    } catch (dbErr) {
+      console.error('Login DB error (transient):', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user || !user.password) {
       console.debug('[auth/login] user not found or missing password for email:', email.toLowerCase())

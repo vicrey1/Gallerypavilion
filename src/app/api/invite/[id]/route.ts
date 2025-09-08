@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
@@ -34,29 +34,13 @@ export async function GET(
       );
     }
 
-    const invite = await prisma.invite.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographer: {
-            user: {
-              email: payload.email,
-            },
-          },
-        },
-      },
-      include: {
-        gallery: {
-          include: {
-            photographer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { id: id, gallery: { photographer: { user: { email: payload.email } } } }, include: { gallery: { include: { photographer: { include: { user: true } } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invite in GET /api/invite/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!invite) {
       return NextResponse.json(
@@ -113,29 +97,13 @@ export async function PUT(
     const data = updateInviteSchema.parse(body);
 
     // Verify the user owns the gallery
-    const existingInvite = await prisma.invite.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographer: {
-            user: {
-              email: sessionPayload.email,
-            },
-          },
-        },
-      },
-      include: {
-        gallery: {
-          include: {
-            photographer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    let existingInvite
+    try {
+      existingInvite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { id: id, gallery: { photographer: { user: { email: sessionPayload.email } } } }, include: { gallery: { include: { photographer: { include: { user: true } } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invite in PUT /api/invite/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!existingInvite) {
       return NextResponse.json(
@@ -145,21 +113,13 @@ export async function PUT(
     }
 
     // Update the invite
-    const updatedInvite = await prisma.invite.update({
-      where: { id: id },
-      data: {
-        clientEmail: data.clientEmail,
-        type: data.type,
-        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
-        maxUsage: data.maxUsage,
-        canView: data.canView,
-        canFavorite: data.canFavorite,
-        canComment: data.canComment,
-        canDownload: data.canDownload,
-        canRequestPurchase: data.canRequestPurchase,
-        status: data.status,
-      },
-    });
+    let updatedInvite
+    try {
+      updatedInvite = await withPrismaRetry(() => prisma.invite.update({ where: { id: id }, data: { clientEmail: data.clientEmail, type: data.type, expiresAt: data.expiresAt ? new Date(data.expiresAt) : null, maxUsage: data.maxUsage, canView: data.canView, canFavorite: data.canFavorite, canComment: data.canComment, canDownload: data.canDownload, canRequestPurchase: data.canRequestPurchase, status: data.status } }))
+    } catch (dbErr) {
+      console.error('DB error updating invite in PUT /api/invite/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       success: true,
@@ -216,18 +176,13 @@ export async function DELETE(
     }
 
     // Verify the user owns the gallery
-    const invite = await prisma.invite.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographer: {
-            user: {
-              email: sessionPayload.email,
-            },
-          },
-        },
-      },
-    });
+    let invite
+    try {
+      invite = await withPrismaRetry(() => prisma.invite.findFirst({ where: { id: id, gallery: { photographer: { user: { email: sessionPayload.email } } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invite in DELETE /api/invite/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!invite) {
       return NextResponse.json(
@@ -237,9 +192,12 @@ export async function DELETE(
     }
 
     // Delete the invite
-    await prisma.invite.delete({
-      where: { id: id },
-    });
+    try {
+      await withPrismaRetry(() => prisma.invite.delete({ where: { id: id } }))
+    } catch (dbErr) {
+      console.error('DB error deleting invite in DELETE /api/invite/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       success: true,

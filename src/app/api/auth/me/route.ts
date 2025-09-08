@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequestAsync } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get fresh user data from database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.userId },
-      include: {
-        photographer: true,
-        client: true
-      }
-    })
+    // Get fresh user data from database (with retry for transient DB errors)
+    let dbUser
+    try {
+      dbUser = await withPrismaRetry(() => prisma.user.findUnique({ where: { id: user.userId }, include: { photographer: true, client: true } }))
+    } catch (dbErr) {
+      console.error('DB error in /api/auth/me:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!dbUser) {
       return NextResponse.json(

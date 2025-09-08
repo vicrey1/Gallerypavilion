@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { GalleryStatus, GalleryVisibility } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
@@ -30,96 +30,43 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status as GalleryStatus
     if (photographerId) where.photographerId = photographerId
 
-    const [galleries, total] = await Promise.all([
-      prisma.gallery.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          photographer: {
+    try {
+      const [galleries, total] = await withPrismaRetry(() =>
+        Promise.all([
+          prisma.gallery.findMany({
+            where,
+            skip,
+            take: limit,
             include: {
-              user: {
-                select: {
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          },
-          collections: {
-            include: {
-              photos: {
-                select: {
-                  id: true,
-                  filename: true,
-                  thumbnailUrl: true
-                },
-                take: 1
-              }
+              photographer: { include: { user: { select: { name: true, email: true } } } },
+              collections: { include: { photos: { select: { id: true, filename: true, thumbnailUrl: true }, take: 1 } }, take: 1 },
+              invites: { select: { id: true, status: true } },
+              _count: { select: { invites: true, collections: true, photos: true } }
             },
-            take: 1
-          },
-          invites: {
-            select: {
-              id: true,
-              status: true
-            }
-          },
-          _count: {
-            select: {
-              invites: true,
-              collections: true,
-              photos: true
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        }
-      }),
-      prisma.gallery.count({ where })
-    ])
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.gallery.count({ where })
+        ])
+      )
 
-    // Get view statistics for each gallery
-    const galleriesWithStats = await Promise.all(
-      galleries.map(async (gallery) => {
-        const viewCount = await prisma.analytics.count({
-          where: {
-            type: 'gallery_access',
-            galleryId: gallery.id
-          }
-        })
+      const galleriesWithStats = await withPrismaRetry(() =>
+        Promise.all(
+          galleries.map(async (gallery) => {
+            const [viewCount, downloadCount] = await Promise.all([
+              prisma.analytics.count({ where: { type: 'gallery_access', galleryId: gallery.id } }),
+              prisma.analytics.count({ where: { type: 'photo_download', galleryId: gallery.id } })
+            ])
 
-        const downloadCount = await prisma.analytics.count({
-          where: {
-            type: 'photo_download',
-            galleryId: gallery.id
-          }
-        })
+            return { ...gallery, stats: { views: viewCount, downloads: downloadCount, photos: gallery._count.photos, invites: gallery._count.invites, collections: gallery._count.collections }, coverPhoto: gallery.collections[0]?.photos[0] || null }
+          })
+        )
+      )
 
-        return {
-          ...gallery,
-          stats: {
-            views: viewCount,
-            downloads: downloadCount,
-            photos: gallery._count.photos,
-            invites: gallery._count.invites,
-            collections: gallery._count.collections
-          },
-          coverPhoto: gallery.collections[0]?.photos[0] || null
-        }
-      })
-    )
-
-    return NextResponse.json({
-      galleries: galleriesWithStats,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    })
+      return NextResponse.json({ galleries: galleriesWithStats, pagination: { page, limit, total, pages: Math.ceil(total / limit) } })
+    } catch (dbErr) {
+      console.error('DB error fetching galleries:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error fetching galleries:', error)
     return NextResponse.json(
@@ -190,40 +137,16 @@ export async function PUT(request: NextRequest) {
         )
     }
 
-    const gallery = await prisma.gallery.update({
-      where: { id: galleryId },
-      data: updateData,
-      include: {
-        photographer: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
-    })
+    try {
+      const gallery = await withPrismaRetry(() => prisma.gallery.update({ where: { id: galleryId }, data: updateData, include: { photographer: { include: { user: { select: { name: true, email: true } } } } } }))
 
-    // Log the admin action
-    await prisma.analytics.create({
-      data: {
-        type: 'admin_action',
-        metadata: {
-          action: `gallery_${action}`,
-          galleryId,
-          adminId: payload.userId,
-          timestamp: new Date().toISOString()
-        }
-      }
-    })
+      await withPrismaRetry(() => prisma.analytics.create({ data: { type: 'admin_action', metadata: { action: `gallery_${action}`, galleryId, adminId: payload.userId, timestamp: new Date().toISOString() } } }))
 
-    return NextResponse.json({
-      message: `Gallery ${action} successful`,
-      gallery
-    })
+      return NextResponse.json({ message: `Gallery ${action} successful`, gallery })
+    } catch (dbErr) {
+      console.error('DB error updating gallery:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error updating gallery:', error)
     return NextResponse.json(
@@ -255,100 +178,31 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if gallery exists
-    const gallery = await prisma.gallery.findUnique({
-      where: { id: galleryId },
-      include: {
-        photos: true,
-        collections: true
-      }
-    })
+    try {
+      const gallery = await withPrismaRetry(() => prisma.gallery.findUnique({ where: { id: galleryId }, include: { photos: true, collections: true } }))
 
-    if (!gallery) {
-      return NextResponse.json(
-        { error: 'Gallery not found' },
-        { status: 404 }
-      )
+      if (!gallery) {
+        return NextResponse.json({ error: 'Gallery not found' }, { status: 404 })
+      }
+
+      await withPrismaRetry(() => prisma.$transaction([
+        prisma.favorite.deleteMany({ where: { photo: { galleryId } } }),
+        prisma.comment.deleteMany({ where: { photo: { galleryId } } }),
+        prisma.purchaseRequest.deleteMany({ where: { photo: { galleryId } } }),
+        prisma.analytics.deleteMany({ where: { OR: [{ metadata: { path: ['galleryId'], equals: galleryId } }, ...gallery.photos.map(photo => ({ metadata: { path: ['photoId'], equals: photo.id } }))] } }),
+        prisma.photo.deleteMany({ where: { galleryId } }),
+        prisma.collection.deleteMany({ where: { galleryId } }),
+        prisma.invite.deleteMany({ where: { galleryId } }),
+        prisma.gallery.delete({ where: { id: galleryId } })
+      ]))
+
+      await withPrismaRetry(() => prisma.analytics.create({ data: { type: 'admin_action', metadata: { action: 'gallery_deleted', galleryId, adminId: payload.userId, timestamp: new Date().toISOString() } } }))
+
+      return NextResponse.json({ message: 'Gallery deleted successfully' })
+    } catch (dbErr) {
+      console.error('DB error deleting gallery:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
-
-    // Delete gallery and all associated data
-    await prisma.$transaction([
-      // Delete favorites for photos in this gallery
-      prisma.favorite.deleteMany({
-        where: {
-          photo: {
-            galleryId
-          }
-        }
-      }),
-      // Delete comments for photos in this gallery
-      prisma.comment.deleteMany({
-        where: {
-          photo: {
-            galleryId
-          }
-        }
-      }),
-      // Delete purchase requests for photos in this gallery
-      prisma.purchaseRequest.deleteMany({
-        where: {
-          photo: {
-            galleryId
-          }
-        }
-      }),
-      // Delete analytics for this gallery
-      prisma.analytics.deleteMany({
-        where: {
-          OR: [
-            {
-              metadata: {
-                path: ['galleryId'],
-                equals: galleryId
-              }
-            },
-            ...gallery.photos.map(photo => ({
-              metadata: {
-                path: ['photoId'],
-                equals: photo.id
-              }
-            }))
-          ]
-        }
-      }),
-      // Delete photos
-      prisma.photo.deleteMany({
-        where: { galleryId }
-      }),
-      // Delete collections
-      prisma.collection.deleteMany({
-        where: { galleryId }
-      }),
-      // Delete invites
-      prisma.invite.deleteMany({
-        where: { galleryId }
-      }),
-      // Delete gallery
-      prisma.gallery.delete({
-        where: { id: galleryId }
-      })
-    ])
-
-    // Log the admin action
-    await prisma.analytics.create({
-      data: {
-        type: 'admin_action',
-        metadata: {
-          action: 'gallery_deleted',
-          galleryId,
-          adminId: payload.userId,
-          timestamp: new Date().toISOString()
-        }
-      }
-    })
-
-    return NextResponse.json({
-      message: 'Gallery deleted successfully'
-    })
   } catch (error) {
     console.error('Error deleting gallery:', error)
     return NextResponse.json(

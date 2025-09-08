@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 // Validation schema for profile updates
@@ -35,18 +35,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const photographer = await prisma.photographer.findUnique({
-      where: { id: payload.photographerId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true
-          }
-        }
-      }
-    })
+    let photographer
+    try {
+      photographer = await withPrismaRetry(() => prisma.photographer.findUnique({ where: { id: payload.photographerId }, include: { user: { select: { id: true, email: true, name: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photographer in GET /api/photographer/profile:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!photographer) {
       return NextResponse.json(
@@ -96,10 +91,13 @@ export async function PUT(request: NextRequest) {
     const validatedData = updateProfileSchema.parse(body)
 
     // Check if photographer exists
-    const existingPhotographer = await prisma.photographer.findUnique({
-      where: { id: payload.photographerId },
-      include: { user: true }
-    })
+    let existingPhotographer
+    try {
+      existingPhotographer = await withPrismaRetry(() => prisma.photographer.findUnique({ where: { id: payload.photographerId }, include: { user: true } }))
+    } catch (dbErr) {
+      console.error('DB error fetching existing photographer in PUT /api/photographer/profile:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!existingPhotographer) {
       return NextResponse.json(
@@ -120,26 +118,22 @@ export async function PUT(request: NextRequest) {
     if (validatedData.portfolio !== undefined) updateData.portfolio = validatedData.portfolio || undefined
     if (validatedData.socialMedia !== undefined) updateData.socialMedia = validatedData.socialMedia
 
-    const updatedPhotographer = await prisma.photographer.update({
-      where: { id: payload.photographerId },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true
-          }
-        }
-      }
-    })
+    let updatedPhotographer
+    try {
+      updatedPhotographer = await withPrismaRetry(() => prisma.photographer.update({ where: { id: payload.photographerId }, data: updateData, include: { user: { select: { id: true, email: true, name: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error updating photographer in PUT /api/photographer/profile:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Update user name if provided
     if (validatedData.name && validatedData.name !== existingPhotographer.user.name) {
-      await prisma.user.update({
-        where: { id: existingPhotographer.userId },
-        data: { name: validatedData.name }
-      })
+      try {
+        await withPrismaRetry(() => prisma.user.update({ where: { id: existingPhotographer.userId }, data: { name: validatedData.name } }))
+      } catch (dbErr) {
+        console.error('DB error updating user name in PUT /api/photographer/profile:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
     }
 
     return NextResponse.json({

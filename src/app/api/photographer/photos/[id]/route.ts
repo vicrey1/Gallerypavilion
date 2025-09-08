@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 import { unlink } from 'fs/promises'
 import { join } from 'path'
@@ -50,17 +50,13 @@ export async function PUT(
     }
 
     // Check if photo exists and belongs to photographer's gallery
-    const existingPhoto = await prisma.photo.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographerId: payload.photographerId,
-        },
-      },
-      include: {
-        gallery: true,
-      },
-    })
+    let existingPhoto
+    try {
+      existingPhoto = await withPrismaRetry(() => prisma.photo.findFirst({ where: { id: id, gallery: { photographerId: payload.photographerId } }, include: { gallery: true } }))
+    } catch (dbErr) {
+      console.error('DB error fetching existing photo in PUT /api/photographer/photos/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!existingPhoto) {
       return NextResponse.json(
@@ -69,10 +65,9 @@ export async function PUT(
       )
     }
 
-    const photo = await prisma.photo.update({
-      where: { id: id },
-      data: dataToUpdate,
-      select: {
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.update({ where: { id: id }, data: dataToUpdate, select: {
         id: true,
         title: true,
         description: true,
@@ -103,8 +98,12 @@ export async function PUT(
             photoDownloads: true,
           },
         },
-      },
-    })
+      } }))
+
+    } catch (dbErr) {
+      console.error('DB error updating photo in PUT /api/photographer/photos/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       id: photo.id,
@@ -165,16 +164,15 @@ export async function DELETE(
     }
 
     // Check if photo exists and belongs to photographer's gallery
-    const existingPhoto = await prisma.photo.findFirst({
-      where: {
-        id: id,
-        gallery: {
-          photographerId: payload.photographerId,
-        },
-      },
-    })
+    let existingPhotoDelete
+    try {
+      existingPhotoDelete = await withPrismaRetry(() => prisma.photo.findFirst({ where: { id: id, gallery: { photographerId: payload.photographerId } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching existing photo in DELETE /api/photographer/photos/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
-    if (!existingPhoto) {
+  if (!existingPhotoDelete) {
       return NextResponse.json(
         { error: 'Photo not found' },
         { status: 404 }
@@ -183,8 +181,8 @@ export async function DELETE(
 
     // Delete photo files from filesystem
     try {
-      const photoPath = join(process.cwd(), 'public', existingPhoto.url)
-      const thumbnailPath = join(process.cwd(), 'public', existingPhoto.thumbnailUrl)
+  const photoPath = join(process.cwd(), 'public', existingPhotoDelete.url)
+  const thumbnailPath = join(process.cwd(), 'public', existingPhotoDelete.thumbnailUrl)
       
       await Promise.all([
         unlink(photoPath).catch(() => {}), // Ignore errors if file doesn't exist
@@ -196,9 +194,12 @@ export async function DELETE(
     }
 
     // Delete photo record from database
-    await prisma.photo.delete({
-      where: { id: id },
-    })
+    try {
+      await withPrismaRetry(() => prisma.photo.delete({ where: { id: id } }))
+    } catch (dbErr) {
+      console.error('DB error deleting photo in DELETE /api/photographer/photos/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json(
       { message: 'Photo deleted successfully' },
@@ -252,7 +253,7 @@ export async function GET(
       },
     })
 
-    if (!photo) {
+  if (!photo) {
       return NextResponse.json(
         { error: 'Photo not found' },
         { status: 404 }

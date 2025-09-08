@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 
 
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get system settings
-    const settings = await prisma.systemSetting.findMany()
-    const settingsMap = settings.reduce((acc, setting) => {
+  const settings = await withPrismaRetry(() => prisma.systemSetting.findMany())
+  const settingsMap = settings.reduce((acc, setting) => {
       acc[setting.key] = {
         value: setting.value,
         type: setting.type,
@@ -82,38 +82,21 @@ export async function PUT(request: NextRequest) {
     const updatePromises = Object.entries(settings).map(async ([key, value]) => {
       return prisma.systemSetting.upsert({
         where: { key },
-        update: {
-          value: String(value),
-          updatedAt: new Date()
-        },
-        create: {
-          key,
-          value: String(value),
-          type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string',
-          description: getSettingDescription(key)
-        }
+        update: { value: String(value), updatedAt: new Date() },
+        create: { key, value: String(value), type: typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string', description: getSettingDescription(key) }
       })
     })
 
-    await Promise.all(updatePromises)
+    try {
+      await withPrismaRetry(() => Promise.all(updatePromises))
 
-    // Log the admin action
-    await prisma.analytics.create({
-      data: {
-        type: 'admin_action',
-        metadata: {
-          action: 'system_settings_updated',
-          settings: Object.keys(settings),
-          adminId: payload.userId,
-          timestamp: new Date().toISOString()
-        }
-      }
-    })
+      await withPrismaRetry(() => prisma.analytics.create({ data: { type: 'admin_action', metadata: { action: 'system_settings_updated', settings: Object.keys(settings), adminId: payload.userId, timestamp: new Date().toISOString() } } }))
 
-    return NextResponse.json({
-      message: 'System settings updated successfully',
-      settings
-    })
+      return NextResponse.json({ message: 'System settings updated successfully', settings })
+    } catch (dbErr) {
+      console.error('DB error updating system settings:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
   } catch (error) {
     console.error('Error updating system settings:', error)
     return NextResponse.json(

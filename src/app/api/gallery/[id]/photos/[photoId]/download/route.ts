@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 import fs from 'fs'
 import path from 'path'
@@ -23,27 +23,13 @@ export async function GET(
                     'unknown'
 
     // Verify the photo belongs to the gallery and gallery allows downloads
-    const photo = await prisma.photo.findFirst({
-      where: {
-        id: photoId,
-        galleryId,
-        gallery: {
-          status: 'active',
-          allowDownloads: true,
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } },
-          ],
-        },
-      },
-      include: {
-        gallery: {
-          select: {
-            allowDownloads: true,
-          },
-        },
-      },
-    })
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.findFirst({ where: { id: photoId, galleryId, gallery: { status: 'active', allowDownloads: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } }, include: { gallery: { select: { allowDownloads: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo in GET /api/gallery/[id]/photos/[photoId]/download:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!photo) {
       return NextResponse.json(
@@ -70,23 +56,15 @@ export async function GET(
     }
 
     // Track download (avoid duplicate tracking for same IP within 1 minute)
-    const recentDownload = await prisma.photoDownload.findFirst({
-      where: {
-        photoId,
-        clientIp,
-        createdAt: {
-          gte: new Date(Date.now() - 60000), // 1 minute ago
-        },
-      },
-    })
-
-    if (!recentDownload) {
-      await prisma.photoDownload.create({
-        data: {
-          photoId,
-          clientIp,
-        },
-      })
+    let recentDownload
+    try {
+      recentDownload = await withPrismaRetry(() => prisma.photoDownload.findFirst({ where: { photoId, clientIp, createdAt: { gte: new Date(Date.now() - 60000) } } }))
+      if (!recentDownload) {
+        await withPrismaRetry(() => prisma.photoDownload.create({ data: { photoId, clientIp } }))
+      }
+    } catch (dbErr) {
+      console.error('DB error tracking download in GET /api/gallery/[id]/photos/[photoId]/download:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
     // Read and return the file

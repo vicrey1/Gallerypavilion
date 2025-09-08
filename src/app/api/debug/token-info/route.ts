@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 // Safe debug: decode the _vercel_jwt (no signature verification) and return
 // only the claim keys and whether a local user exists that matches an email-like claim.
@@ -25,10 +25,11 @@ export async function GET(request: NextRequest) {
     if (emailCandidate) {
       try {
         const normalized = String(emailCandidate).toLowerCase()
-        const user = await prisma.user.findUnique({ where: { email: normalized } })
+        const user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: normalized } }))
         mappedUser = !!user
-      } catch (e) {
-        // ignore DB errors in debug endpoint
+      } catch (dbErr) {
+        console.error('DB error in debug/token-info user lookup:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
       }
     }
 

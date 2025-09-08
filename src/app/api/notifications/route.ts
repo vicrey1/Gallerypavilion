@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 const createNotificationSchema = z.object({
@@ -31,9 +31,13 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: payload.email }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email } }))
+    } catch (dbErr) {
+      console.error('DB error fetching user in /api/notifications GET:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -52,22 +56,22 @@ export async function GET(request: NextRequest) {
     }
 
     // Get notifications
-    const notifications = await prisma.notification.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: limit,
-      skip: offset
-    })
+    let notifications
+    try {
+      notifications = await withPrismaRetry(() => prisma.notification.findMany({ where, orderBy: { createdAt: 'desc' }, take: limit, skip: offset }))
+    } catch (dbErr) {
+      console.error('DB error fetching notifications in /api/notifications GET:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Get unread count
-    const unreadCount = await prisma.notification.count({
-      where: {
-        userId: user.id,
-        isRead: false
-      }
-    })
+    let unreadCount
+    try {
+      unreadCount = await withPrismaRetry(() => prisma.notification.count({ where: { userId: user.id, isRead: false } }))
+    } catch (dbErr) {
+      console.error('DB error counting unread notifications in /api/notifications GET:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
       notifications,

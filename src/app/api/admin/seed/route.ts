@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,10 +15,8 @@ export async function POST(request: NextRequest) {
 
     console.log('🌱 Starting production database seeding...')
 
-    // Check if admin already exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: 'admin@gallerypavilion.com' }
-    })
+  // Check if admin already exists
+  const existingAdmin = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: 'admin@gallerypavilion.com' } }))
     
     if (existingAdmin) {
       console.log('✅ Admin user already exists')
@@ -37,17 +33,9 @@ export async function POST(request: NextRequest) {
     
     // Create admin user
     console.log('Creating admin user...')
-    const hashedPassword = await bcrypt.hash('admin123', 12)
-    
-    const adminUser = await prisma.user.create({
-      data: {
-        email: 'admin@gallerypavilion.com',
-        name: 'System Administrator',
-        password: hashedPassword,
-        role: 'admin',
-        emailVerified: new Date()
-      }
-    })
+  const hashedPassword = await bcrypt.hash('admin123', 12)
+
+  const adminUser = await withPrismaRetry(() => prisma.user.create({ data: { email: 'admin@gallerypavilion.com', name: 'System Administrator', password: hashedPassword, role: 'admin', emailVerified: new Date() } }))
     
     console.log('✅ Admin user created successfully!')
     
@@ -64,19 +52,8 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('❌ Error seeding production database:', error)
-    
-    return NextResponse.json({ 
-      success: false,
-      error: 'Database seeding failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      troubleshooting: {
-        checkDatabaseUrl: 'Verify DATABASE_URL environment variable is set correctly',
-        checkPermissions: 'Ensure database user has CREATE permissions',
-        checkConnection: 'Test database connectivity'
-      }
-    }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
+
+    return NextResponse.json({ success: false, error: 'Database seeding failed', details: error instanceof Error ? error.message : 'Unknown error', troubleshooting: { checkDatabaseUrl: 'Verify DATABASE_URL environment variable is set correctly', checkPermissions: 'Ensure database user has CREATE permissions', checkConnection: 'Test database connectivity' } }, { status: 500 })
   }
 }
 
@@ -84,28 +61,18 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Check if admin exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: 'admin@gallerypavilion.com' }
-    })
-    
+    const existingAdmin = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: 'admin@gallerypavilion.com' } }))
+
     return NextResponse.json({
       adminExists: !!existingAdmin,
-      admin: existingAdmin ? {
-        id: existingAdmin.id,
-        email: existingAdmin.email,
-        role: existingAdmin.role
-      } : null,
+      admin: existingAdmin
+        ? { id: existingAdmin.id, email: existingAdmin.email, role: existingAdmin.role }
+        : null,
       message: existingAdmin ? 'Admin user exists' : 'Admin user not found',
       seedEndpoint: '/api/admin/seed (POST with ?secret=YOUR_SECRET)'
     })
-    
   } catch (error) {
     console.error('Error checking admin user:', error)
-    return NextResponse.json({ 
-      error: 'Database query failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
+    return NextResponse.json({ error: 'Database query failed', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }
 }

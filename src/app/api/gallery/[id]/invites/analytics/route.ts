@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma, withPrismaRetry } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/jwt';
 
 // Get invite analytics for a gallery
@@ -23,16 +23,13 @@ export async function GET(
     const period = searchParams.get('period') || '30'; // days
 
     // Verify the user owns the gallery
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: id,
-        photographer: {
-          user: {
-            email: payload.email,
-          },
-        },
-      },
-    });
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: id, photographer: { user: { email: payload.email } } } }))
+    } catch (dbErr) {
+      console.error('DB error verifying gallery in GET /api/gallery/[id]/invites/analytics:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!gallery) {
       return NextResponse.json(
@@ -46,24 +43,15 @@ export async function GET(
     startDate.setDate(startDate.getDate() - periodDays);
 
     // Get all invites for the gallery
-    const allInvites = await prisma.invite.findMany({
-      where: {
-        galleryId: id,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Get invites created in the specified period
-    const recentInvites = await prisma.invite.findMany({
-      where: {
-        galleryId: id,
-        createdAt: {
-          gte: startDate,
-        },
-      },
-    });
+    let allInvites
+    let recentInvites
+    try {
+      allInvites = await withPrismaRetry(() => prisma.invite.findMany({ where: { galleryId: id }, orderBy: { createdAt: 'desc' } }))
+      recentInvites = await withPrismaRetry(() => prisma.invite.findMany({ where: { galleryId: id, createdAt: { gte: startDate } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching invites analytics in GET /api/gallery/[id]/invites/analytics:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Calculate analytics
     const totalInvites = allInvites.length;

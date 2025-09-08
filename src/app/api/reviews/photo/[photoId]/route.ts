@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 const reviewSchema = z.object({
@@ -19,23 +19,13 @@ export async function GET(
     const { photoId } = await params
 
     // Get reviews for the photo
-    const reviews = await prisma.photoReview.findMany({
-      where: {
-        photoId
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    let reviews
+    try {
+      reviews = await withPrismaRetry(() => prisma.photoReview.findMany({ where: { photoId }, include: { user: { select: { id: true, name: true, email: true } } }, orderBy: { createdAt: 'desc' } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo reviews in GET /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     // Calculate average rating
     const averageRating = reviews.length > 0 
@@ -78,9 +68,13 @@ export async function POST(
     const validatedData = reviewSchema.parse(body)
 
     // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: payload.email }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email } }))
+    } catch (dbErr) {
+      console.error('DB error fetching user in POST /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -90,9 +84,13 @@ export async function POST(
     }
 
     // Check if photo exists
-    const photo = await prisma.photo.findUnique({
-      where: { id: photoId }
-    })
+    let photo
+    try {
+      photo = await withPrismaRetry(() => prisma.photo.findUnique({ where: { id: photoId } }))
+    } catch (dbErr) {
+      console.error('DB error fetching photo in POST /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!photo) {
       return NextResponse.json(
@@ -102,55 +100,31 @@ export async function POST(
     }
 
     // Check if user has already reviewed this photo
-    const existingReview = await prisma.photoReview.findUnique({
-      where: {
-        userId_photoId: {
-          userId: user.id,
-          photoId
-        }
-      }
-    })
+    let existingReview
+    try {
+      existingReview = await withPrismaRetry(() => prisma.photoReview.findUnique({ where: { userId_photoId: { userId: user.id, photoId } } }))
+    } catch (dbErr) {
+      console.error('DB error checking existing review in POST /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     let review
     if (existingReview) {
       // Update existing review
-      review = await prisma.photoReview.update({
-        where: {
-          id: existingReview.id
-        },
-        data: {
-          rating: validatedData.rating,
-          comment: validatedData.comment
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      })
+      try {
+        review = await withPrismaRetry(() => prisma.photoReview.update({ where: { id: existingReview.id }, data: { rating: validatedData.rating, comment: validatedData.comment }, include: { user: { select: { id: true, name: true, email: true } } } }))
+      } catch (dbErr) {
+        console.error('DB error updating review in POST /api/reviews/photo/[photoId]:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
     } else {
       // Create new review
-      review = await prisma.photoReview.create({
-        data: {
-          rating: validatedData.rating,
-          comment: validatedData.comment,
-          userId: user.id,
-          photoId
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      })
+      try {
+        review = await withPrismaRetry(() => prisma.photoReview.create({ data: { rating: validatedData.rating, comment: validatedData.comment, userId: user.id, photoId }, include: { user: { select: { id: true, name: true, email: true } } } }))
+      } catch (dbErr) {
+        console.error('DB error creating review in POST /api/reviews/photo/[photoId]:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
     }
 
     return NextResponse.json(review, { status: existingReview ? 200 : 201 })
@@ -187,9 +161,13 @@ export async function DELETE(
     }
 
     // Get user
-    const user = await prisma.user.findUnique({
-      where: { email: payload.email }
-    })
+    let user
+    try {
+      user = await withPrismaRetry(() => prisma.user.findUnique({ where: { email: payload.email } }))
+    } catch (dbErr) {
+      console.error('DB error fetching user in DELETE /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -199,14 +177,13 @@ export async function DELETE(
     }
 
     // Find and delete the review
-    const review = await prisma.photoReview.findUnique({
-      where: {
-        userId_photoId: {
-          userId: user.id,
-          photoId
-        }
-      }
-    })
+    let review
+    try {
+      review = await withPrismaRetry(() => prisma.photoReview.findUnique({ where: { userId_photoId: { userId: user.id, photoId } } }))
+    } catch (dbErr) {
+      console.error('DB error fetching review in DELETE /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     if (!review) {
       return NextResponse.json(
@@ -215,11 +192,12 @@ export async function DELETE(
       )
     }
 
-    await prisma.photoReview.delete({
-      where: {
-        id: review.id
-      }
-    })
+    try {
+      await withPrismaRetry(() => prisma.photoReview.delete({ where: { id: review.id } }))
+    } catch (dbErr) {
+      console.error('DB error deleting review in DELETE /api/reviews/photo/[photoId]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({ message: 'Review deleted successfully' })
   } catch (error) {

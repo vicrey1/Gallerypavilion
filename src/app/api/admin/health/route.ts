@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { promises as fs } from 'fs'
 import path from 'path'
 
@@ -15,19 +15,11 @@ export async function GET(_request: NextRequest) {
     // Database health check
     try {
       const dbStart = Date.now()
-      await prisma.$queryRaw`SELECT 1`
+      await withPrismaRetry(() => prisma.$queryRaw`SELECT 1`)
       const dbEnd = Date.now()
-      healthChecks.database = {
-        status: 'healthy',
-        responseTime: dbEnd - dbStart,
-        error: null
-      }
+      healthChecks.database = { status: 'healthy', responseTime: dbEnd - dbStart, error: null }
     } catch (error) {
-      healthChecks.database = {
-        status: 'unhealthy',
-        responseTime: 0,
-        error: error instanceof Error ? error.message : 'Database connection failed'
-      }
+      healthChecks.database = { status: 'unhealthy', responseTime: 0, error: error instanceof Error ? error.message : 'Database connection failed' }
     }
 
     // Storage health check (serverless-friendly)

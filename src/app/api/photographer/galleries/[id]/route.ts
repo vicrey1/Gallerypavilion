@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/jwt'
-import { prisma } from '@/lib/prisma'
+import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
 const updateGallerySchema = z.object({
@@ -31,12 +31,9 @@ export async function GET(
       )
     }
 
-    const gallery = await prisma.gallery.findFirst({
-      where: {
-        id: id,
-  photographerId: payload.photographerId,
-      },
-      include: {
+    let gallery
+    try {
+      gallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: id, photographerId: payload.photographerId }, include: {
         photographer: {
           include: {
             user: {
@@ -96,10 +93,13 @@ export async function GET(
             },
           },
         },
-      },
-    })
+      } }))
+      } catch (dbErr) {
+        console.error('DB error fetching gallery in GET /api/photographer/galleries/[id]:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
 
-    if (!gallery) {
+      if (!gallery) {
       return NextResponse.json(
         { error: 'Gallery not found' },
         { status: 404 }
@@ -186,22 +186,27 @@ export async function PUT(
     })
     console.log('DELETE Gallery - Gallery ID:', id)
     
-    const existingGallery = await prisma.gallery.findFirst({
-      where: {
-  id: id,
-  photographerId: payload.photographerId,
-      },
-    })
+    let existingGallery
+    try {
+      existingGallery = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: id, photographerId: payload.photographerId } }))
+    } catch (dbErr) {
+      console.error('DB error checking existing gallery in /api/photographer/galleries/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
     
     console.log('DELETE Gallery - Found gallery:', existingGallery)
     
     // Check if gallery exists at all
-    const anyGallery = await prisma.gallery.findUnique({
-      where: { id: id }
-    })
+    let anyGallery
+    try {
+      anyGallery = await withPrismaRetry(() => prisma.gallery.findUnique({ where: { id: id } }))
+    } catch (dbErr) {
+      console.error('DB error checking any gallery in /api/photographer/galleries/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
     console.log('DELETE Gallery - Any gallery with this ID:', anyGallery)
 
-    if (!existingGallery) {
+  if (!existingGallery) {
       return NextResponse.json(
         { error: 'Gallery not found' },
         { status: 404 }
@@ -231,32 +236,27 @@ export async function PUT(
       updateData.expiresAt = validatedData.expiresAt ? new Date(validatedData.expiresAt) : null
     }
 
-    const gallery = await prisma.gallery.update({
-      where: { id: id },
-      data: updateData,
-      include: {
-        _count: {
-          select: {
-            photos: true,
-            invites: true,
-          },
-        },
-      },
-    })
+    let updatedGallery
+    try {
+      updatedGallery = await withPrismaRetry(() => prisma.gallery.update({ where: { id: id }, data: updateData, include: { _count: { select: { photos: true, invites: true } } } }))
+    } catch (dbErr) {
+      console.error('DB error updating gallery in /api/photographer/galleries/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json({
-      id: gallery.id,
-      title: gallery.title,
-      description: gallery.description,
-      status: gallery.status,
-      createdAt: gallery.createdAt,
-      expiresAt: gallery.expiresAt,
-      isPublic: gallery.isPublic,
-      allowDownloads: gallery.allowDownloads,
-      requirePassword: gallery.requirePassword,
-      totalPhotos: gallery._count.photos,
-      views: gallery.views,
-      invites: gallery._count.invites,
+      id: updatedGallery.id,
+      title: updatedGallery.title,
+      description: updatedGallery.description,
+      status: updatedGallery.status,
+      createdAt: updatedGallery.createdAt,
+      expiresAt: updatedGallery.expiresAt,
+      isPublic: updatedGallery.isPublic,
+      allowDownloads: updatedGallery.allowDownloads,
+      requirePassword: updatedGallery.requirePassword,
+      totalPhotos: updatedGallery._count.photos,
+      views: updatedGallery.views,
+      invites: updatedGallery._count.invites,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -290,20 +290,25 @@ export async function DELETE(
     }
 
     // Check if gallery exists and belongs to photographer
-    const existingGallery = await prisma.gallery.findFirst({
-      where: {
-        id: id,
-  photographerId: payload.photographerId,
-      },
-    })
+    let existingGalleryDelete
+    try {
+      existingGalleryDelete = await withPrismaRetry(() => prisma.gallery.findFirst({ where: { id: id, photographerId: payload.photographerId } }))
+    } catch (dbErr) {
+      console.error('DB error checking existing gallery before delete in /api/photographer/galleries/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
-    if (!existingGallery) {
+    if (!existingGalleryDelete) {
       // Check if gallery exists at all to provide better error message
-      const anyGallery = await prisma.gallery.findUnique({
-        where: { id: id }
-      })
+      let anyGalleryDelete
+      try {
+        anyGalleryDelete = await withPrismaRetry(() => prisma.gallery.findUnique({ where: { id: id } }))
+      } catch (dbErr) {
+        console.error('DB error checking any gallery before delete in /api/photographer/galleries/[id]:', dbErr)
+        return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      }
       
-      if (!anyGallery) {
+      if (!anyGalleryDelete) {
         return NextResponse.json(
           { error: 'Gallery not found' },
           { status: 404 }
@@ -317,9 +322,12 @@ export async function DELETE(
     }
 
     // Delete gallery and all related data (photos, views, favorites, etc.)
-    await prisma.gallery.delete({
-      where: { id: id },
-    })
+    try {
+      await withPrismaRetry(() => prisma.gallery.delete({ where: { id: id } }))
+    } catch (dbErr) {
+      console.error('DB error deleting gallery in /api/photographer/galleries/[id]:', dbErr)
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    }
 
     return NextResponse.json(
       { message: 'Gallery deleted successfully' },
