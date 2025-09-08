@@ -81,7 +81,17 @@ export async function POST(request: NextRequest) {
 
     const token = generateToken(tokenPayload)
 
-    const setCookie = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+  const maxAge = 60 * 60 * 24 * 7
+  const parts: string[] = []
+  parts.push(`auth-token=${token}`)
+  parts.push('HttpOnly')
+  parts.push('Path=/')
+  parts.push(`Max-Age=${maxAge}`)
+  parts.push('SameSite=None')
+  if (process.env.NODE_ENV === 'production') parts.push('Secure')
+  if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+
+  const setCookie = parts.join('; ')
 
     return NextResponse.json({
       success: true,

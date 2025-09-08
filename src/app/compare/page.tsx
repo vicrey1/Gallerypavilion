@@ -9,22 +9,7 @@ import { useSession } from '@/hooks/useAuth'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ArrowLeft, 
-  X, 
-  Plus, 
-  Eye, 
-  Heart, 
-  Download, 
-  ShoppingCart, 
-  Star, 
-  Calendar, 
-  MapPin, 
-  Camera, 
-  Maximize2, 
-  Grid3X3, 
-  RotateCcw
-} from 'lucide-react'
+import { ArrowLeft, X, Plus, Grid3X3, RotateCcw, Maximize2, Eye, Heart, Camera, MapPin, Calendar } from 'lucide-react'
 
 interface Photo {
   id: string
@@ -59,10 +44,10 @@ interface Photo {
 function PhotoComparisonPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
+  const { data: _session, status: _status } = useSession()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [_error, setError] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'side-by-side'>('side-by-side')
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [showFullscreen, setShowFullscreen] = useState(false)

@@ -62,6 +62,7 @@ export async function POST(
 
     if (requestType === 'generate') {
       // Generate certificate data
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'http://localhost:3000'
       const certificateData = {
         certificateId,
         photoId: photo.id,
@@ -78,10 +79,10 @@ export async function POST(
         provenance: photo.provenance,
         photographerEmail: photo.gallery.photographer.user.email,
         galleryTitle: photo.gallery.title,
-    issuedAt: new Date(),
-  clientEmail: clientEmail || payload?.email,
-  clientName: clientName || dbPayloadUser?.name || payload?.email,
-  verificationUrl: `${process.env.NEXTAUTH_URL}/api/certificate/${photoId}/verify?id=${certificateId}`
+        issuedAt: new Date(),
+        clientEmail: clientEmail || payload?.email,
+        clientName: clientName || dbPayloadUser?.name || payload?.email,
+        verificationUrl: `${baseUrl}/api/certificate/${photoId}/verify?id=${certificateId}`,
       }
 
       return NextResponse.json({

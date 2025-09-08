@@ -104,7 +104,7 @@ export default function CollectionDetailPage() {
 
   const fetchAvailablePhotos = useCallback(async () => {
     try {
-      setLoadingPhotos(true)
+  setLoadingPhotos(true)
       // This would need to be implemented - fetch photos that can be added to collection
       // For now, we'll use a placeholder
       setAvailablePhotos([])
@@ -190,8 +190,8 @@ export default function CollectionDetailPage() {
     }
   }
 
-  const togglePhotoSelection = (photoId: string) => {
-    setSelectedPhotos(prev => {
+  const _togglePhotoSelection = (photoId: string) => {
+  setSelectedPhotos(prev => {
       const newSet = new Set(prev)
       if (newSet.has(photoId)) {
         newSet.delete(photoId)

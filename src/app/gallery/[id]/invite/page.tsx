@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Heart, Download, Eye, Search, Grid, List, X, Share, Image as ImageIcon, Lock, Calendar, DollarSign, ShoppingCart, Tag, FileImage } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'

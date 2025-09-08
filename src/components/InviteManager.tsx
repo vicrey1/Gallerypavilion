@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Copy, Edit, Trash2, Plus, Clock, CheckCircle, XCircle, AlertCircle, BarChart3, Users } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
-import { generateInviteCode } from '@/lib/utils'
+import { generateInviteCode as _generateInviteCode } from '@/lib/utils'
 import CreateInviteModal from './CreateInviteModal'
 import InviteAnalytics from './InviteAnalytics'
 

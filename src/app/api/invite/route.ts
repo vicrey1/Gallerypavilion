@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Send invitation email using the proper template
-  const inviteUrl = `${process.env.NEXTAUTH_URL}/invite/${inviteCode}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'http://localhost:3000'
+  const inviteUrl = `${baseUrl}/invite/${inviteCode}`;
     
     const emailSent = await sendInviteEmail({
       recipientEmail: data.clientEmail,

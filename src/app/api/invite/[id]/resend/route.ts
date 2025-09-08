@@ -65,8 +65,8 @@ export async function POST(
     }
 
     // Construct the invite URL
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://gallerypavilion.com';
-    const inviteUrl = `${baseUrl}/client/${invite.inviteCode}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'https://gallerypavilion.com';
+  const inviteUrl = `${baseUrl}/client/${invite.inviteCode}`;
 
     // Send the email
     try {

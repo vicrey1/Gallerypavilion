@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate JWT token
+  // Generate JWT token
     const tokenPayload = {
       userId: user.id,
       email: user.email,
@@ -103,13 +103,40 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Set HTTP-only cookie
+    // Debugging: surface non-sensitive info to help diagnose production 401s
+    try {
+      console.debug('[auth/login] successful login for email:', user.email, 'id:', user.id, 'role:', user.role)
+    } catch (e) {
+      /* ignore logging errors */
+    }
+
+    // Set HTTP-only cookie (explicit path) so browsers include it for subsequent requests
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 60 * 60 * 24 * 7 // 7 days
     })
+
+    // Also set a 'Set-Cookie' header fallback string. Use SameSite=None for cross-site use and allow domain override via COOKIE_DOMAIN.
+    try {
+      const maxAge = 60 * 60 * 24 * 7
+      const parts: string[] = []
+      parts.push(`auth-token=${token}`)
+      parts.push('HttpOnly')
+      parts.push('Path=/')
+      parts.push(`Max-Age=${maxAge}`)
+      // Allow cross-site cookie (needed if your app uses different subdomains or CDNs)
+      parts.push('SameSite=None')
+      if (process.env.NODE_ENV === 'production') parts.push('Secure')
+      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
+
+      const setCookie = parts.join('; ')
+      response.headers.set('Set-Cookie', setCookie)
+    } catch (e) {
+      /* ignore header set errors */
+    }
 
     return response
   } catch (error) {

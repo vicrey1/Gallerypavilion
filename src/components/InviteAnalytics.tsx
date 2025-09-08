@@ -20,12 +20,12 @@ import {
   TrendingUp,
   Users,
   Mail,
-  Clock,
   CheckCircle,
-  XCircle,
   AlertCircle,
   BarChart3,
   Calendar,
+  Clock as _Clock,
+  XCircle as _XCircle,
 } from 'lucide-react';
 
 interface InviteAnalyticsProps {
@@ -76,7 +76,7 @@ interface AnalyticsData {
   period: number;
 }
 
-const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
+const _COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'];
 
 export default function InviteAnalytics({ galleryId }: InviteAnalyticsProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);

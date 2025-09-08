@@ -71,8 +71,11 @@ export async function POST(
       },
     })
 
-    // TODO: Send email notification to the client with the invite link
-    // For now, we'll just return the invite details
+  // Resolve base URL for invite links (avoid NextAuth env var)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'http://localhost:3000'
+
+  // TODO: Send email notification to the client with the invite link
+  // For now, we'll just return the invite details
     
     // Notify photographer that invitation was created
     try {
@@ -107,7 +110,7 @@ export async function POST(
         canRequestPurchase: invite.canRequestPurchase,
       },
       status: invite.status,
-      inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
+  inviteUrl: `${baseUrl}/invite?code=${invite.inviteCode}`,
   }, { status: 201 })
 
   } catch (error) {
@@ -180,6 +183,7 @@ export async function GET(
       },
       orderBy: { createdAt: 'desc' },
     })
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || process.env.APP_URL || 'http://localhost:3000'
 
     return NextResponse.json(
       invites.map(invite => ({
@@ -199,8 +203,8 @@ export async function GET(
           canRequestPurchase: invite.canRequestPurchase,
         },
         status: invite.status,
-        createdAt: invite.createdAt,
-        inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
+  createdAt: invite.createdAt,
+  inviteUrl: `${baseUrl}/invite?code=${invite.inviteCode}`,
       }))
     )
 

@@ -109,13 +109,17 @@ export async function POST(
       },
     })
 
+    // Resolve base URL for invite links with sensible fallbacks
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000'
+
     // Send email notification to the client
     const emailSent = await sendInviteEmail({
       recipientEmail: validatedData.email,
       recipientName: validatedData.email.split('@')[0], // Use email prefix as name
       galleryTitle: gallery.title,
       photographerName: gallery.photographer?.user?.name || gallery.photographer?.businessName || 'Photographer',
-      inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
+      inviteUrl: `${baseUrl}/invite?code=${invite.inviteCode}`,
       expiresAt: invite.expiresAt || undefined,
       permissions: {
         canView: invite.canView,
@@ -159,7 +163,7 @@ export async function POST(
         canRequestPurchase: invite.canRequestPurchase,
       },
       status: invite.status,
-      inviteUrl: `${process.env.NEXTAUTH_URL}/invite?code=${invite.inviteCode}`,
+  inviteUrl: `${baseUrl}/invite?code=${invite.inviteCode}`,
       emailSent,
       message: emailSent 
         ? 'Invite created and email sent successfully!' 
