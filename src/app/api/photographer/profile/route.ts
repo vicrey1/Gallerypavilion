@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -26,7 +26,7 @@ const updateProfileSchema = z.object({
 // GET /api/photographer/profile - Get photographer profile
 export async function GET(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 // PUT /api/photographer/profile - Update photographer profile
 export async function PUT(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.photographerId) {
       return NextResponse.json(

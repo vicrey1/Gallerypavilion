@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -52,8 +52,8 @@ export async function POST(
   { params }: { params: Promise<{ photoId: string }> }
 ) {
   try {
-    const { photoId } = await params
-    const payload = getUserFromRequest(request)
+  const { photoId } = await params
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.email) {
       return NextResponse.json(
@@ -150,8 +150,8 @@ export async function DELETE(
   { params }: { params: Promise<{ photoId: string }> }
 ) {
   try {
-    const { photoId } = await params
-    const payload = getUserFromRequest(request)
+  const { photoId } = await params
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.email) {
       return NextResponse.json(

@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -16,7 +16,7 @@ const createNotificationSchema = z.object({
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.email) {
       return NextResponse.json(
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 // POST /api/notifications - Create a new notification (admin/system use)
 export async function POST(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.email) {
       return NextResponse.json(
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 // PATCH /api/notifications - Mark notifications as read
 export async function PATCH(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
     if (!payload?.email) {
       return NextResponse.json(

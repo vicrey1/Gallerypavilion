@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withPrismaRetry } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
 // Resend invite email
@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
   const { id } = await params;
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
   if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },

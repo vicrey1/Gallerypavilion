@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import crypto from 'crypto'
@@ -18,7 +18,7 @@ export async function POST(
 ) {
   try {
   const { photoId } = await params
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
   // Resolve user name from DB if JWT doesn't include name
   const dbPayloadUser = payload ? await prisma.user.findUnique({ where: { id: payload.userId } }) : null
   const body = await request.json()

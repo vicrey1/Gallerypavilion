@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -13,7 +13,7 @@ export async function GET(
 ) {
   try {
   const { collectionId } = await params
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -84,7 +84,7 @@ export async function PUT(
 ) {
   const { collectionId } = await params
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -149,7 +149,7 @@ export async function DELETE(
 ) {
   const { collectionId } = await params
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

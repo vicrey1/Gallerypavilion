@@ -1,13 +1,13 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 // GET /api/collections - Get user's collections
 export async function GET(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 // POST /api/collections - Create a new collection
 export async function POST(request: NextRequest) {
   try {
-    const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const wantDebug = url.searchParams.get('debug') === 'true'
   const debugAllowed = wantDebug && process.env.STATS_DEBUG === 'true'
 
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
   // Check if user is authenticated and has admin role
   if (!payload || payload.role !== 'admin') {

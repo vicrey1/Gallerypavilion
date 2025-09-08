@@ -1,12 +1,12 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
   if (!payload || payload.role !== 'admin') {
       return NextResponse.json(
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
 
   if (!payload || payload.role !== 'admin') {
       return NextResponse.json(

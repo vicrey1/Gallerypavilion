@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { InviteType, InviteStatus } from '@prisma/client';
 
 // Get all invites for a gallery
@@ -11,8 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const payload = getUserFromRequest(request)
+  const { id } = await params;
+  const payload = await getUserFromRequestAsync(request)
     if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },

@@ -3,7 +3,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma, withPrismaRetry } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { sendInviteEmail } from '@/lib/email';
 
 const updateInviteSchema = z.object({
@@ -26,7 +26,7 @@ export async function GET(
 ) {
   try {
   const { id } = await params;
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
   if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -85,7 +85,7 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-  const sessionPayload = getUserFromRequest(request)
+  const sessionPayload = await getUserFromRequestAsync(request)
   if (!sessionPayload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -167,7 +167,7 @@ export async function DELETE(
 ) {
   const { id } = await params;
   try {
-  const sessionPayload = getUserFromRequest(request)
+  const sessionPayload = await getUserFromRequestAsync(request)
   if (!sessionPayload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 
 /**
  * Return a NextAuth-compatible session object mapped from our JWT payload.
@@ -7,7 +7,7 @@ import { getUserFromRequest } from '@/lib/jwt'
  */
 export async function GET(_request: NextRequest) {
   try {
-  const payload = getUserFromRequest(_request)
+  const payload = await getUserFromRequestAsync(_request)
 
     if (!payload) {
       return NextResponse.json(null, {

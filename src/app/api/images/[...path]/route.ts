@@ -1,14 +1,14 @@
 export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { generateSignedUrl, verifyImageAccessToken, logSecurityEvent, checkRateLimit } from '@/lib/security'
 import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
   const { path: _path } = await params
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
     const url = new URL(request.url)
     const photoId = url.searchParams.get('photoId')
     const token = url.searchParams.get('token')

@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withPrismaRetry } from '@/lib/prisma';
-import { getUserFromRequest } from '@/lib/jwt'
+import { getUserFromRequestAsync } from '@/lib/jwt'
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { sendInviteEmail } from '@/lib/email';
@@ -23,7 +23,7 @@ const createInviteSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
   if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 // Get invites for a gallery
 export async function GET(request: NextRequest) {
   try {
-  const payload = getUserFromRequest(request)
+  const payload = await getUserFromRequestAsync(request)
   if (!payload?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
