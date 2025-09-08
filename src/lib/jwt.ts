@@ -205,7 +205,12 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
     if (nextAuthCookie) {
       const sessionToken = nextAuthCookie.value
       try {
-        const session = await withPrismaRetry(() => prisma.session.findUnique({ where: { sessionToken }, include: { user: true } }))
+        const session = await withPrismaRetry(() =>
+          prisma.session.findUnique({
+            where: { sessionToken },
+            include: { user: { include: { photographer: true, client: true } } }
+          })
+        )
         if (session && session.user) {
           const u = session.user
           const payload: JWTPayload = {
