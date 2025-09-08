@@ -81,11 +81,9 @@ export function getTokenFromRequest(request: NextRequest): string | null {
   }
 
   const tokenCookieVercel = request.cookies.get('_vercel_jwt')
-  if (tokenCookieVercel) {
-    // WARNING: `_vercel_jwt` may be signed by Vercel. We attempt to verify it as a JWT here.
-    // If you rely on Vercel's JWT feature, ensure the signing secret is compatible with `JWT_SECRET`.
-    return tokenCookieVercel.value
-  }
+  // Do NOT return `_vercel_jwt` here — prefer our own `auth-token` cookie.
+  // `_vercel_jwt` may be signed by Vercel and won't verify with our JWT_SECRET.
+  // The async helper `getUserFromRequestAsync` will attempt to map `_vercel_jwt` safely if needed.
 
   // Fallback: some runtime environments may not populate request.cookies as expected.
   // As a last resort, parse the Cookie header manually for `auth-token` or `_vercel_jwt`.
@@ -99,9 +97,7 @@ export function getTokenFromRequest(request: NextRequest): string | null {
           // Do not log token contents; return value only
           return c.substring('auth-token='.length)
         }
-        if (c.startsWith('_vercel_jwt=')) {
-          return c.substring('_vercel_jwt='.length)
-        }
+        // If only _vercel_jwt is present, we don't return it here — let async fallback map it.
       }
     }
   } catch (e) {

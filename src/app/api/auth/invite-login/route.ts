@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       parts.push('HttpOnly')
       parts.push('Path=/')
       parts.push(`Max-Age=${maxAge}`)
-      parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+      parts.push('SameSite=Lax')
       if (isProd) parts.push('Secure')
       if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
       response.headers.set('Set-Cookie', parts.join('; '))

@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      sameSite: 'lax',
       path: '/',
       maxAge
     })
@@ -108,13 +108,13 @@ export async function POST(request: NextRequest) {
     /* ignore */
   }
 
-  try {
+    try {
     const parts: string[] = []
     parts.push(`auth-token=${token}`)
     parts.push('HttpOnly')
     parts.push('Path=/')
     parts.push(`Max-Age=${maxAge}`)
-    parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+    parts.push('SameSite=Lax')
     if (isProd) parts.push('Secure')
     if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
     response.headers.set('Set-Cookie', parts.join('; '))

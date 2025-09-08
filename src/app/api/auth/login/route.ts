@@ -128,8 +128,8 @@ export async function POST(request: NextRequest) {
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: isProd,
-      // Use 'none' in production so cross-site requests (if any) work; use 'lax' locally for convenience.
-      sameSite: isProd ? 'none' : 'lax',
+      // Prefer SameSite=Lax in production to avoid Vercel's _vercel_jwt interception and still allow navigation-based auth.
+      sameSite: 'lax',
       path: '/',
       maxAge
     })
@@ -141,7 +141,8 @@ export async function POST(request: NextRequest) {
       parts.push('HttpOnly')
       parts.push('Path=/')
       parts.push(`Max-Age=${maxAge}`)
-      parts.push(isProd ? 'SameSite=None' : 'SameSite=Lax')
+  // Use SameSite=Lax to prefer our auth-token cookie during navigation.
+  parts.push('SameSite=Lax')
       if (isProd) parts.push('Secure')
       if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
 

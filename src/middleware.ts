@@ -17,9 +17,10 @@ export function middleware(request: NextRequest) {
       .map(c => c.split('=')[0].trim())
       .filter(Boolean)
     const hasAuthHeader = !!authHeader && authHeader.startsWith('Bearer ')
-    const hasAuthCookie = cookieNames.includes('auth-token') || cookieNames.includes('_vercel_jwt')
-    hasToken = hasAuthHeader || hasAuthCookie
-    console.debug('[middleware] hasAuthHeader:', hasAuthHeader, 'hasAuthCookie:', hasAuthCookie, 'cookieNames:', cookieNames)
+  // Prefer our own auth cookie. `_vercel_jwt` may be present but is not authoritative here.
+  const hasAuthCookie = cookieNames.includes('auth-token')
+  hasToken = hasAuthHeader || hasAuthCookie
+  console.debug('[middleware] hasAuthHeader:', hasAuthHeader, 'hasAuthCookie:', hasAuthCookie, 'cookieNames:', cookieNames)
   } catch (e) {
     console.debug('[middleware] token presence check failed')
   }

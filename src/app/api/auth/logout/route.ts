@@ -37,7 +37,7 @@ export async function POST(_request: NextRequest) {
     // Also set header fallback
     try {
       const isProd = process.env.NODE_ENV === 'production'
-      const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', isProd ? 'SameSite=None' : 'SameSite=Lax']
+  const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', 'SameSite=Lax']
       if (isProd) parts.push('Secure')
       if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
       response.headers.set('Set-Cookie', parts.join('; '))
