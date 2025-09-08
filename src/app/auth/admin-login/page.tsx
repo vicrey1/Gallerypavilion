@@ -20,7 +20,7 @@ export default function AdminLogin() {
     setError('')
 
     try {
-      await login(email, password)
+  await login(email, password, 'admin')
       router.push('/admin')
     } catch (err) {
       console.error('Login error:', err)
