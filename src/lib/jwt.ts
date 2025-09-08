@@ -121,48 +121,55 @@ export function getUserFromRequest(request: NextRequest): JWTPayload | null {
 // Async helper: when verification fails (for example when Vercel injects `_vercel_jwt`),
 // attempt to decode the token and map it to a local user record via Prisma.
 export async function getUserFromRequestAsync(request: NextRequest): Promise<JWTPayload | null> {
-  const token = getTokenFromRequest(request)
-  if (!token) return null
+  // Try to get an auth token (our auth-token or Bearer header)
+  let token = getTokenFromRequest(request)
 
-  const verified = verifyToken(token)
-  if (verified) return verified
-
-  try {
+  // If we have a token, try to verify it first
+  if (token) {
+    const verified = verifyToken(token)
+    if (verified) return verified
+    // If verification failed, fall through to attempt mapping via decoded token
+  } else {
+    // No auth-token; attempt to read Vercel's injected cookie
     const vercelCookie = request.cookies.get('_vercel_jwt')
-    if (vercelCookie) {
-      const decoded = jwt.decode(token) as Record<string, unknown> | null
-      if (decoded) {
-        const emailCandidate = (decoded['email'] || decoded['email_address'] || decoded['sub'] || decoded['userId']) as string | undefined
-        if (emailCandidate) {
-          const normalizedEmail = String(emailCandidate).toLowerCase()
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-            include: { photographer: true, client: true }
-          })
-          if (user) {
-            const payload: JWTPayload = {
-              userId: user.id,
-              email: user.email,
-              role: user.role as 'photographer' | 'client' | 'admin',
-              name: user.name || undefined,
-              photographerId: user.photographer?.id || undefined,
-              clientId: user.client?.id || undefined,
-              permissions: {
-                canView: true,
-                canFavorite: true,
-                canComment: true,
-                canDownload: user.role === 'photographer' || user.role === 'admin',
-                canRequestPurchase: true
-              }
+    if (!vercelCookie) return null
+    token = vercelCookie.value
+  }
+
+  // At this point we have a token (either original or _vercel_jwt). Attempt to decode and map to local user.
+  try {
+    const decoded = jwt.decode(token) as Record<string, unknown> | null
+    if (decoded) {
+      const emailCandidate = (decoded['email'] || decoded['email_address'] || decoded['sub'] || decoded['userId']) as string | undefined
+      if (emailCandidate) {
+        const normalizedEmail = String(emailCandidate).toLowerCase()
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+          include: { photographer: true, client: true }
+        })
+        if (user) {
+          const payload: JWTPayload = {
+            userId: user.id,
+            email: user.email,
+            role: user.role as 'photographer' | 'client' | 'admin',
+            name: user.name || undefined,
+            photographerId: user.photographer?.id || undefined,
+            clientId: user.client?.id || undefined,
+            permissions: {
+              canView: true,
+              canFavorite: true,
+              canComment: true,
+              canDownload: user.role === 'photographer' || user.role === 'admin',
+              canRequestPurchase: true
             }
-            console.debug('[jwt] Mapped _vercel_jwt to local user:', { email: normalizedEmail, id: user.id })
-            return payload
           }
+          console.debug('[jwt] Mapped token to local user:', { email: normalizedEmail, id: user.id })
+          return payload
         }
       }
     }
   } catch (e) {
-    console.debug('[jwt] fallback mapping from _vercel_jwt failed', e)
+    console.debug('[jwt] fallback mapping from decoded token failed', e)
   }
 
   return null
