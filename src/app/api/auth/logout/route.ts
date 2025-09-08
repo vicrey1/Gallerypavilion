@@ -20,15 +20,14 @@ export async function POST(_request: NextRequest) {
 
     // Clear the auth token cookie (explicit path) and set immediate expiry
     try {
-      const isProd = process.env.NODE_ENV === 'production'
-      const cookieOptions: CookieOptions = {
+  const cookieOptions: CookieOptions = {
         httpOnly: true,
-        secure: isProd,
-        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
         path: '/',
         maxAge: 0 // Expire immediately
       }
-      cookieOptions.domain = process.env.COOKIE_DOMAIN || (isProd ? '.gallerypavilion.com' : undefined)
+      if (process.env.COOKIE_DOMAIN) cookieOptions.domain = process.env.COOKIE_DOMAIN
       response.cookies.set('auth-token', '', cookieOptions)
     } catch (e) {
       /* ignore cookie API errors */
@@ -36,10 +35,9 @@ export async function POST(_request: NextRequest) {
 
     // Also set header fallback
     try {
-      const isProd = process.env.NODE_ENV === 'production'
-  const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0', 'SameSite=Lax']
-  if (isProd) parts.push('Secure')
-  parts.push(`Domain=${process.env.COOKIE_DOMAIN || '.gallerypavilion.com'}`)
+  const parts = ['auth-token=','HttpOnly','Path=/','Max-Age=0','SameSite=Lax']
+      if (process.env.NODE_ENV === 'production') parts.push('Secure')
+      if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
       response.headers.set('Set-Cookie', parts.join('; '))
     } catch (e) {
       /* ignore */

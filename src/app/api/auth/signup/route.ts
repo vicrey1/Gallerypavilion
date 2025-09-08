@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       sameSite: 'lax',
       path: '/',
       maxAge,
-      domain: isProd ? (process.env.COOKIE_DOMAIN || '.gallerypavilion.com') : undefined
+  domain: process.env.COOKIE_DOMAIN || undefined
     })
   } catch (e) {
     /* ignore */
@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
     parts.push('Path=/')
     parts.push(`Max-Age=${maxAge}`)
     parts.push('SameSite=Lax')
-    if (isProd) parts.push('Secure')
-    parts.push(`Domain=${process.env.COOKIE_DOMAIN || '.gallerypavilion.com'}`)
+  if (isProd) parts.push('Secure')
+  if (process.env.COOKIE_DOMAIN) parts.push(`Domain=${process.env.COOKIE_DOMAIN}`)
     response.headers.set('Set-Cookie', parts.join('; '))
   } catch (e) {
     /* ignore */
