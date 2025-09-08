@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
       console.debug('[api/auth/me] header debug failed')
     }
   const user = await getUserFromRequestAsync(request)
+    // Allow optional debug details when explicitly enabled via env var.
+    const url = new URL(request.url)
+    const wantDebug = url.searchParams.get('debug') === 'true'
+    const debugAllowed = wantDebug && process.env.AUTH_DEBUG === 'true'
 
     if (!user) {
       return NextResponse.json(
@@ -30,7 +34,10 @@ export async function GET(request: NextRequest) {
       dbUser = await withPrismaRetry(() => prisma.user.findUnique({ where: { id: user.userId }, include: { photographer: true, client: true } }))
     } catch (dbErr) {
       console.error('DB error in /api/auth/me:', dbErr)
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      const msg = dbErr && dbErr instanceof Error ? dbErr.message : String(dbErr)
+      const body: any = { error: 'Service temporarily unavailable' }
+      if (debugAllowed) body._debug = { dbError: msg }
+      return NextResponse.json(body, { status: 503 })
     }
 
     if (!dbUser) {
