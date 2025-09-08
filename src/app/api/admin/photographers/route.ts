@@ -8,6 +8,10 @@ import { PhotographerStatus } from '@prisma/client'
 export async function GET(request: NextRequest) {
   try {
   const payload = await getUserFromRequestAsync(request)
+  // Allow optional debug details when explicitly enabled via env var.
+  const url = new URL(request.url)
+  const wantDebug = url.searchParams.get('debug') === 'true'
+  const debugAllowed = wantDebug && process.env.ADMIN_DEBUG === 'true'
 
   if (!payload || payload.role !== 'admin') {
       return NextResponse.json(
@@ -16,7 +20,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { searchParams } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const status = searchParams.get('status')
@@ -44,6 +48,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         photographers,
+  ...(debugAllowed ? { _debug: { payload: { userId: payload?.userId, email: payload?.email, role: payload?.role, photographerId: payload?.photographerId } } } : {}),
         pagination: {
           page,
           limit,
