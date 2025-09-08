@@ -6,6 +6,11 @@ import { prisma, withPrismaRetry } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
+  // Allow optional debug details when explicitly enabled via env var.
+  const url = new URL(request.url)
+  const wantDebug = url.searchParams.get('debug') === 'true'
+  const debugAllowed = wantDebug && process.env.STATS_DEBUG === 'true'
+
   const payload = getUserFromRequest(request)
 
   // Check if user is authenticated and has admin role
@@ -53,8 +58,13 @@ export async function GET(request: NextRequest) {
 
       stats = result
     } catch (dbErr) {
+      const msg = dbErr && dbErr instanceof Error ? dbErr.message : String(dbErr)
       console.error('Error fetching admin stats (DB):', dbErr)
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+      const body: any = { error: 'Service temporarily unavailable' }
+      if (debugAllowed) {
+        body._debug = { dbError: msg }
+      }
+      return NextResponse.json(body, { status: 503 })
     }
 
   return NextResponse.json(stats)
