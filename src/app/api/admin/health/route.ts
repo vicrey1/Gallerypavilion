@@ -5,6 +5,11 @@ import path from 'path'
 
 export async function GET(_request: NextRequest) {
   try {
+  // Only allow debug details when the environment explicitly enables it.
+  const url = new URL(_request.url)
+  const wantDebug = url.searchParams.get('debug') === 'true'
+  const debugAllowed = wantDebug && process.env.HEALTH_DEBUG === 'true'
+
     const healthChecks = {
       database: { status: 'unknown', responseTime: 0, error: null as string | null },
       storage: { status: 'unknown', freeSpace: 0, error: null as string | null },
@@ -19,7 +24,13 @@ export async function GET(_request: NextRequest) {
       const dbEnd = Date.now()
       healthChecks.database = { status: 'healthy', responseTime: dbEnd - dbStart, error: null }
     } catch (error) {
-      healthChecks.database = { status: 'unhealthy', responseTime: 0, error: error instanceof Error ? error.message : 'Database connection failed' }
+      const msg = error instanceof Error ? error.message : 'Database connection failed'
+      healthChecks.database = { status: 'unhealthy', responseTime: 0, error: debugAllowed ? msg : 'Database connection failed' }
+      // If debug is allowed, include sanitized details in the top-level response to help troubleshooting.
+      if (debugAllowed) {
+        // Attach a non-sensitive debug field. Avoid including connection strings or secrets.
+        ;(healthChecks as any)._debug = { dbError: msg }
+      }
     }
 
     // Storage health check (serverless-friendly)
