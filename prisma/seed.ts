@@ -78,9 +78,11 @@ async function main() {
     create: {
       userId: testUser.id,
       name: 'Test Photographer',
-      businessName: 'Test Photography Studio',
       bio: 'Professional photographer specializing in portraits and events',
-      status: 'ACTIVE'
+      email: 'photographer@test.com',
+      website: 'http://test-photography.com',
+      instagram: '@testphotography',
+      status: "ACTIVE"
     }
   })
 
@@ -94,62 +96,34 @@ async function main() {
     }
   })
 
-    // Create test photos
-  const testPhotos = [
-    {
+    // Create test gallery
+  const testGallery = await prisma.gallery.create({
+    data: {
+      title: 'Wedding Portfolio',
+      description: 'Beautiful wedding photography collection',
+      photographerId: testPhotographer.id,
+      isPublic: false
+    }
+  });
+
+  // Create test photo
+  const testPhoto = await prisma.photo.create({
+    data: {
       title: 'Ceremony Moment',
       description: 'Beautiful ceremony capture',
       url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop',
       thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop',
       photographerId: testPhotographer.id,
       galleryId: testGallery.id,
-      price: 25.00,
-      currency: 'USD',
+      size: 2048000,
       width: 1920,
       height: 1280,
-      size: 2048000,
       format: 'jpg',
-      isPublic: false,
-      isFeatured: false
-    },
-    {
-      title: 'Reception Dance',
-      description: 'First dance moment',
-      url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=800&h=600&fit=crop',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=300&fit=crop',
-      photographerId: testPhotographer.id,
-      galleryId: testGallery.id,
-      price: 30.00,
-      currency: 'USD',
-      width: 1920,
-      height: 1080,
-      size: 1856000,
-      format: 'jpg',
-      isPublic: false,
-      isFeatured: false
-    },
-    {
-      title: 'Portrait Session',
-      description: 'Couple portrait in garden',
-      url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop',
-      photographerId: testPhotographer.id,
-      galleryId: testGallery.id,
-      price: 35.00,
-      currency: 'USD',
-      width: 1920,
-      height: 1440,
-      size: 2304000,
-      format: 'jpg',
+      price: 25.00,
       isPublic: false,
       isFeatured: false
     }
-  ]
-
-  for (const photo of testPhotos) {
-    await prisma.photo.create({
-      data: photo
-    })
+  });
   }
 
   // Create test invite
@@ -157,9 +131,10 @@ async function main() {
     data: {
       galleryId: testGallery.id,
       code: 'TEST123',
-      email: 'client@test.com'
+      email: 'client@test.com',
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
     }
-  })
+  });
 
   console.log('Database seeded successfully!')
   console.log('\n=== ADMIN CREDENTIALS ===')
@@ -168,6 +143,7 @@ async function main() {
   console.log('Role: admin')
   console.log('\n=== TEST DATA ===')
   console.log('Test invite code: TEST123')
+  console.log('Test photographer ID:', testPhotographer.id)
   console.log('Test gallery ID:', testGallery.id)
 }
 
@@ -178,4 +154,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect()
+    process.exit(0)
   })
