@@ -1,12 +1,20 @@
+<<<<<<< HEAD
+=======
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
+// NextAuth.js required models
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -20,7 +28,12 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+<<<<<<< HEAD
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+=======
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 
   @@unique([provider, providerAccountId])
 }
@@ -34,6 +47,7 @@ model Session {
 }
 
 model User {
+<<<<<<< HEAD
   id                  String               @id @default(cuid())
   name                String?
   email               String               @unique
@@ -52,6 +66,24 @@ model User {
   collections         Collection[]
   photographer        Photographer?
   wishlist            WishlistItem[]
+=======
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("photographer")
+  accounts      Account[]
+  sessions      Session[]
+  photographer  Photographer?
+  client        Client?
+  collections   Collection[]
+  wishlist      WishlistItem[]
+  photoReviews        PhotoReview[]
+  photographerReviews PhotographerReview[]
+  notifications       Notification[]
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 }
 
 model VerificationToken {
@@ -63,6 +95,7 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+<<<<<<< HEAD
 model Photographer {
   id           String               @id @default(cuid())
   userId       String               @unique
@@ -83,10 +116,36 @@ model Photographer {
   galleries    Gallery[]
   user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+=======
+// Photography marketplace models
+model Photographer {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  name        String
+  businessName String?
+  website     String?
+  phone       String?
+  bio         String?
+  equipment   String?
+  experience  String?
+  portfolio   String?
+  socialMedia Json?    // Store social media links as JSON
+  status      PhotographerStatus @default(pending)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  galleries   Gallery[]
+  clients     Client[] @relation("PhotographerClients")
+  reviews     PhotographerReview[]
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("photographers")
 }
 
 model Client {
+<<<<<<< HEAD
   id               String            @id @default(cuid())
   userId           String            @unique
   email            String            @unique
@@ -101,10 +160,29 @@ model Client {
   favorites        Favorite[]
   purchaseRequests PurchaseRequest[]
 
+=======
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  email      String   @unique
+  name       String
+  invitedBy  String   // Photographer ID who invited this client
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photographer Photographer @relation("PhotographerClients", fields: [invitedBy], references: [id])
+  favorites    Favorite[]
+  comments     Comment[]
+  purchaseRequests PurchaseRequest[]
+  clientInvites ClientInvite[]
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("clients")
 }
 
 model Gallery {
+<<<<<<< HEAD
   id              String            @id @default(cuid())
   title           String
   description     String?
@@ -125,6 +203,30 @@ model Gallery {
   invites         Invite[]
   photos          Photo[]
 
+=======
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  photographerId String
+  visibility     GalleryVisibility @default(private)
+  status         GalleryStatus @default(draft)
+  expiresAt      DateTime?
+  isPublic       Boolean @default(false)
+  allowDownloads Boolean @default(false)
+  requirePassword Boolean @default(false)
+  password       String?
+  views          Int @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  photos         Photo[]
+  collections    Collection[]
+  invites        Invite[]
+  analytics      Analytics[]
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("galleries")
 }
 
@@ -138,14 +240,24 @@ model Collection {
   isPrivate   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+<<<<<<< HEAD
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   gallery     Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade)
   photos      Photo[]
 
+=======
+  
+  // Relations
+  gallery     Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos      Photo[]
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("collections")
 }
 
 model Photo {
+<<<<<<< HEAD
   id               String            @id @default(cuid())
   galleryId        String
   collectionId     String?
@@ -209,6 +321,58 @@ model Photo {
   purchaseRequests PurchaseRequest[]
   wishlistItems    WishlistItem[]
 
+=======
+  id           String   @id @default(cuid())
+  galleryId    String
+  collectionId String?
+  title        String?
+  description  String?
+  filename     String
+  url          String
+  thumbnailUrl String
+  fileSize     Int
+  width        Int?
+  height       Int?
+  mimeType     String
+  metadata     Json?    // EXIF data, AI tags, etc.
+  
+  // Pricing fields
+  price        Float?   // Price for the photo
+  isForSale    Boolean  @default(false)
+  
+  // Additional metadata
+  tags         Json?    // Photo tags/keywords as JSON array
+  category     String?  // Photo category
+  location     String?  // Where photo was taken
+  
+  // Artwork authenticity fields
+  editionNumber   Int?     @default(1)    // Edition number for limited editions
+  totalEditions   Int?     @default(1)    // Total number of editions
+  medium          String?                 // Medium used (e.g., "Silver Gelatin Print")
+  technique       String?                 // Technique used (e.g., "Traditional Darkroom")
+  materials       String?                 // Materials used (e.g., "Fiber Paper, Silver")
+  artistStatement String?                 // Artist's statement about the work
+  provenance      String?                 // Provenance and exhibition history
+  certificateId   String?                 // Unique certificate of authenticity ID
+  
+  sortOrder    Int      @default(0)
+  isPrivate    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  gallery          Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  collection       Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  favorites        Favorite[]
+  photoFavorites   PhotoFavorite[]
+  photoDownloads   PhotoDownload[]
+  comments         Comment[]
+  purchaseRequests PurchaseRequest[]
+  analytics        Analytics[]
+  wishlistItems    WishlistItem[]
+  reviews          PhotoReview[]
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("photos")
 }
 
@@ -217,28 +381,48 @@ model WishlistItem {
   userId    String
   photoId   String
   createdAt DateTime @default(now())
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([userId, photoId])
   @@map("wishlist_items")
 }
 
 model PhotoReview {
   id        String   @id @default(cuid())
+<<<<<<< HEAD
   rating    Int
+=======
+  rating    Int      // 1-5 stars
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   comment   String?
   userId    String
   photoId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+=======
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([userId, photoId])
 }
 
 model PhotographerReview {
+<<<<<<< HEAD
   id             String       @id @default(cuid())
   rating         Int
   comment        String?
@@ -249,24 +433,50 @@ model PhotographerReview {
   photographer   Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+=======
+  id             String   @id @default(cuid())
+  rating         Int      // 1-5 stars
+  comment        String?
+  userId         String
+  photographerId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photographer Photographer @relation(fields: [photographerId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([userId, photographerId])
 }
 
 model Notification {
   id        String   @id @default(cuid())
+<<<<<<< HEAD
   type      String
+=======
+  type      String   // 'new_photo', 'price_change', 'purchase_update', 'gallery_invite'
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   title     String
   message   String
   userId    String
   isRead    Boolean  @default(false)
+<<<<<<< HEAD
   data      Json?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+=======
+  data      Json?    // Additional data like photoId, galleryId, etc.
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@index([userId, isRead])
   @@index([createdAt])
 }
 
+<<<<<<< HEAD
 model Invite {
   id                 String         @id @default(cuid())
   inviteCode         String         @unique
@@ -283,14 +493,56 @@ model Invite {
   @@map("invites")
 }
 
+=======
+
+
+model Invite {
+  id                 String     @id @default(cuid())
+  inviteCode         String     @unique
+  galleryId          String
+  clientEmail        String?
+  type               InviteType @default(single_use)
+  status             InviteStatus @default(active)
+  expiresAt          DateTime?
+  maxUsage           Int?
+  usageCount         Int        @default(0)
+  usedAt             DateTime?
+  
+  // Permissions
+  canView            Boolean    @default(true)
+  canFavorite        Boolean    @default(true)
+  canComment         Boolean    @default(false)
+  canDownload        Boolean    @default(false)
+  canRequestPurchase Boolean    @default(true)
+  
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  
+  // Relations
+  gallery            Gallery    @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  clientInvites      ClientInvite[]
+  
+  @@map("invites")
+}
+
+// Junction table for Client-Invite many-to-many relationship
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 model ClientInvite {
   id        String   @id @default(cuid())
   clientId  String
   inviteId  String
   createdAt DateTime @default(now())
+<<<<<<< HEAD
   invite    Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invite    Invite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([clientId, inviteId])
   @@map("client_invites")
 }
@@ -300,9 +552,17 @@ model Favorite {
   clientId  String
   photoId   String
   createdAt DateTime @default(now())
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo     Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([clientId, photoId])
   @@map("favorites")
 }
@@ -312,8 +572,15 @@ model PhotoFavorite {
   photoId   String
   clientIp  String
   createdAt DateTime @default(now())
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@unique([photoId, clientIp])
   @@map("photo_favorites")
 }
@@ -323,8 +590,15 @@ model PhotoDownload {
   photoId   String
   clientIp  String
   createdAt DateTime @default(now())
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  photo     Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("photo_downloads")
 }
 
@@ -335,9 +609,17 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+<<<<<<< HEAD
   photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo     Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("comments")
 }
 
@@ -351,9 +633,17 @@ model PurchaseRequest {
   price       Float?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+<<<<<<< HEAD
   photo       Photo               @relation(fields: [photoId], references: [id], onDelete: Cascade)
   client      Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
+=======
+  
+  // Relations
+  client      Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  photo       Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("purchase_requests")
 }
 
@@ -364,11 +654,21 @@ model Analytics {
   photoId    String?
   clientId   String?
   inviteCode String?
+<<<<<<< HEAD
   metadata   Json?
   createdAt  DateTime      @default(now())
   photo      Photo?        @relation(fields: [photoId], references: [id], onDelete: Cascade)
   gallery    Gallery?      @relation(fields: [galleryId], references: [id], onDelete: Cascade)
 
+=======
+  metadata   Json?         // Additional data like user agent, duration, etc.
+  createdAt  DateTime      @default(now())
+  
+  // Relations
+  gallery    Gallery? @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  photo      Photo?   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
   @@map("analytics")
 }
 
@@ -380,6 +680,7 @@ model SystemSetting {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+<<<<<<< HEAD
 
   @@map("system_settings")
 }
@@ -394,6 +695,13 @@ model NewsletterSubscription {
   @@map("newsletter_subscriptions")
 }
 
+=======
+  
+  @@map("system_settings")
+}
+
+// Enums
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
 enum PhotographerStatus {
   pending
   approved
@@ -454,3 +762,16 @@ enum AnalyticsType {
   invite_used
   admin_action
 }
+<<<<<<< HEAD
+=======
+
+model NewsletterSubscription {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  isActive     Boolean  @default(true)
+  unsubscribedAt DateTime?
+  
+  @@map("newsletter_subscriptions")
+}
+>>>>>>> e2f1b7a994117b9fb44ea004e697ba6989c4c810
