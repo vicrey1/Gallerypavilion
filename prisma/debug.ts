@@ -22,13 +22,11 @@ async function main() {
 
     // 2. Check Photographer table
     console.log('\nChecking Photographer table...')
-    const photographer = await prisma.photographer.findFirst({
+    const photographer = user ? await prisma.photographer.findUnique({
       where: {
-        user: {
-          email: 'vameh09@gmail.com'
-        }
+        userId: user.id
       }
-    })
+    }) : null
     console.log('Photographer found:', photographer ? 'Yes' : 'No')
     if (photographer) {
       console.log('Photographer ID:', photographer.id)
