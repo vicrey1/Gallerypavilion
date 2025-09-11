@@ -33,189 +33,150 @@ export async function GET(request: NextRequest) {
     // Recent photographer registrations
     const recentPhotographers = await prisma.photographer.findMany({
       take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        }
-      }
+      orderBy: { createdAt: 'desc' }
     })
 
-    recentPhotographers.forEach((photographer: {
-      id: string
-      status: string
-      createdAt: Date
-      user: {
-        name: string | null
-        email: string
-      }
-    }) => {
+    recentPhotographers.forEach(photographer => {
       activities.push({
-        id: `photographer-${photographer.id}`,
+        id: photographer.id,
         type: 'photographer_registration',
-        title: 'New photographer registration',
-        description: `${photographer.user.name || photographer.user.email} registered as a photographer`,
+        title: 'New Photographer Registration',
+        description: `${photographer.name} (${photographer.email}) registered as a photographer`,
         timestamp: photographer.createdAt,
         status: photographer.status,
         metadata: {
           photographerId: photographer.id,
-          photographerName: photographer.user.name,
-          photographerEmail: photographer.user.email
+          name: photographer.name,
+          email: photographer.email
         }
       })
     })
 
-    // Recent galleries
-    const recentGalleries = await prisma.gallery.findMany({
+    // Recent photo uploads
+    const recentPhotos = await prisma.photo.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        photographer: {
+        photographer: true,
+        gallery: true
+      }
+    })
+
+    recentPhotos.forEach(photo => {
+      activities.push({
+        id: photo.id,
+        type: 'photo_upload',
+        title: 'New Photo Upload',
+        description: `${photo.photographer.name} uploaded "${photo.title}" to gallery "${photo.gallery?.name || 'Untitled'}"`,
+        timestamp: photo.createdAt,
+        status: photo.isPublic ? 'public' : 'private',
+        metadata: {
+          photoId: photo.id,
+          photographerId: photo.photographerId,
+          galleryId: photo.galleryId,
+          photographerName: photo.photographer.name,
+          galleryName: photo.gallery?.name
+        }
+      })
+    })
+
+    // Recent client invites
+    const recentInvites = await prisma.invite.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        gallery: {
           include: {
-            user: {
-              select: { name: true, email: true }
-            }
+            photographer: true
           }
         }
       }
     })
 
-    recentGalleries.forEach((gallery: {
-      id: string
-      title: string
-      status: string
-      createdAt: Date
-      photographer: {
-        id: string
-        user: {
-          name: string | null
-          email: string
-        }
-      }
-    }) => {
+    recentInvites.forEach(invite => {
       activities.push({
-        id: `gallery-${gallery.id}`,
-        type: 'gallery_created',
-        title: 'New gallery created',
-        description: `${gallery.photographer.user.name || gallery.photographer.user.email} created gallery "${gallery.title}"`,
-        timestamp: gallery.createdAt,
-        status: gallery.status,
+        id: invite.id,
+        type: 'gallery_invite',
+        title: 'New Gallery Invite',
+        description: `${invite.gallery.photographer.name} invited ${invite.email} to view gallery "${invite.gallery.name}"`,
+        timestamp: invite.createdAt,
+        status: invite.expiresAt && invite.expiresAt < new Date() ? 'expired' : 'active',
         metadata: {
-          galleryId: gallery.id,
-          galleryTitle: gallery.title,
-          photographerId: gallery.photographer.id,
-          photographerName: gallery.photographer.user.name
+          inviteId: invite.id,
+          galleryId: invite.galleryId,
+          photographerId: invite.gallery.photographer.id,
+          email: invite.email
         }
       })
     })
 
-    // Recent clients
-    const recentClients = await prisma.client.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { name: true, email: true }
-        },
-        photographer: {
-          include: {
-            user: {
-              select: { name: true }
-            }
-          }
-        }
-      }
-    })
-
-    recentClients.forEach((client: {
-      id: string
-      createdAt: Date
-      user: {
-        name: string | null
-        email: string
-      }
-      photographer: {
-        id: string
-        user: {
-          name: string | null
-        }
-      }
-    }) => {
-      activities.push({
-        id: `client-${client.id}`,
-        type: 'client_registration',
-        title: 'New client registered',
-        description: `${client.user.name || client.user.email} was invited by ${client.photographer.user.name}`,
-        timestamp: client.createdAt,
-        status: 'active',
-        metadata: {
-          clientId: client.id,
-          clientName: client.user.name,
-          clientEmail: client.user.email,
-          photographerId: client.photographer.id,
-          photographerName: client.photographer.user.name
-        }
-      })
-    })
-
-    // Recent purchase requests
+    // Recent purchases
     const recentPurchases = await prisma.purchaseRequest.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        client: {
+        photo: {
           include: {
-            user: {
-              select: { name: true, email: true }
-            }
+            photographer: true
           }
         },
-        photo: {
-          select: { id: true, title: true, filename: true }
-        }
+        user: true
       }
     })
 
-    recentPurchases.forEach((purchase: {
-      id: string
-      createdAt: Date
-      status: string
-      licenseType: string
-      price: number | null
-      client: {
-        id: string
-        user: {
-          name: string | null
-          email: string
-        }
-      }
-      photo: {
-        id: string
-        title: string | null
-        filename: string
-      }
-    }) => {
+    recentPurchases.forEach(purchase => {
       activities.push({
-        id: `purchase-${purchase.id}`,
-        type: 'purchase_request',
-        title: 'New purchase request',
-        description: `${purchase.client.user.name || purchase.client.user.email} requested to purchase "${purchase.photo.title || purchase.photo.filename}"`,
+        id: purchase.id,
+        type: 'photo_purchase',
+        title: 'New Photo Purchase',
+        description: `${purchase.user.name || purchase.user.email} purchased "${purchase.photo.title}" from ${purchase.photo.photographer.name}`,
         timestamp: purchase.createdAt,
         status: purchase.status,
         metadata: {
           purchaseId: purchase.id,
-          clientId: purchase.client.id,
-          clientName: purchase.client.user.name,
-          photoId: purchase.photo.id,
-          photoTitle: purchase.photo.title,
-          licenseType: purchase.licenseType,
-          price: purchase.price
+          photoId: purchase.photoId,
+          userId: purchase.userId,
+          photographerId: purchase.photo.photographerId,
+          price: purchase.price,
+          currency: purchase.currency
         }
       })
     })
 
-    // Sort all activities by timestamp (newest first)
-    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    // Recent reviews
+    const recentPhotoReviews = await prisma.photoReview.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        photo: {
+          include: {
+            photographer: true
+          }
+        },
+        user: true
+      }
+    })
+
+    recentPhotoReviews.forEach(review => {
+      activities.push({
+        id: review.id,
+        type: 'photo_review',
+        title: 'New Photo Review',
+        description: `${review.user.name || review.user.email} reviewed "${review.photo.title}" by ${review.photo.photographer.name}`,
+        timestamp: review.createdAt,
+        status: review.rating >= 4 ? 'positive' : review.rating >= 2 ? 'neutral' : 'negative',
+        metadata: {
+          reviewId: review.id,
+          photoId: review.photoId,
+          userId: review.userId,
+          photographerId: review.photo.photographerId,
+          rating: review.rating
+        }
+      })
+    })
+
+    // Sort all activities by timestamp
+    activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 
     // Apply pagination
     const paginatedActivities = activities.slice(offset, offset + limit)
@@ -225,11 +186,10 @@ export async function GET(request: NextRequest) {
       total: activities.length,
       hasMore: offset + limit < activities.length
     })
-
   } catch (error) {
-    console.error('Error fetching admin activities:', error)
+    console.error('Error in activities route:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch activities' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
