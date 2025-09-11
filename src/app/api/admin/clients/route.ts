@@ -38,13 +38,6 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
         include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true
-            }
-          },
           invites: {
             include: {
               invite: {
@@ -71,11 +64,7 @@ export async function GET(request: NextRequest) {
       id: client.id,
       email: client.email,
       name: client.name,
-      user: client.user ? {
-        id: client.user.id,
-        email: client.user.email,
-        name: client.user.name
-      } : null,
+      userId: client.userId,
       galleries: client.invites.map(invite => ({
         id: invite.invite.gallery.id,
         name: invite.invite.gallery.name,
