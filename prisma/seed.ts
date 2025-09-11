@@ -89,7 +89,7 @@ async function main() {
   // Create test gallery
   const testGallery = await prisma.gallery.create({
     data: {
-      title: 'Wedding Portfolio',
+      name: 'Wedding Portfolio',
       description: 'Beautiful wedding photography collection',
       photographerId: testPhotographer.id,
       isPublic: false
