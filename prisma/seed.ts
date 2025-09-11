@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, PhotographerStatus } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -80,100 +80,84 @@ async function main() {
       name: 'Test Photographer',
       businessName: 'Test Photography Studio',
       bio: 'Professional photographer specializing in portraits and events',
-      status: 'approved'
+      status: 'ACTIVE'
     }
   })
 
   // Create a test gallery
-  const testGallery = await prisma.gallery.upsert({
-    where: { id: 'test-gallery-1' },
-    update: {},
-    create: {
-      id: 'test-gallery-1',
+  const testGallery = await prisma.gallery.create({
+    data: {
       title: 'Wedding Portfolio',
       description: 'Beautiful wedding photography collection',
       photographerId: testPhotographer.id,
-      visibility: 'private',
-      status: 'active',
-      isPublic: false,
-      allowDownloads: true
+      isPublic: false
     }
   })
 
-  // Create test photos
+    // Create test photos
   const testPhotos = [
     {
-      id: 'photo-1',
-      filename: 'wedding-1.jpg',
-      url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop',
       title: 'Ceremony Moment',
       description: 'Beautiful ceremony capture',
-      tags: ['wedding', 'ceremony', 'romantic'],
-      price: 25.00,
-      isForSale: true,
-      isPrivate: false,
+      url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=600&fit=crop',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop',
+      photographerId: testPhotographer.id,
       galleryId: testGallery.id,
-      fileSize: 2048000,
+      price: 25.00,
+      currency: 'USD',
       width: 1920,
       height: 1280,
-      mimeType: 'image/jpeg'
+      size: 2048000,
+      format: 'jpg',
+      isPublic: false,
+      isFeatured: false
     },
     {
-      id: 'photo-2',
-      filename: 'wedding-2.jpg',
-      url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=800&h=600&fit=crop',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=300&fit=crop',
       title: 'Reception Dance',
       description: 'First dance moment',
-      tags: ['wedding', 'reception', 'dance'],
-      price: 30.00,
-      isForSale: true,
-      isPrivate: false,
+      url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=800&h=600&fit=crop',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0e4a6?w=400&h=300&fit=crop',
+      photographerId: testPhotographer.id,
       galleryId: testGallery.id,
-      fileSize: 1856000,
+      price: 30.00,
+      currency: 'USD',
       width: 1920,
       height: 1080,
-      mimeType: 'image/jpeg'
+      size: 1856000,
+      format: 'jpg',
+      isPublic: false,
+      isFeatured: false
     },
     {
-      id: 'photo-3',
-      filename: 'wedding-3.jpg',
-      url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop',
-      thumbnailUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop',
       title: 'Portrait Session',
       description: 'Couple portrait in garden',
-      tags: ['wedding', 'portrait', 'outdoor'],
-      price: 35.00,
-      isForSale: true,
-      isPrivate: false,
+      url: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&h=600&fit=crop',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=300&fit=crop',
+      photographerId: testPhotographer.id,
       galleryId: testGallery.id,
-      fileSize: 2304000,
+      price: 35.00,
+      currency: 'USD',
       width: 1920,
       height: 1440,
-      mimeType: 'image/jpeg'
+      size: 2304000,
+      format: 'jpg',
+      isPublic: false,
+      isFeatured: false
     }
   ]
 
   for (const photo of testPhotos) {
-    await prisma.photo.upsert({
-      where: { id: photo.id },
-      update: {},
-      create: photo
+    await prisma.photo.create({
+      data: photo
     })
   }
 
   // Create test invite
-  const testInvite = await prisma.invite.upsert({
-    where: { inviteCode: 'TEST123' },
-    update: {},
-    create: {
-      inviteCode: 'TEST123',
+  const testInvite = await prisma.invite.create({
+    data: {
       galleryId: testGallery.id,
-      clientEmail: 'client@test.com',
-      status: 'active',
-  canView: true,
-  canRequestPurchase: true
+      code: 'TEST123',
+      email: 'client@test.com'
     }
   })
 
