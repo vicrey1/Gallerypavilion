@@ -86,17 +86,7 @@ async function main() {
     }
   })
 
-  // Create a test gallery
-  const testGallery = await prisma.gallery.create({
-    data: {
-      title: 'Wedding Portfolio',
-      description: 'Beautiful wedding photography collection',
-      photographerId: testPhotographer.id,
-      isPublic: false
-    }
-  })
-
-    // Create test gallery
+  // Create test gallery
   const testGallery = await prisma.gallery.create({
     data: {
       title: 'Wedding Portfolio',
@@ -124,15 +114,14 @@ async function main() {
       isFeatured: false
     }
   });
-  }
 
   // Create test invite
   const testInvite = await prisma.invite.create({
     data: {
-      galleryId: testGallery.id,
       code: 'TEST123',
       email: 'client@test.com',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      galleryId: testGallery.id
     }
   });
 
