@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
           photographerId: photo.photographerId,
           galleryId: photo.galleryId,
           photographerName: photo.photographer.name,
-          galleryName: photo.gallery?.name
+          galleryName: photo.gallery?.name ?? null
         }
       })
     })
