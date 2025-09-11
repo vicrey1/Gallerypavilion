@@ -34,21 +34,19 @@ async function main() {
       console.log('User ID:', photographer.userId)
     }
 
-    // 3. Raw query to check both tables
-    console.log('\nRunning raw join query...')
-    const result = await prisma.$queryRaw`
-      SELECT 
-        User.id as userId, 
-        User.email,
-        User.role,
-        photographers.id as photographerId,
-        photographers.status,
-        photographers.name
-      FROM User
-      LEFT JOIN photographers ON User.id = photographers.userId
-      WHERE User.email = 'vameh09@gmail.com'
-    `
-    console.log('Raw query result:', result)
+    // 3. Get combined user and photographer data
+    console.log('\nGetting combined user and photographer data...')
+    if (user && photographer) {
+      const combinedData = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        photographerId: photographer.id,
+        status: photographer.status,
+        name: photographer.name
+      }
+      console.log('Combined data:', combinedData)
+    }
 
   } catch (error) {
     console.error('Error:', error)
