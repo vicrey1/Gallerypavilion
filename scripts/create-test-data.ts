@@ -32,8 +32,7 @@ async function createTestData() {
         data: {
           email,
           name: 'Test Client',
-          userId: user.id,
-          invitedBy: photographer.id
+          userId: user.id
         }
       })
     }
