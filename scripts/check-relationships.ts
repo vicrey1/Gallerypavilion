@@ -10,8 +10,11 @@ async function checkRelationships() {
     const client = await prisma.client.findFirst({
       where: { email },
       include: {
-        clientInvites: true,
-        user: true
+        invites: {
+          include: {
+            invite: true
+          }
+        }
       }
     });
     
@@ -21,26 +24,19 @@ async function checkRelationships() {
         id: client.id,
         email: client.email,
         name: client.name,
-        inviteCount: client.clientInvites.length
+        inviteCount: client.invites.length
       });
 
-      if (client.clientInvites.length > 0) {
-        const invites = await prisma.clientInvite.findMany({
-          where: { clientId: client.id },
-          include: {
-            invite: {
-              include: {
-                gallery: true
-              }
-            }
-          }
-        });
-        console.log('Invites:', JSON.stringify(invites, null, 2));
-      } else {
-        console.log('No invites found for this client');
+      if (client.invites.length > 0) {
+        for (const clientInvite of client.invites) {
+          console.log('Invite details:', {
+            inviteId: clientInvite.inviteId,
+            inviteCode: clientInvite.invite.code,
+            expiresAt: clientInvite.invite.expiresAt
+          });
+        }
       }
     }
-    
   } catch (error) {
     console.error('Error:', error);
   } finally {
