@@ -1,0 +1,54 @@
+<svg width="400" height="600" viewBox="0 0 400 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fashionBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f7fafc;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#edf2f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="modelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d3748;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#1a202c;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="600" fill="url(#fashionBg)"/>
+  
+  <!-- Studio backdrop -->
+  <rect x="50" y="50" width="300" height="500" fill="white" opacity="0.9"/>
+  
+  <!-- Model silhouette -->
+  <ellipse cx="200" cy="150" rx="40" ry="50" fill="url(#modelGrad)"/>
+  
+  <!-- Fashion outfit -->
+  <path d="M160 200 Q200 190 240 200 Q240 350 200 400 Q160 350 160 200" fill="#2d3748" opacity="0.8"/>
+  
+  <!-- Elegant pose - arms -->
+  <ellipse cx="140" cy="250" rx="15" ry="40" fill="url(#modelGrad)" transform="rotate(-20 140 250)"/>
+  <ellipse cx="260" cy="280" rx="15" ry="35" fill="url(#modelGrad)" transform="rotate(30 260 280)"/>
+  
+  <!-- Legs -->
+  <rect x="180" y="400" width="15" height="120" fill="url(#modelGrad)"/>
+  <rect x="205" y="400" width="15" height="120" fill="url(#modelGrad)"/>
+  
+  <!-- High fashion accessories -->
+  <circle cx="200" cy="140" r="8" fill="#ffd700" opacity="0.8"/>
+  <rect x="195" y="220" width="10" height="30" fill="#ffd700" opacity="0.7"/>
+  
+  <!-- Studio lighting effects -->
+  <ellipse cx="100" cy="200" rx="30" ry="80" fill="white" opacity="0.3" transform="rotate(-10 100 200)"/>
+  <ellipse cx="300" cy="250" rx="25" ry="70" fill="white" opacity="0.2" transform="rotate(15 300 250)"/>
+  
+  <!-- Fashion elements -->
+  <path d="M180 350 Q200 340 220 350 Q220 380 200 390 Q180 380 180 350" fill="#e53e3e" opacity="0.6"/>
+  
+  <!-- Professional equipment silhouette -->
+  <rect x="20" y="300" width="8" height="40" fill="#4a5568" opacity="0.5"/>
+  <circle cx="24" cy="290" r="12" fill="#4a5568" opacity="0.5"/>
+  
+  <!-- Studio frame -->
+  <rect x="10" y="10" width="380" height="580" fill="none" stroke="#a0aec0" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Watermark -->
+  <text x="200" y="590" text-anchor="middle" font-family="serif" font-size="14" fill="#718096" opacity="0.6">FASHION PHOTOGRAPHY</text>
+</svg>

@@ -1,0 +1,56 @@
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="eventBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a202c;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#2d3748;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4a5568;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="spotlight" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="500" height="400" fill="url(#eventBg)"/>
+  
+  <!-- Stage lighting -->
+  <ellipse cx="250" cy="120" rx="200" ry="100" fill="url(#spotlight)"/>
+  
+  <!-- Stage -->
+  <rect x="50" y="250" width="400" height="150" fill="#2d3748" opacity="0.8"/>
+  <rect x="50" y="240" width="400" height="10" fill="#4a5568"/>
+  
+  <!-- Performer silhouettes -->
+  <ellipse cx="200" cy="200" rx="25" ry="30" fill="#1a202c" opacity="0.9"/>
+  <rect x="180" y="230" width="40" height="60" fill="#1a202c" opacity="0.8"/>
+  
+  <ellipse cx="300" cy="210" rx="20" ry="25" fill="#1a202c" opacity="0.9"/>
+  <rect x="285" y="235" width="30" height="50" fill="#1a202c" opacity="0.8"/>
+  
+  <!-- Audience silhouettes -->
+  <circle cx="80" cy="320" r="15" fill="#1a202c" opacity="0.7"/>
+  <circle cx="120" cy="330" r="12" fill="#1a202c" opacity="0.7"/>
+  <circle cx="160" cy="325" r="14" fill="#1a202c" opacity="0.7"/>
+  <circle cx="340" cy="335" r="13" fill="#1a202c" opacity="0.7"/>
+  <circle cx="380" cy="320" r="15" fill="#1a202c" opacity="0.7"/>
+  <circle cx="420" cy="330" r="12" fill="#1a202c" opacity="0.7"/>
+  
+  <!-- Stage lights -->
+  <circle cx="100" cy="50" r="8" fill="#ffd700" opacity="0.9"/>
+  <circle cx="200" cy="40" r="10" fill="#ffd700" opacity="0.9"/>
+  <circle cx="300" cy="45" r="9" fill="#ffd700" opacity="0.9"/>
+  <circle cx="400" cy="50" r="8" fill="#ffd700" opacity="0.9"/>
+  
+  <!-- Light beams -->
+  <path d="M100 50 L120 250 L80 250 Z" fill="#ffd700" opacity="0.2"/>
+  <path d="M200 40 L230 250 L170 250 Z" fill="#ffd700" opacity="0.3"/>
+  <path d="M300 45 L330 250 L270 250 Z" fill="#ffd700" opacity="0.2"/>
+  <path d="M400 50 L420 250 L380 250 Z" fill="#ffd700" opacity="0.2"/>
+  
+  <!-- Professional frame -->
+  <rect x="5" y="5" width="490" height="390" fill="none" stroke="#718096" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Watermark -->
+  <text x="250" y="390" text-anchor="middle" font-family="serif" font-size="14" fill="#a0aec0" opacity="0.6">EVENT PHOTOGRAPHY</text>
+</svg>

@@ -1,0 +1,10 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Premium Portrait Co -->
+  <g opacity="0.7">
+    <rect x="10" y="10" width="20" height="20" rx="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <circle cx="20" cy="17" r="2" fill="currentColor"/>
+    <path d="M15 25 Q20 22 25 25" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <text x="35" y="18" font-family="serif" font-size="10" font-weight="600" fill="currentColor">PREMIUM</text>
+    <text x="35" y="28" font-family="serif" font-size="10" font-weight="400" fill="currentColor">PORTRAITS</text>
+  </g>
+</svg>

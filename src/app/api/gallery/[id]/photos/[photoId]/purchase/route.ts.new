@@ -1,0 +1,155 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+
+const requestSchema = z.object({
+  inviteCode: z.string(),
+  email: z.string().email().optional(),
+  message: z.string().optional(),
+})
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string; photoId: string }> }
+) {
+  try {
+    // Extract and validate parameters
+    const params = await context.params
+    const galleryId = params.id
+    const photoId = params.photoId
+    
+    const body = await request.json()
+    const { inviteCode, email, message } = requestSchema.parse(body)
+
+    // Verify the photo exists and is for sale
+    const photo = await prisma.photo.findFirst({
+      where: {
+        id: photoId,
+        galleryId,
+        isForSale: true,
+        gallery: {
+          status: 'active',
+          invites: {
+            some: {
+              inviteCode: inviteCode,
+              status: 'active',
+              canRequestPurchase: true,
+            },
+          },
+        },
+      },
+      include: {
+        gallery: {
+          include: {
+            photographer: true,
+          },
+        },
+      },
+    })
+
+    if (!photo) {
+      return NextResponse.json(
+        { error: 'Photo not found or not available for purchase' },
+        { status: 404 }
+      )
+    }
+
+    // Find or create client based on email
+    let client = null
+    if (email) {
+      // Try to find existing client
+      client = await prisma.client.findFirst({
+        where: {
+          email: email,
+        },
+      })
+
+      if (!client) {
+        // Create new client
+        client = await prisma.client.create({
+          data: {
+            email: email,
+            name: email.split('@')[0], // Temporary name from email
+            invitedBy: photo.gallery.photographerId,
+            userId: '', // This will be updated when they register
+          },
+        })
+      }
+    }
+
+    // Create purchase request and notification in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create purchase request
+      const purchaseRequest = await tx.purchaseRequest.create({
+        data: {
+          photo: {
+            connect: {
+              id: photoId
+            }
+          },
+          inviteCode,
+          email: email || undefined,
+          message: message || undefined,
+          status: 'pending',
+          ...(client && {
+            client: {
+              connect: {
+                id: client.id
+              }
+            }
+          })
+        },
+      })
+
+      // Create notification for photographer
+      const notification = await tx.notification.create({
+        data: {
+          type: 'PURCHASE_REQUEST',
+          userId: photo.gallery.photographer.userId,
+          title: 'New Purchase Request',
+          message: `A client has requested to purchase "${photo.title || 'Untitled'}" from gallery "${photo.gallery.title}"`,
+          data: JSON.stringify({
+            photoId,
+            galleryId,
+            purchaseRequestId: purchaseRequest.id,
+          }),
+        },
+      })
+
+      return { purchaseRequest, notification }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Purchase request submitted successfully',
+      purchaseRequestId: result.purchaseRequest.id
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Error processing purchase request:', error)
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.issues },
+        { status: 400 }
+      )
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Duplicate purchase request' },
+          { status: 409 }
+        )
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
