@@ -8,16 +8,17 @@ import { z } from 'zod'
 const createGallerySchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
-  isPublic: z.boolean().default(false)
+  visibility: z.enum(['private', 'invite_only', 'public']).default('private'),
+  status: z.enum(['draft', 'active', 'archived']).default('draft')
 })
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.photographerId) {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Photographer access required' },
+        { error: 'Unauthorized - Please sign in' },
         { status: 401 }
       )
     }
@@ -150,11 +151,28 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.photographerId) {
+
+    if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'Unauthorized - Photographer access required' },
+        { error: 'Unauthorized - Please sign in' },
         { status: 401 }
+      )
+    }
+
+    // Get photographer profile
+    const photographer = await prisma.photographer.findFirst({
+      where: {
+        user: {
+          email: session.user.email,
+          role: 'PHOTOGRAPHER'
+        }
+      }
+    })
+
+    if (!photographer) {
+      return NextResponse.json(
+        { error: 'Photographer profile not found' },
+        { status: 404 }
       )
     }
 
@@ -165,44 +183,25 @@ export async function POST(request: NextRequest) {
       data: {
         title: validatedData.title,
         description: validatedData.description,
-        isPublic: validatedData.isPublic,
-        photographerId: session.user.photographerId,
-        status: 'active'
-      },
-      include: {
-        _count: {
-          select: {
-            photos: true,
-            invites: true
-          },
-        },
-      },
+        visibility: validatedData.visibility,
+        status: validatedData.status,
+        photographerId: photographer.id
+      }
     })
 
-    return NextResponse.json({
-      id: gallery.id,
-      title: gallery.title,
-      description: gallery.description,
-      status: gallery.status,
-      createdAt: gallery.createdAt,
-      isPublic: gallery.isPublic,
-      totalPhotos: gallery._count.photos,
-      views: gallery.views,
-      invites: gallery._count.invites,
-      thumbnail: null
-    }, { status: 201 })
-  } catch (error) {
+    return NextResponse.json(gallery, { status: 201 })
+  } catch (error: unknown) {
+    console.error('Gallery creation error:', error)
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       )
     }
-    
-    console.error('Error creating gallery:', error)
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create gallery' },
       { status: 500 }
     )
   }
-}

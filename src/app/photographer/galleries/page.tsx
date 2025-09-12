@@ -33,6 +33,21 @@ export default async function PhotographerGalleries() {
         }
       }
     }
+    include: {
+      galleries: {
+        orderBy: {
+          createdAt: 'desc'
+        },
+        include: {
+          _count: {
+            select: {
+              photos: true,
+              invites: true
+            }
+          }
+        }
+      }
+    }
   })
 
   if (!photographer) {
