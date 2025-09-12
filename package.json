@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "vercel-build": "prisma generate && next build",
-    "build": "next build",
+    "build": "prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "eslint",
     "seed:production": "npx tsx scripts/seed-production.ts",
