@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 
@@ -55,6 +55,12 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           passwordHash: hashedPassword,
           role: 'PHOTOGRAPHER'
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true
         }
       })
       
@@ -107,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Handle Prisma errors
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         return NextResponse.json(
           { error: 'A user with this email already exists' },
