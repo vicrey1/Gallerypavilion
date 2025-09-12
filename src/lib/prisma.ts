@@ -10,7 +10,7 @@ function makePrisma() {
     errorFormat: 'minimal',
     datasources: {
       db: {
-        url: process.env.PRISMA_DATABASE_URL || process.env.DATABASE_URL
+        url: process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL
       }
     }
   })
