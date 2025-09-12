@@ -1,47 +1,23 @@
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function checkRelationships() {
+async function main() {
   try {
     const email = 'Vameh09@gmail.com';
-    console.log('Looking up client:', email);
-    
-    const client = await prisma.client.findFirst({
-      where: { email },
-      include: {
-        invites: {
-          include: {
-            invite: true
-          }
-        }
-      }
-    });
-    
-    console.log('Client found:', client ? 'Yes' : 'No');
-    if (client) {
-      console.log('Client details:', {
-        id: client.id,
-        email: client.email,
-        name: client.name,
-        inviteCount: client.invites.length
-      });
+    console.log('Looking up user:', email);
 
-      if (client.invites.length > 0) {
-        for (const clientInvite of client.invites) {
-          console.log('Invite details:', {
-            inviteId: clientInvite.inviteId,
-            inviteCode: clientInvite.invite.code,
-            expiresAt: clientInvite.invite.expiresAt
-          });
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Error:', error);
+    // Minimal query - avoid `include` to prevent mismatched include types from the generated client
+    const user = await prisma.user.findFirst({ where: { email } });
+
+    console.log('User found:', !!user);
+    console.log(user ?? 'No user returned');
+  } catch (err) {
+    console.error('Error during relationship check:', err);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-checkRelationships();
+main();

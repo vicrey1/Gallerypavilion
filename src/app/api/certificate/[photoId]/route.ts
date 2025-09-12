@@ -21,22 +21,12 @@ export async function POST(
     const body = await request.json()
     const { requestType, clientEmail, clientName } = certificateRequestSchema.parse(body)
 
-    // Get photo details with gallery and photographer info
+    // Get photo details with gallery (load photographer separately to satisfy generated types)
     const photo = await prisma.photo.findUnique({
       where: { id: photoId },
       include: {
-        gallery: {
-          include: {
-            photographer: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      },
-      // Ensure exhibitionHistory is selected
-      // If you use select, add all required fields
+        gallery: true
+      }
     })
 
     if (!photo) {
@@ -46,8 +36,8 @@ export async function POST(
       )
     }
 
-    // Generate certificate ID if not exists
-    let certificateId = photo.certificateId
+  // Generate certificate ID if not exists
+  let certificateId = photo.certificateId
     if (!certificateId) {
       // Generate unique certificate ID
       const timestamp = Date.now().toString(36)
@@ -61,13 +51,18 @@ export async function POST(
       })
     }
 
+    // Load photographer (if available)
+    const photographer = photo.gallery?.photographerId
+      ? await prisma.photographer.findUnique({ where: { id: photo.gallery!.photographerId }, include: { user: true } })
+      : null
+
     if (requestType === 'generate') {
       // Generate certificate data
       const certificateData = {
         certificateId,
         photoId: photo.id,
         title: photo.title || 'Untitled',
-        artist: photo.gallery.photographer.name,
+        artist: photographer?.name || photo.photographerName || 'Unknown',
   medium: photo.medium || 'Photogram',
   // technique: photo.printingTechnique || 'Traditional Darkroom Process',
   materials: 'Silver Gelatin, Fiber Paper',
@@ -76,8 +71,8 @@ export async function POST(
         dimensions: photo.width && photo.height ? `${photo.width} x ${photo.height} pixels` : 'Variable',
         createdAt: photo.createdAt,
         provenance: "Original artwork from gallery collection",
-        photographerEmail: photo.gallery.photographer.user.email,
-        galleryTitle: photo.gallery.title,
+        photographerEmail: photographer?.user?.email || null,
+        galleryTitle: photo.gallery?.title || null,
         issuedAt: new Date(),
         clientEmail: clientEmail || session?.user?.email,
         clientName: clientName || session?.user?.name,
@@ -91,14 +86,14 @@ export async function POST(
       })
     }
 
-    if (requestType === 'verify') {
+  if (requestType === 'verify') {
       // Verify certificate authenticity
       const verificationData = {
         isValid: true,
         certificateId,
         photoId: photo.id,
-        title: photo.title,
-        artist: photo.gallery.photographer.name,
+    title: photo.title,
+    artist: photographer?.name || photo.photographerName || 'Unknown',
   editionNumber: photo.editionNumber || '1/1',
   totalEditions: (photo as any).editionTotal || 1,
         verifiedAt: new Date()
