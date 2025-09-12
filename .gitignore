@@ -47,3 +47,7 @@ next-env.d.ts
 .vercel
 
 .vercel
+
+/generated/prisma
+
+/generated/prisma
