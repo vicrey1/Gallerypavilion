@@ -8,6 +8,20 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
 
+interface Photo {
+  id: string;
+  galleryId: string;
+  tags?: string;
+  dimensions?: string;
+  framingOptions?: string;
+  exhibitionHistory?: string;
+  shippingDetails?: string;
+  _count?: {
+    favorites: number;
+    photoDownloads: number;
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -114,7 +128,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Transform any JSON string fields back to objects/arrays
-    const transformedPhotos = photos.map(photo => ({
+    const transformedPhotos = photos.map((photo: Photo) => ({
       ...photo,
       tags: photo.tags ? JSON.parse(photo.tags as string) : [],
       dimensions: photo.dimensions ? JSON.parse(photo.dimensions as string) : null,

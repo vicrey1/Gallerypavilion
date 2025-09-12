@@ -4,6 +4,20 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
+interface Gallery {
+  id: string;
+  title: string;
+  status: string;
+  visibility: string;
+  description?: string;
+  coverImage?: string;
+  createdAt: Date;
+  _count: {
+    photos: number;
+    invites: number;
+  };
+}
+
 export default async function PhotographerGalleries() {
   const session = await getServerSession(authOptions)
   
@@ -18,21 +32,6 @@ export default async function PhotographerGalleries() {
         role: 'PHOTOGRAPHER'
       }
     },
-    include: {
-      galleries: {
-        orderBy: {
-          createdAt: 'desc'
-        },
-        include: {
-          _count: {
-            select: {
-              photos: true,
-              invites: true
-            }
-          }
-        }
-      }
-    }
     include: {
       galleries: {
         orderBy: {
@@ -67,7 +66,7 @@ export default async function PhotographerGalleries() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {photographer.galleries.map((gallery) => (
+        {photographer.galleries.map((gallery: Gallery) => (
           <div key={gallery.id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="p-6">
               <h3 className="text-xl font-semibold mb-2">{gallery.title}</h3>

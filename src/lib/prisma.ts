@@ -18,6 +18,20 @@ function makePrisma() {
 
 export const prisma = globalForPrisma.prisma ?? makePrisma()
 
+export async function withPrismaRetry<T>(
+  operation: () => Promise<T>,
+  retries = 3
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      return withPrismaRetry(operation, retries - 1)
+    }
+    throw error
+  }
+}
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 } else {
