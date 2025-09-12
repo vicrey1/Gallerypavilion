@@ -32,7 +32,8 @@ async function createTestData() {
         data: {
           email,
           name: 'Test Client',
-          userId: user.id
+          userId: user.id,
+          invitedBy: photographer.id
         }
       })
     }
@@ -50,9 +51,10 @@ async function createTestData() {
     // 4. Create invite
     const invite = await prisma.invite.create({
       data: {
-        code: 'TEST' + Math.random().toString(36).substring(7),
+        inviteCode: 'TEST' + Math.random().toString(36).substring(7),
         galleryId: gallery.id,
-        email: email
+        clientEmail: email,
+        status: 'active'
       }
     })
     
@@ -60,14 +62,13 @@ async function createTestData() {
     await prisma.clientInvite.create({
       data: {
         clientId: client.id,
-        inviteId: invite.id,
-        userId: client.userId as string
+        inviteId: invite.id
       }
     })
     
     console.log('Test data created successfully:', {
       client: { id: client.id, email },
-      invite: { id: invite.id, code: invite.code },
+      invite: { id: invite.id, code: invite.inviteCode },
       gallery: { id: gallery.id }
     })
     

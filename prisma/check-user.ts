@@ -4,9 +4,12 @@ const prisma = new PrismaClient()
 
 async function checkUser(email: string) {
   try {
-    // Find user
+    // Find user and associated photographer profile
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        photographer: true
+      }
     })
 
     if (!user) {
@@ -14,21 +17,16 @@ async function checkUser(email: string) {
       return
     }
 
-    // Find associated photographer profile
-    const photographer = await prisma.photographer.findUnique({
-      where: { userId: user.id }
-    })
-
     console.log('User found:')
     console.log('- Email:', user.email)
     console.log('- Role:', user.role)
     console.log('- Has password:', !!user.password)
     
-    if (photographer) {
+    if (user.photographer) {
       console.log('\nPhotographer profile:')
-      console.log('- ID:', photographer.id)
-      console.log('- Status:', photographer.status)
-      console.log('- Name:', photographer.name)
+      console.log('- ID:', user.photographer.id)
+      console.log('- Status:', user.photographer.status)
+      console.log('- Name:', user.photographer.name)
     } else {
       console.log('\n❌ No photographer profile found')
     }
