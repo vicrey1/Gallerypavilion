@@ -1,11 +1,12 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run vercel-build",
   "framework": "nextjs",
-  "installCommand": "npm install",
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "DATABASE_URL": "@database_url"
   }
 }
