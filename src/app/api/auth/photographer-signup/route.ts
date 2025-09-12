@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
+import type { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+
+type TransactionClient = Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>
 
 // Validation schema for photographer registration
 const photographerSignupSchema = z.object({
@@ -47,14 +50,14 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = validatedData.email.toLowerCase()
     
     // Create user and photographer in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: TransactionClient) => {
       // Create user
       const user = await tx.user.create({
         data: {
           name: `${validatedData.firstName} ${validatedData.lastName}`,
           email: normalizedEmail,
           passwordHash: hashedPassword,
-          role: 'PHOTOGRAPHER'
+          role: 'PHOTOGRAPHER' as 'PHOTOGRAPHER' | 'ADMIN'
         },
         select: {
           id: true,
