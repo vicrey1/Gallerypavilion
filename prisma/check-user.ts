@@ -4,13 +4,9 @@ const prisma = new PrismaClient()
 
 async function checkUser(email: string) {
   try {
-    // Find user and associated photographer profile
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        photographer: true
-      }
-    })
+    // Find user (without include) then load photographer explicitly to avoid
+    // mismatched generated types during project-wide type checking.
+    const user = await prisma.user.findUnique({ where: { email } })
 
     if (!user) {
       console.log('❌ No user found with email:', email)
@@ -21,12 +17,15 @@ async function checkUser(email: string) {
     console.log('- Email:', user.email)
     console.log('- Role:', user.role)
     console.log('- Has password:', !!user.password)
-    
-    if (user.photographer) {
+
+    // Load photographer profile by userId if present
+    const photographer = await prisma.photographer.findUnique({ where: { userId: user.id } as any })
+
+    if (photographer) {
       console.log('\nPhotographer profile:')
-      console.log('- ID:', user.photographer.id)
-      console.log('- Status:', user.photographer.status)
-      console.log('- Name:', user.photographer.name)
+      console.log('- ID:', photographer.id)
+      console.log('- Status:', photographer.status)
+      console.log('- Name:', photographer.name)
     } else {
       console.log('\n❌ No photographer profile found')
     }

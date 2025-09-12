@@ -3,127 +3,52 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                String       @id @default(auto()) @map("_id") @db.ObjectId
-  email            String       @unique
-  name             String?
-  role             UserRole     @default(CLIENT)
-  passwordHash     String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  resetToken       String?      @unique
-  resetTokenExpiry DateTime?
-  galleries        Gallery[]    @relation("UserGalleries")
-  collections      Collection[] @relation("UserCollections")
-  activities       Activity[]   @relation("UserActivities")
-  inviteCode       String?      @unique
-  invitedBy        String?      @db.ObjectId
-  inviter          User?        @relation("UserInvites", fields: [invitedBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  invitedUsers     User[]       @relation("UserInvites")
-  isVerified       Boolean      @default(false)
+  id           String    @id @default(cuid())
+  name         String?
+  email        String    @unique
+  passwordHash String?
+  role         UserRole  @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  accounts     Account[]
+  sessions     Session[]
 }
 
-model Gallery {
-  id              String       @id @default(auto()) @map("_id") @db.ObjectId
-  title           String
-  description     String?
-  userId          String       @db.ObjectId
-  user            User         @relation("UserGalleries", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  collections     Collection[] @relation("GalleryCollections")
-  photos          Photo[]      @relation("GalleryPhotos")
-  isPublic        Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  activities      Activity[]   @relation("GalleryActivities")
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  access_token      String?
+  refresh_token     String?
+  expires_at        Int?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Collection {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  description   String?
-  userId        String     @db.ObjectId
-  user          User       @relation("UserCollections", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  galleryId     String     @db.ObjectId
-  gallery       Gallery    @relation("GalleryCollections", fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  activities    Activity[] @relation("CollectionActivities")
-  photoRefs     PhotoRef[]
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model PhotoRef {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  photoId       String     @db.ObjectId
-  collectionId  String     @db.ObjectId
-  photo         Photo      @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  createdAt     DateTime   @default(now())
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  @@unique([photoId, collectionId])
-}
-
-model Photo {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  title        String
-  description  String?
-  url          String
-  thumbnailUrl String?
-  metadata     Json?
-  galleryId    String     @db.ObjectId
-  gallery      Gallery    @relation("GalleryPhotos", fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  edition      Edition?   @relation("PhotoEdition")
-  materials    String[]
-  context      String?
-  dimensions   String?
-  price        Float?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  activities   Activity[] @relation("PhotoActivities")
-  photoRefs    PhotoRef[]
-}
-
-model Edition {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  photoId       String   @unique @db.ObjectId
-  photo         Photo    @relation("PhotoEdition", fields: [photoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  number        Int
-  totalEditions Int
-  certificate   String?
-  signature     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Activity {
-  id           String       @id @default(auto()) @map("_id") @db.ObjectId
-  type         ActivityType
-  userId       String       @db.ObjectId
-  user         User         @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  galleryId    String?      @db.ObjectId
-  gallery      Gallery?     @relation("GalleryActivities", fields: [galleryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  collectionId String?      @db.ObjectId
-  collection   Collection?  @relation("CollectionActivities", fields: [collectionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  photoId      String?      @db.ObjectId
-  photo        Photo?       @relation("PhotoActivities", fields: [photoId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  detail       String?
-  createdAt    DateTime     @default(now())
+  @@unique([identifier, token])
 }
 
 enum UserRole {
   ADMIN
-  PHOTOGRAPHER
-  CLIENT
-}
-
-enum ActivityType {
-  CREATE
-  UPDATE
-  DELETE
-  VIEW
-  SHARE
-  PURCHASE
 }

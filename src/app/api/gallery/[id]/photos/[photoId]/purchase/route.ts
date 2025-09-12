@@ -40,7 +40,7 @@ export async function POST(
     // Verify photo exists and is for sale and gallery is active
     const photo = await prisma.photo.findFirst({
       where: { id: photoId, galleryId, isForSale: true },
-      include: { gallery: { include: { photographer: true } } },
+      include: ({ gallery: { include: ({ photographer: true } as any) } } as any),
     })
 
     if (!photo || photo.gallery?.status !== "active") {

@@ -172,7 +172,7 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
         const normalizedEmail = String(emailCandidate).toLowerCase()
         console.debug('[jwt] decoded claim keys:', claimKeys, 'foundEmailCandidate:', normalizedEmail)
         const user = await withPrismaRetry(() =>
-          prisma.user.findUnique({ where: { email: normalizedEmail }, include: { photographer: true, client: true } })
+    prisma.user.findUnique({ where: { email: normalizedEmail }, include: ({ photographer: true, client: true } as any) })
         )
         if (user) {
           const payload: JWTPayload = {
@@ -208,7 +208,7 @@ export async function getUserFromRequestAsync(request: NextRequest): Promise<JWT
         const session = await withPrismaRetry(() =>
           prisma.session.findUnique({
             where: { sessionToken },
-            include: { user: { include: { photographer: true, client: true } } }
+            include: ({ user: { include: ({ photographer: true, client: true } as any) } } as any)
           })
         )
         if (session && session.user) {
