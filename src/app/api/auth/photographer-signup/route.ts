@@ -1,53 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
-import { z } from 'zod'
-import bcrypt from 'bcryptjs'
 
-// Validation schema for photographer registration
-const photographerSignupSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Valid email is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
-  phone: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
-  portfolio: z.string().min(1, 'Portfolio URL is required').url('Portfolio must be a valid URL'),
-  experience: z.string().min(1, 'Experience level is required'),
-  specialization: z.string().min(1, 'Specialization is required'),
-  businessName: z.string().optional(),
-  bio: z.string().optional(),
-  instagram: z.string().optional(),
-  equipment: z.string().optional(),
-  references: z.string().optional()
-})
-
+// Temporarily return a 404 since photographer registration is disabled
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    
-    // Validate input data
-    const validatedData = photographerSignupSchema.parse(body)
-    
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email.toLowerCase() }
-    })
-    
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'A user with this email already exists' },
-        { status: 400 }
-      )
-    }
-    
-    // Check if photographer already exists
-    const existingPhotographer = await prisma.photographer.findFirst({
-      where: { 
-        user: {
-          email: validatedData.email.toLowerCase()
-        }
-      }
+  return NextResponse.json(
+    { error: 'Photographer registration is currently disabled. Please contact the administrator.' },
+    { status: 404 }
+  )
+}
     })
     
     if (existingPhotographer) {
