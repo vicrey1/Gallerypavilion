@@ -4,11 +4,18 @@ const prisma = new PrismaClient()
 
 async function checkUser(email: string) {
   try {
-    // Find user and associated photographer profile
+    // Find user with all associated profiles
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        photographer: true
+        accounts: true,
+        sessions: true,
+        photographer: true,
+        client: true,
+        collections: true,
+        photoReviews: true,
+        photographerReviews: true,
+        notifications: true
       }
     })
 
