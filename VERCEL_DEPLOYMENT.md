@@ -50,14 +50,35 @@ Gallerypavilion/
    In the Vercel dashboard, go to your project settings and add these environment variables:
    
    ```
+   # Required Environment Variables
    MONGODB_URI=mongodb+srv://gallerypavilion:<Cronaldo-7>@gallery-pavilion.grnhga3.mongodb.net/
-   JWT_SECRET=your-super-secret-jwt-key-here-make-it-long-and-random
+   JWT_SECRET=your-super-secret-jwt-key-here-make-it-long-and-random-for-production
    JWT_EXPIRES_IN=7d
    NODE_ENV=production
    FRONTEND_URL=https://your-app-name.vercel.app
    BACKEND_URL=https://your-app-name.vercel.app/api
+   CORS_ORIGIN=https://your-app-name.vercel.app
+   COOKIE_SECRET=your-secure-cookie-secret-key-for-production
    RATE_LIMIT_WINDOW_MS=900000
    RATE_LIMIT_MAX_REQUESTS=100
+   
+   # Admin Configuration
+   ADMIN_EMAIL=admin@gallerypavilion.com
+   ADMIN_PASSWORD=secure-admin-password-change-this
+   
+   # File Upload Configuration
+   MAX_FILE_SIZE=10485760
+   MAX_FILES_PER_UPLOAD=20
+   WATERMARK_TEXT=Gallery Pavilion
+   WATERMARK_OPACITY=0.3
+   
+   # Email Configuration (Optional - for contact forms)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-app-password
+   SMTP_FROM=noreply@gallerypavilion.com
    ```
 
 4. **Deploy**
@@ -105,11 +126,29 @@ Gallerypavilion/
 | Variable | Description | Example |
 |----------|-------------|----------|
 | `MONGODB_URI` | MongoDB connection string | `mongodb+srv://gallerypavilion:<Cronaldo-7>@gallery-pavilion.grnhga3.mongodb.net/` |
-| `JWT_SECRET` | Secret key for JWT tokens | `your-super-secret-key-here` |
+| `JWT_SECRET` | Secret key for JWT tokens | `your-super-secret-key-here-make-it-long-and-random-for-production` |
 | `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
 | `NODE_ENV` | Environment mode | `production` |
 | `FRONTEND_URL` | Your Vercel app URL | `https://your-app.vercel.app` |
 | `BACKEND_URL` | API base URL | `https://your-app.vercel.app/api` |
+| `CORS_ORIGIN` | CORS allowed origin | `https://your-app.vercel.app` |
+| `COOKIE_SECRET` | Cookie encryption secret | `your-secure-cookie-secret-key-for-production` |
+
+### Admin Configuration
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `ADMIN_EMAIL` | Admin user email | `admin@gallerypavilion.com` |
+| `ADMIN_PASSWORD` | Admin user password | `secure-admin-password-change-this` |
+
+### File Upload & Processing
+
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `MAX_FILE_SIZE` | Maximum file size in bytes | `10485760` (10MB) |
+| `MAX_FILES_PER_UPLOAD` | Max files per upload | `20` |
+| `WATERMARK_TEXT` | Watermark text | `Gallery Pavilion` |
+| `WATERMARK_OPACITY` | Watermark opacity | `0.3` |
 
 ### Optional Environment Variables
 
@@ -117,8 +156,11 @@ Gallerypavilion/
 |----------|-------------|----------|
 | `RATE_LIMIT_WINDOW_MS` | Rate limiting window | `900000` (15 min) |
 | `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `100` |
-| `ADMIN_EMAIL` | Default admin email | - |
-| `ADMIN_PASSWORD` | Default admin password | - |
+| `SMTP_HOST` | Email server host | `smtp.gmail.com` |
+| `SMTP_PORT` | Email server port | `587` |
+| `SMTP_USER` | Email username | - |
+| `SMTP_PASS` | Email password/app password | - |
+| `SMTP_FROM` | From email address | `noreply@gallerypavilion.com` |
 
 ## Step 4: Verify Deployment
 
