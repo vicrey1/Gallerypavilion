@@ -50,7 +50,7 @@ Gallerypavilion/
    In the Vercel dashboard, go to your project settings and add these environment variables:
    
    ```
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/gallery-pavilion
+   MONGODB_URI=mongodb+srv://gallerypavilion:<Cronaldo-7>@gallery-pavilion.grnhga3.mongodb.net/
    JWT_SECRET=your-super-secret-jwt-key-here-make-it-long-and-random
    JWT_EXPIRES_IN=7d
    NODE_ENV=production
@@ -104,7 +104,7 @@ Gallerypavilion/
 
 | Variable | Description | Example |
 |----------|-------------|----------|
-| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/gallery-pavilion` |
+| `MONGODB_URI` | MongoDB connection string | `mongodb+srv://gallerypavilion:<Cronaldo-7>@gallery-pavilion.grnhga3.mongodb.net/` |
 | `JWT_SECRET` | Secret key for JWT tokens | `your-super-secret-key-here` |
 | `JWT_EXPIRES_IN` | JWT token expiration | `7d` |
 | `NODE_ENV` | Environment mode | `production` |
