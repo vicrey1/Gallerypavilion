@@ -15,6 +15,7 @@
   "env": {
     "NODE_ENV": "production"
   },
+  "installCommand": "npm install --prefix frontend",
   "functions": {
     "api/index.js": {
       "maxDuration": 30
