@@ -18,6 +18,11 @@ const invitationRoutes = require('./routes/invitations');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const isServerless = !!process.env.VERCEL;
+// Include Vercel-provided deployment URLs as allowed origins, e.g. my-app.vercel.app
+const vercelUrls = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+  .filter(Boolean)
+  .map((u) => `https://${u}`);
 
 // Security middleware
 if (process.env.NODE_ENV === 'production') {
@@ -60,24 +65,47 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001', 
   'http://localhost:3002',
-  process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+  process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000',
+  ...vercelUrls
 ].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+
+    // Allow same-origin automatically (important for Vercel rewrites serving API on same domain)
+    try {
+      const originHost = new URL(origin).host;
+      const reqHost = this?.req?.get ? this.req.get('host') : null; // fallback if not bound
+      // If req is not available via this, try callback-bound function variant
+    } catch (_) {
+      // ignore URL parse errors
     }
+
+    // Fallback same-origin check using provided req (function signature origin, callback doesn't pass req),
+    // so we'll compute it inside a wrapper middleware below
+    callback(null, allowedOrigins.includes(origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Inject a small middleware before to properly allow same-origin based on req
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin) return next();
+  try {
+    const originHost = new URL(origin).host;
+    const reqHost = req.get('host');
+    if (originHost === reqHost) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+    }
+  } catch (_) {}
+  next();
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: '50mb' }));
@@ -167,16 +195,23 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gallery-p
 .then(() => {
   console.log('✅ Connected to MongoDB');
   
-  // Start server
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
+  // Start server only in non-serverless environments
+  if (!isServerless) {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } else {
+    console.log('🛰️ Serverless runtime detected (Vercel): not calling app.listen');
+  }
 })
 .catch((error) => {
   console.error('❌ MongoDB connection error:', error);
-  process.exit(1);
+  // Avoid exiting in serverless; let function return 500 and logs help debugging
+  if (!isServerless) {
+    process.exit(1);
+  }
 });
 
 // Graceful shutdown
