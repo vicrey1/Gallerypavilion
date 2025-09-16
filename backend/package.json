@@ -1,0 +1,41 @@
+{
+  "name": "gallery-pavilion-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Gallery Pavilion photography platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "photography",
+    "gallery",
+    "api",
+    "express"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1490.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "form-data": "^4.0.4",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.6.3",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.7.0",
+    "nodemailer": "^7.0.6",
+    "sharp": "^0.32.6",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

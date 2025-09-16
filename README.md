@@ -1,53 +1,50 @@
-# Gallery Pavilion - Photography Platform
+# Gallery Pavilion
 
-A modern, full-featured photography platform built with Next.js, featuring gallery management, photographer profiles, and client collaboration tools.
-
-## Features
-
-- **Gallery Management**: Create and organize photo collections
-- **Photographer Profiles**: Professional photographer showcases
-- **Client Collaboration**: Share galleries and collect feedback
-- **Photo Comparison**: Side-by-side photo comparison tools
-- **Analytics Dashboard**: Track engagement and performance
-- **Responsive Design**: Beautiful UI that works on all devices
-
-## Getting Started
-
-First, install dependencies:
-
-```bash
-npm install
-```
-
-Then, run the development server:
-
-```bash
-npm run dev
-```
-
-Open [https://gallerypavilion.com](https://gallerypavilion.com) with your browser to see the result.
+A modern, private, premium photography gallery platform.
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 with App Router
-- **Database**: Prisma with SQLite
-- **Styling**: Tailwind CSS
-- **UI Components**: Custom components with modern design
-- **Authentication**: Built-in auth system
-- **File Upload**: Image handling and optimization
+- **Frontend**: React (JavaScript), React Router v7, Tailwind CSS
+- **Backend**: Node.js + Express (JavaScript)
+- **Authentication**: JWT stored in HttpOnly cookies
+- **Storage**: Cloud (S3/R2) with signed URLs
+- **Image Processing**: Sharp for watermarked previews and thumbnails
+- **Homepage Images**: Unsplash API with fallback
 
 ## Project Structure
 
 ```
-src/
-├── app/                 # Next.js app router pages
-├── components/          # Reusable UI components
-├── lib/                 # Utility functions and configurations
-└── types/               # TypeScript type definitions
+gallery-pavilion/
+├── frontend/          # React application
+├── backend/           # Node.js/Express API
+└── README.md
 ```
 
-## Deploy on Vercel
+## Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Frontend
+```bash
+cd frontend
+npm install
+npm start
+```
+
+## Features
+
+- Photographer authentication and approval system
+- Private gallery sharing with tokens and passwords
+- Image upload with automatic watermarking
+- Responsive masonry grid with lightbox
+- Admin panel for user management
+- Premium homepage with slideshow
+
+## Environment Variables
+
+See backend/.env.example for required environment variables.
