@@ -1,4 +1,38 @@
 {
+  "name": "gallery-pavilion",
+  "version": "1.0.0",
+  "description": "Gallery Pavilion - Photography platform with React frontend and Node.js backend",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm start",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && npm run dev",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:frontend && npm run install:backend"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vicrey1/Gallerypavilion.git"
+  },
+  "keywords": [
+    "photography",
+    "gallery",
+    "react",
+    "nodejs",
+    "portfolio"
+  ],
+  "author": "vicrey1",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.12.2",
     "axios-cookiejar-support": "^6.0.4",
