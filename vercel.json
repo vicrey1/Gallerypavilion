@@ -12,10 +12,7 @@
       "dest": "/frontend/build/$1"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "installCommand": "npm install --prefix frontend",
+  "installCommand": "npm ci --prefix frontend",
   "functions": {
     "api/index.js": {
       "maxDuration": 30
