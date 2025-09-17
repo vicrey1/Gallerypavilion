@@ -62,7 +62,7 @@ class EmailService {
 
   generateInvitationEmailHTML(invitation, gallery, photographer) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const inviteUrl = `${frontendUrl}/gallery/invite/${invitation.code}`;
+    const inviteUrl = `${frontendUrl}/gallery/${invitation.code}`;
     const galleryUrl = `${frontendUrl}/gallery/${gallery._id}`;
     
     return `
@@ -266,7 +266,7 @@ class EmailService {
 
   generateInvitationEmailText(invitation, gallery, photographer) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const inviteUrl = `${frontendUrl}/gallery/invite/${invitation.code}`;
+    const inviteUrl = `${frontendUrl}/gallery/${invitation.code}`;
     
     return `
 GALLERY PAVILION - EXCLUSIVE INVITATION

@@ -18,6 +18,7 @@ import PhotoDetailPage from './pages/PhotoDetailPage';
 import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 
+
 // Styles
 import './index.css';
 
@@ -32,6 +33,7 @@ function App() {
             <Route path="/portfolio" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+
             <Route path="/gallery/:token" element={<ShareGalleryPage />} />
             <Route path="/gallery/:token/photo/:photoId" element={<PhotoDetailPage />} />
             {/* Protected Routes - Photographers */}

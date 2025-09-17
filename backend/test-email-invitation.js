@@ -40,7 +40,7 @@ class TestEmailService {
     }
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const inviteUrl = `${frontendUrl}/gallery/invite/${invitation.code}`;
+    const inviteUrl = `${frontendUrl}/gallery/${invitation.code}`;
     
     const mailOptions = {
       from: 'noreply@gallerypavilion.com',
