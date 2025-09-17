@@ -757,8 +757,23 @@ router.post('/:id/photos',
   authenticateToken,
   requireApprovedPhotographer,
   validateGalleryId,
+  // Add request timeout middleware
+  (req, res, next) => {
+    // Set a 3-minute timeout for the entire request
+    req.setTimeout(180000, () => {
+      console.error('Request timeout for photo upload');
+      if (!res.headersSent) {
+        res.status(504).json({
+          message: 'Upload timeout',
+          error: 'The upload is taking too long. Please try uploading fewer or smaller images.',
+          code: 'REQUEST_TIMEOUT'
+        });
+      }
+    });
+    next();
+  },
   cleanupOnError,
-  photoUpload.array('photos', 20),
+  photoUpload,
   handleUploadErrors,
   async (req, res, next) => {
     // Get gallery settings for watermark configuration
@@ -785,7 +800,8 @@ router.post('/:id/photos',
       watermarkText: 'Gallery Pavilion',
       watermarkPosition: 'bottom-right',
       watermarkOpacity: opacityMap[watermarkIntensity] || 0.5,
-      quality: 85
+      quality: 85,
+      timeout: 120000 // 2 minute processing timeout
     };
 
     // Apply image processing middleware
@@ -824,28 +840,29 @@ router.post('/:id/photos',
 
       for (const processedFile of req.processedFiles) {
         try {
-          const { original, processed } = processedFile;
+          
+          const { original, preview, thumbnail, watermarked } = processedFile;
           
           // Handle GridFS, cloud storage, or local storage paths
           const isGridFS = isGridFSAvailable();
           const isCloud = isCloudStorageConfigured();
           
           const photo = new Photo({
-            title: original.originalname.replace(/\.[^/.]+$/, ''),
+            title: processedFile.originalName.replace(/\.[^/.]+$/, ''),
             gallery: req.params.id,
             photographer: req.user._id,
             originalKey: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
-            previewKey: processed.preview ? (isGridFS ? processed.preview.filename : (isCloud ? processed.preview.key : path.basename(processed.preview.path))) : null,
-            thumbnailKey: processed.thumbnail ? (isGridFS ? processed.thumbnail.filename : (isCloud ? processed.thumbnail.key : path.basename(processed.thumbnail.path))) : null,
-            watermarkedKey: processed.watermarked ? (isGridFS ? processed.watermarked.filename : (isCloud ? processed.watermarked.key : path.basename(processed.watermarked.path))) : null,
+            previewKey: preview ? (isGridFS ? preview.filename : (isCloud ? preview.key : path.basename(preview.path))) : null,
+            thumbnailKey: thumbnail ? (isGridFS ? thumbnail.filename : (isCloud ? thumbnail.key : path.basename(thumbnail.path))) : null,
+            watermarkedKey: watermarked ? (isGridFS ? watermarked.filename : (isCloud ? watermarked.key : path.basename(watermarked.path))) : null,
             filename: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
-            originalFilename: original.originalname,
-            mimetype: original.mimetype,
-            size: original.size,
+            originalFilename: processedFile.originalName,
+            mimetype: processedFile.mimetype,
+            size: processedFile.size,
             dimensions: {
-              width: original.width || processed.width,
-              height: original.height || processed.height,
-              aspectRatio: (original.width || processed.width) / (original.height || processed.height)
+              width: original.metadata?.width || null,
+              height: original.metadata?.height || null,
+              aspectRatio: original.metadata?.width && original.metadata?.height ? original.metadata.width / original.metadata.height : null
             },
             exif: {
               camera: {

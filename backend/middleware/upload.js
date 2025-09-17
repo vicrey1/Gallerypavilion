@@ -99,16 +99,21 @@ const createUploadConfig = (options = {}) => {
   });
 };
 
-// Pre-configured upload middleware - prioritize GridFS, then cloud, then local
-const photoUpload = isGridFSAvailable() 
-  ? gridfsPhotoUpload
-  : isCloudStorageConfigured() 
-    ? cloudPhotoUpload
-    : createUploadConfig({
-        uploadType: 'photos',
-        maxFiles: 20,
-        maxFileSize: 50 * 1024 * 1024
-      });
+// Dynamic upload middleware - check GridFS availability at request time
+const photoUpload = (req, res, next) => {
+  const middleware = isGridFSAvailable() 
+    ? gridfsPhotoUpload
+    : isCloudStorageConfigured() 
+      ? cloudPhotoUpload
+      : createUploadConfig({
+          uploadType: 'photos',
+          maxFiles: 20,
+          maxFileSize: 50 * 1024 * 1024
+        });
+  
+  console.log('📁 Using upload middleware:', isGridFSAvailable() ? 'GridFS' : isCloudStorageConfigured() ? 'Cloud' : 'Local');
+  return middleware.array('photos', 20)(req, res, next);
+};
 
 const profileUpload = createUploadConfig({
   uploadType: 'profiles',

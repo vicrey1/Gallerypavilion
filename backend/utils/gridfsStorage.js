@@ -95,6 +95,13 @@ const existsInGridFS = async (filename) => {
 
 // Process and upload image with multiple sizes
 const processAndUploadToGridFS = async (buffer, originalFilename, options = {}) => {
+  console.log('🚀 processAndUploadToGridFS called with:', {
+    originalFilename,
+    bufferType: typeof buffer,
+    bufferLength: buffer?.length,
+    isBuffer: Buffer.isBuffer(buffer)
+  });
+  
   const {
     generateThumbnail = true,
     generatePreview = true,
@@ -110,8 +117,31 @@ const processAndUploadToGridFS = async (buffer, originalFilename, options = {}) 
   const results = {};
 
   try {
+    // Debug buffer information
+    console.log('🔍 Buffer debug info:', {
+      type: typeof buffer,
+      length: buffer?.length,
+      constructor: buffer?.constructor?.name,
+      isBuffer: Buffer.isBuffer(buffer),
+      firstBytes: buffer?.slice(0, 10),
+      bufferContent: buffer?.toString('hex').substring(0, 20)
+    });
+
+    // Validate buffer before Sharp processing
+    if (!Buffer.isBuffer(buffer)) {
+      throw new Error(`Expected Buffer, got ${typeof buffer}`);
+    }
+    if (buffer.length === 0) {
+      throw new Error('Buffer is empty');
+    }
+    if (buffer.length < 10) {
+      throw new Error(`Buffer too small: ${buffer.length} bytes`);
+    }
+
+    console.log('📸 Attempting Sharp metadata extraction...');
     // Get image metadata
     const metadata = await sharp(buffer).metadata();
+    console.log('✅ Sharp metadata successful:', metadata);
     
     // Upload original
     const originalFilename = `${fileId}_original${ext}`;
@@ -254,40 +284,94 @@ const gridfsPhotoUpload = createGridFSUploadConfig({
   maxFileSize: 50 * 1024 * 1024 // 50MB
 });
 
-// Process uploaded images middleware for GridFS
-const processGridFSImages = async (req, res, next) => {
-  if (!req.files || req.files.length === 0) {
-    return next();
-  }
+// Process uploaded images middleware for GridFS with timeout handling
+const processGridFSImages = (options = {}) => {
+  const { timeout = 120000 } = options; // 2 minute timeout
+  
+  return async (req, res, next) => {
+    if (!req.files || req.files.length === 0) {
+      return next();
+    }
 
-  try {
-    const processedFiles = [];
-    
-    for (const file of req.files) {
-      const processed = await processAndUploadToGridFS(file.buffer, file.originalname, {
-        generateThumbnail: true,
-        generatePreview: true,
-        generateWatermarked: false, // Can be enabled based on gallery settings
-        quality: 85
-      });
+    // Set up timeout for the entire processing operation
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Image processing timeout - operation took too long'));
+      }, timeout);
+    });
+
+    try {
+      console.log(`Starting GridFS processing for ${req.files.length} files`);
+      const startTime = Date.now();
       
-      processedFiles.push({
-        original: processed.original,
-        preview: processed.preview,
-        thumbnail: processed.thumbnail,
-        watermarked: processed.watermarked,
-        originalName: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size
+      // Process files in parallel with Promise.all for better performance
+      const processingPromise = Promise.all(
+        req.files.map(async (file, index) => {
+          try {
+            console.log(`Processing file ${index + 1}/${req.files.length}: ${file.originalname}`);
+            console.log('🔍 File object debug:');
+            console.log('  - File keys:', Object.keys(file));
+            console.log('  - File buffer exists:', !!file.buffer);
+            console.log('  - File buffer type:', typeof file.buffer);
+            console.log('  - File buffer length:', file.buffer ? file.buffer.length : 'undefined');
+            console.log('  - File mimetype:', file.mimetype);
+            console.log('  - File size:', file.size);
+            
+            const fileStartTime = Date.now();
+            
+            const processed = await processAndUploadToGridFS(file.buffer, file.originalname, {
+              generateThumbnail: true,
+              generatePreview: true,
+              generateWatermarked: false,
+              quality: 85
+            });
+            
+            const fileProcessTime = Date.now() - fileStartTime;
+            console.log(`File ${file.originalname} processed in ${fileProcessTime}ms`);
+            
+            return {
+              original: processed.original,
+              preview: processed.preview,
+              thumbnail: processed.thumbnail,
+              watermarked: processed.watermarked,
+              originalName: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size
+            };
+          } catch (fileError) {
+            console.error(`Error processing file ${file.originalname}:`, fileError);
+            throw new Error(`Failed to process ${file.originalname}: ${fileError.message}`);
+          }
+        })
+      );
+      
+      // Race between processing and timeout
+      const processedFiles = await Promise.race([processingPromise, timeoutPromise]);
+      
+      const totalTime = Date.now() - startTime;
+      console.log(`All ${req.files.length} files processed successfully in ${totalTime}ms`);
+      
+      req.processedFiles = processedFiles;
+      next();
+    } catch (error) {
+      console.error('Error processing GridFS images:', error);
+      
+      // Send appropriate error response based on error type
+      if (error.message.includes('timeout')) {
+        return res.status(504).json({
+          message: 'Upload processing timeout',
+          error: 'The image processing is taking too long. Please try uploading fewer or smaller images.',
+          code: 'PROCESSING_TIMEOUT'
+        });
+      }
+      
+      return res.status(500).json({
+        message: 'Image processing failed',
+        error: error.message,
+        code: 'PROCESSING_ERROR'
       });
     }
-    
-    req.processedFiles = processedFiles;
-    next();
-  } catch (error) {
-    console.error('Error processing GridFS images:', error);
-    next(error);
-  }
+  };
 };
 
 // Check if GridFS is available
