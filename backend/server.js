@@ -19,6 +19,12 @@ const invitationRoutes = require('./routes/invitations');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const isServerless = !!process.env.VERCEL;
+
+// Trust proxy for Vercel deployment (required for rate limiting and IP detection)
+if (process.env.NODE_ENV === 'production' || isServerless) {
+  app.set('trust proxy', 1);
+}
+
 // Include Vercel-provided deployment URLs as allowed origins, e.g. my-app.vercel.app
 const vercelUrls = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
   .filter(Boolean)
@@ -44,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
   }));
 }
 
-// Rate limiting
+// Rate limiting with proper proxy support
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
@@ -54,8 +60,16 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for failed requests to avoid blocking legitimate retries
+  skipFailedRequests: true,
+  // Skip successful requests for certain endpoints
+  skip: (req) => {
+    // Skip rate limiting for health checks and static assets
+    return req.path === '/health' || req.path === '/api/health';
+  }
 });
 
+// Apply rate limiting only in production
 if (process.env.NODE_ENV === 'production') {
   app.use('/api/', limiter);
 }
