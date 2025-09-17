@@ -2,6 +2,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const imageProcessor = require('../utils/imageProcessor');
+const { 
+  cloudPhotoUpload, 
+  processCloudImages, 
+  isCloudStorageConfigured 
+} = require('../utils/cloudStorage');
+const {
+  gridfsPhotoUpload,
+  processGridFSImages,
+  isGridFSAvailable
+} = require('../utils/gridfsStorage');
 
 // Configure storage
 const createStorage = (uploadType = 'photos') => {
@@ -89,12 +99,16 @@ const createUploadConfig = (options = {}) => {
   });
 };
 
-// Pre-configured upload middleware
-const photoUpload = createUploadConfig({
-  uploadType: 'photos',
-  maxFiles: 20,
-  maxFileSize: 50 * 1024 * 1024
-});
+// Pre-configured upload middleware - prioritize GridFS, then cloud, then local
+const photoUpload = isGridFSAvailable() 
+  ? gridfsPhotoUpload
+  : isCloudStorageConfigured() 
+    ? cloudPhotoUpload
+    : createUploadConfig({
+        uploadType: 'photos',
+        maxFiles: 20,
+        maxFileSize: 50 * 1024 * 1024
+      });
 
 const profileUpload = createUploadConfig({
   uploadType: 'profiles',
@@ -109,8 +123,16 @@ const singlePhotoUpload = createUploadConfig({
   maxFileSize: 50 * 1024 * 1024
 });
 
-// Middleware to process uploaded images
+// Middleware to process uploaded images - use GridFS, cloud, or local processing
 const processUploadedImages = (options = {}) => {
+  // Use GridFS processing if available, then cloud, then local
+  if (isGridFSAvailable()) {
+    return processGridFSImages(options);
+  } else if (isCloudStorageConfigured()) {
+    return processCloudImages(options);
+  }
+
+  // Fallback to local processing for development
   return async (req, res, next) => {
     if (!req.files && !req.file) {
       return next();

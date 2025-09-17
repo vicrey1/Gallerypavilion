@@ -10,6 +10,8 @@ const {
   requireOwnershipOrAdmin,
   optionalAuth 
 } = require('../middleware/auth');
+const { isCloudStorageConfigured, getFileUrl } = require('../utils/cloudStorage');
+const { isGridFSAvailable, getFromGridFS, getPhotoBucket } = require('../utils/gridfsStorage');
 
 const router = express.Router();
 
@@ -488,27 +490,71 @@ router.get('/:id/download',
         return res.status(403).json({ message: 'Download not allowed' });
       }
 
-      // Check if file exists
-      try {
-        await fs.access(photo.path);
-      } catch (fileError) {
-        return res.status(404).json({ message: 'Photo file not found' });
+      // Handle GridFS storage first
+      if (isGridFSAvailable()) {
+        try {
+          const filename = photo.originalKey || photo.filename;
+          const fileBuffer = await getFromGridFS(filename);
+          
+          // Increment download count if not owner
+          if (!isOwner) {
+            await Photo.findByIdAndUpdate(req.params.id, {
+              $inc: { 'stats.downloads': 1 }
+            });
+          }
+          
+          res.setHeader('Content-Disposition', `attachment; filename="${photo.originalFilename || photo.filename}"`);
+          res.setHeader('Content-Type', photo.mimetype);
+          res.setHeader('Content-Length', fileBuffer.length);
+          return res.send(fileBuffer);
+        } catch (gridfsError) {
+          console.error('GridFS download error:', gridfsError);
+          return res.status(404).json({ message: 'Photo file not found in GridFS' });
+        }
       }
-
-      // Increment download count if not owner
-      if (!isOwner) {
-        await Photo.findByIdAndUpdate(req.params.id, {
-          $inc: { 'stats.downloads': 1 }
-        });
-      }
-
-      // Set appropriate headers
-      res.setHeader('Content-Disposition', `attachment; filename="${photo.originalName}"`);
-      res.setHeader('Content-Type', photo.mimeType);
       
-      // Stream the file
-      const fileStream = require('fs').createReadStream(photo.path);
-      fileStream.pipe(res);
+      // Handle cloud storage vs local storage
+      if (isCloudStorageConfigured()) {
+        // For cloud storage, redirect to the signed URL
+        const fileUrl = await getFileUrl(photo.originalKey || photo.filename);
+        if (!fileUrl) {
+          return res.status(404).json({ message: 'Photo file not found' });
+        }
+        
+        // Increment download count if not owner
+        if (!isOwner) {
+          await Photo.findByIdAndUpdate(req.params.id, {
+            $inc: { 'stats.downloads': 1 }
+          });
+        }
+        
+        return res.redirect(fileUrl);
+      } else {
+        // Local storage handling
+        const filePath = path.join(__dirname, '../uploads/photos', photo.originalKey || photo.filename);
+        
+        // Check if file exists
+        try {
+          await fs.access(filePath);
+        } catch (fileError) {
+          return res.status(404).json({ message: 'Photo file not found' });
+        }
+
+        // Increment download count if not owner
+        if (!isOwner) {
+          await Photo.findByIdAndUpdate(req.params.id, {
+            $inc: { 'stats.downloads': 1 }
+          });
+        }
+
+        // Set appropriate headers
+        res.setHeader('Content-Disposition', `attachment; filename="${photo.originalFilename || photo.filename}"`);
+        res.setHeader('Content-Type', photo.mimetype);
+        
+        // Stream the file
+        const fileStream = require('fs').createReadStream(filePath);
+        fileStream.pipe(res);
+      }
 
     } catch (error) {
       console.error('Error downloading photo:', error);
@@ -545,22 +591,52 @@ router.get('/:id/preview',
         return res.status(403).json({ message: 'Access denied' });
       }
 
-      const previewPath = photo.previewPath || photo.path;
-
-      // Check if file exists
-      try {
-        await fs.access(previewPath);
-      } catch (fileError) {
-        return res.status(404).json({ message: 'Preview image not found' });
+      // Handle GridFS storage first
+      if (isGridFSAvailable()) {
+        try {
+          const filename = photo.previewKey || photo.originalKey || photo.filename;
+          const fileBuffer = await getFromGridFS(filename);
+          
+          res.setHeader('Content-Type', 'image/jpeg');
+          res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+          res.setHeader('Content-Length', fileBuffer.length);
+          return res.send(fileBuffer);
+        } catch (gridfsError) {
+          console.error('GridFS preview error:', gridfsError);
+          return res.status(404).json({ message: 'Preview image not found in GridFS' });
+        }
       }
-
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
       
-      // Stream the file
-      const fileStream = require('fs').createReadStream(previewPath);
-      fileStream.pipe(res);
+      // Handle cloud storage vs local storage
+      if (isCloudStorageConfigured()) {
+        // For cloud storage, redirect to the signed URL
+        const previewKey = photo.previewKey || photo.originalKey || photo.filename;
+        const fileUrl = await getFileUrl(previewKey);
+        if (!fileUrl) {
+          return res.status(404).json({ message: 'Preview image not found' });
+        }
+        
+        return res.redirect(fileUrl);
+      } else {
+        // Local storage handling
+        const previewKey = photo.previewKey || photo.originalKey || photo.filename;
+        const previewPath = path.join(__dirname, '../uploads/photos', previewKey);
+
+        // Check if file exists
+        try {
+          await fs.access(previewPath);
+        } catch (fileError) {
+          return res.status(404).json({ message: 'Preview image not found' });
+        }
+
+        // Set appropriate headers
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+        
+        // Stream the file
+        const fileStream = require('fs').createReadStream(previewPath);
+        fileStream.pipe(res);
+      }
 
     } catch (error) {
       console.error('Error serving preview:', error);
@@ -597,22 +673,52 @@ router.get('/:id/thumbnail',
         return res.status(403).json({ message: 'Access denied' });
       }
 
-      const thumbnailPath = photo.thumbnailPath || photo.previewPath || photo.path;
-
-      // Check if file exists
-      try {
-        await fs.access(thumbnailPath);
-      } catch (fileError) {
-        return res.status(404).json({ message: 'Thumbnail image not found' });
+      // Handle GridFS storage first
+      if (isGridFSAvailable()) {
+        try {
+          const filename = photo.thumbnailKey || photo.previewKey || photo.originalKey || photo.filename;
+          const fileBuffer = await getFromGridFS(filename);
+          
+          res.setHeader('Content-Type', 'image/jpeg');
+          res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+          res.setHeader('Content-Length', fileBuffer.length);
+          return res.send(fileBuffer);
+        } catch (gridfsError) {
+          console.error('GridFS thumbnail error:', gridfsError);
+          return res.status(404).json({ message: 'Thumbnail image not found in GridFS' });
+        }
       }
-
-      // Set appropriate headers
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
       
-      // Stream the file
-      const fileStream = require('fs').createReadStream(thumbnailPath);
-      fileStream.pipe(res);
+      // Handle cloud storage vs local storage
+      if (isCloudStorageConfigured()) {
+        // For cloud storage, redirect to the signed URL
+        const thumbnailKey = photo.thumbnailKey || photo.previewKey || photo.originalKey || photo.filename;
+        const fileUrl = await getFileUrl(thumbnailKey);
+        if (!fileUrl) {
+          return res.status(404).json({ message: 'Thumbnail image not found' });
+        }
+        
+        return res.redirect(fileUrl);
+      } else {
+        // Local storage handling
+        const thumbnailKey = photo.thumbnailKey || photo.previewKey || photo.originalKey || photo.filename;
+        const thumbnailPath = path.join(__dirname, '../uploads/photos', thumbnailKey);
+
+        // Check if file exists
+        try {
+          await fs.access(thumbnailPath);
+        } catch (fileError) {
+          return res.status(404).json({ message: 'Thumbnail image not found' });
+        }
+
+        // Set appropriate headers
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+        
+        // Stream the file
+        const fileStream = require('fs').createReadStream(thumbnailPath);
+        fileStream.pipe(res);
+      }
 
     } catch (error) {
       console.error('Error serving thumbnail:', error);

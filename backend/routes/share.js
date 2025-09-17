@@ -383,9 +383,9 @@ router.get('/:token',
 
       const mappedPhotos = photos.map(photo => ({
         ...photo,
-        previewUrl: photo.previewKey ? `/uploads/photos/${photo.previewKey}` : (photo.filename ? `/uploads/photos/${photo.filename}` : undefined),
-        thumbnailUrl: photo.thumbnailKey ? `/uploads/photos/${photo.thumbnailKey}` : (photo.previewKey ? `/uploads/photos/${photo.previewKey}` : undefined),
-        url: photo.originalKey ? `/uploads/photos/${photo.originalKey}` : (photo.filename ? `/uploads/photos/${photo.filename}` : undefined),
+        previewUrl: `/photos/${photo._id}/preview`,
+        thumbnailUrl: `/photos/${photo._id}/thumbnail`,
+        url: `/photos/${photo._id}/download`,
         // Normalized metadata for frontend display (keep in sync with public gallery route)
         metadata: {
           description: photo.description || '',

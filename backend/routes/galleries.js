@@ -19,6 +19,8 @@ const {
   handleUploadErrors, 
   cleanupOnError 
 } = require('../middleware/upload');
+const { isCloudStorageConfigured } = require('../utils/cloudStorage');
+const { isGridFSAvailable } = require('../utils/gridfsStorage');
 
 const router = express.Router();
 
@@ -465,11 +467,10 @@ router.post('/',
 
       // Handle cover image if uploaded
       if (req.file) {
-        const fileUrl = `/uploads/photos/${req.file.filename}`;
         galleryData.coverImage = {
           originalKey: req.file.filename,
           previewKey: req.file.filename,
-          url: fileUrl,
+          url: `/uploads/photos/${req.file.filename}`, // Will be handled by photo routes
           filename: req.file.filename,
           size: req.file.size,
           mimetype: req.file.mimetype
@@ -613,11 +614,10 @@ router.put('/:id',
 
       // Handle cover image if uploaded
       if (req.file) {
-        const fileUrl = `/uploads/photos/${req.file.filename}`;
         updateData.coverImage = {
           originalKey: req.file.filename,
           previewKey: req.file.filename,
-          url: fileUrl,
+          url: `/uploads/photos/${req.file.filename}`, // Will be handled by photo routes
           filename: req.file.filename,
           size: req.file.size,
           mimetype: req.file.mimetype
@@ -826,22 +826,26 @@ router.post('/:id/photos',
         try {
           const { original, processed } = processedFile;
           
+          // Handle GridFS, cloud storage, or local storage paths
+          const isGridFS = isGridFSAvailable();
+          const isCloud = isCloudStorageConfigured();
+          
           const photo = new Photo({
             title: original.originalname.replace(/\.[^/.]+$/, ''),
             gallery: req.params.id,
             photographer: req.user._id,
-            originalKey: path.basename(original.path),
-            previewKey: processed.preview ? path.basename(processed.preview.path) : null,
-            thumbnailKey: processed.thumbnail ? path.basename(processed.thumbnail.path) : null,
-            watermarkedKey: processed.watermarked ? path.basename(processed.watermarked.path) : null,
-            filename: path.basename(original.path),
+            originalKey: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
+            previewKey: processed.preview ? (isGridFS ? processed.preview.filename : (isCloud ? processed.preview.key : path.basename(processed.preview.path))) : null,
+            thumbnailKey: processed.thumbnail ? (isGridFS ? processed.thumbnail.filename : (isCloud ? processed.thumbnail.key : path.basename(processed.thumbnail.path))) : null,
+            watermarkedKey: processed.watermarked ? (isGridFS ? processed.watermarked.filename : (isCloud ? processed.watermarked.key : path.basename(processed.watermarked.path))) : null,
+            filename: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
             originalFilename: original.originalname,
             mimetype: original.mimetype,
             size: original.size,
             dimensions: {
-              width: original.width,
-              height: original.height,
-              aspectRatio: original.width / original.height
+              width: original.width || processed.width,
+              height: original.height || processed.height,
+              aspectRatio: (original.width || processed.width) / (original.height || processed.height)
             },
             exif: {
               camera: {
@@ -954,9 +958,9 @@ router.get('/:id/public',
       // Map URLs similar to share route for consistency
       const mappedPhotos = photos.map(photo => ({
         ...photo,
-        previewUrl: photo.previewKey ? `/uploads/photos/${photo.previewKey}` : (photo.filename ? `/uploads/photos/${photo.filename}` : undefined),
-        thumbnailUrl: photo.thumbnailKey ? `/uploads/photos/${photo.thumbnailKey}` : (photo.previewKey ? `/uploads/photos/${photo.previewKey}` : undefined),
-        url: photo.originalKey ? `/uploads/photos/${photo.originalKey}` : (photo.filename ? `/uploads/photos/${photo.filename}` : undefined),
+        previewUrl: `/photos/${photo._id}/preview`,
+        thumbnailUrl: `/photos/${photo._id}/thumbnail`,
+        url: `/photos/${photo._id}/download`,
         // Normalized metadata for frontend display
         metadata: {
           description: photo.description || '',
