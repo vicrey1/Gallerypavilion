@@ -474,6 +474,7 @@ router.get('/:id/download',
 
       const photo = await Photo.findById(req.params.id)
         .populate('gallery', 'isPublished photographer settings')
+        .populate('photographer', '_id')
         .lean();
 
       if (!photo || photo.isDeleted) {
@@ -575,7 +576,8 @@ router.get('/:id/preview',
       }
 
       const photo = await Photo.findById(req.params.id)
-        .populate('gallery', 'isPublic status photographer')
+        .populate('gallery', 'isPublished photographer')
+        .populate('photographer', '_id')
         .lean();
 
       if (!photo || photo.isDeleted) {
@@ -585,7 +587,7 @@ router.get('/:id/preview',
       // Check access permissions
       const isOwner = req.user && photo.photographer.toString() === req.user._id.toString();
       const isAdmin = req.user && req.user.role === 'admin';
-      const isPublic = photo.gallery.isPublic && photo.gallery.status === 'published' && photo.isVisible;
+      const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
       if (!isOwner && !isAdmin && !isPublic) {
         return res.status(403).json({ message: 'Access denied' });
@@ -657,7 +659,8 @@ router.get('/:id/thumbnail',
       }
 
       const photo = await Photo.findById(req.params.id)
-        .populate('gallery', 'isPublic status photographer')
+        .populate('gallery', 'isPublished photographer')
+        .populate('photographer', '_id')
         .lean();
 
       if (!photo || photo.isDeleted) {

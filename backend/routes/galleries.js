@@ -975,9 +975,9 @@ router.get('/:id/public',
       // Map URLs similar to share route for consistency
       const mappedPhotos = photos.map(photo => ({
         ...photo,
-        previewUrl: `/photos/${photo._id}/preview`,
-        thumbnailUrl: `/photos/${photo._id}/thumbnail`,
-        url: `/photos/${photo._id}/download`,
+        previewUrl: `/api/photos/${photo._id}/preview`,
+        thumbnailUrl: `/api/photos/${photo._id}/thumbnail`,
+        url: `/api/photos/${photo._id}/download`,
         // Normalized metadata for frontend display
         metadata: {
           description: photo.description || '',
