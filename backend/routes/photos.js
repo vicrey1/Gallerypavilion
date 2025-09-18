@@ -12,7 +12,7 @@ const {
 } = require('../middleware/auth');
 const { isCloudStorageConfigured, getFileUrl } = require('../utils/cloudStorage');
 const { isGridFSAvailable, getFromGridFS, getPhotoBucket } = require('../utils/gridfsStorage');
-const { isCloudinaryConfigured, getOptimizedUrl } = require('../utils/cloudinaryStorage');
+const { isCloudinaryConfigured, getCloudinaryUrl } = require('../utils/cloudinaryStorage');
 
 const router = express.Router();
 
@@ -622,7 +622,7 @@ router.get('/:id/preview',
         try {
           // For Cloudinary, use the preview URL or generate optimized URL
           const previewUrl = photo.cloudinary?.previewUrl || 
-                           getOptimizedUrl(photo.cloudinary?.publicId, { width: 800, height: 600, crop: 'limit', quality: 'auto' });
+                           getCloudinaryUrl(photo.cloudinary?.publicId, { width: 800, height: 600, crop: 'limit', quality: 'auto' });
           
           if (!previewUrl) {
             return res.status(404).json({ message: 'Preview image not found in Cloudinary' });
@@ -723,7 +723,7 @@ router.get('/:id/thumbnail',
         try {
           // For Cloudinary, use the thumbnail URL or generate optimized URL
           const thumbnailUrl = photo.cloudinary?.thumbnailUrl || 
-                             getOptimizedUrl(photo.cloudinary?.publicId, { width: 300, height: 300, crop: 'fill', quality: 'auto' });
+                             getCloudinaryUrl(photo.cloudinary?.publicId, { width: 300, height: 300, crop: 'fill', quality: 'auto' });
           
           if (!thumbnailUrl) {
             return res.status(404).json({ message: 'Thumbnail image not found in Cloudinary' });
