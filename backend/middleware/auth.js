@@ -350,10 +350,14 @@ const generateToken = (userId) => {
 
 // Set JWT cookie
 const setTokenCookie = (res, token) => {
+  // Determine SameSite policy and secure flag dynamically
+  const sameSite = process.env.COOKIE_SAMESITE || (process.env.NODE_ENV === 'production' ? 'none' : 'lax');
+  const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';
+
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure,
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/'
   };
@@ -363,10 +367,14 @@ const setTokenCookie = (res, token) => {
 
 // Clear JWT cookie
 const clearTokenCookie = (res) => {
+  // Mirror the same cookie attributes used when setting to ensure proper clearing
+  const sameSite = process.env.COOKIE_SAMESITE || (process.env.NODE_ENV === 'production' ? 'none' : 'lax');
+  const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';
+
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    secure,
+    sameSite,
     path: '/'
   });
 };
