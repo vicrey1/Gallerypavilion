@@ -161,7 +161,7 @@ router.get('/',
       // If user is not authenticated or not the photographer, only show public galleries
       if (!req.user) {
         query.isPublished = true;
-      } else if (req.user.role !== 'admin') {
+      } else if (req.user.role !== 'ADMIN') {
         query.$or = [
           { isPublished: true },
           { photographer: req.user._id }
@@ -511,7 +511,7 @@ router.get('/:id',
 
       // Check access permissions
       const isOwner = req.user && gallery.photographer._id.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!gallery.isPublished;
 
       if (!isOwner && !isAdmin && !isPublic) {
@@ -555,7 +555,7 @@ router.put('/:id',
 
       // Check ownership
       const isOwner = existingGallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -666,7 +666,7 @@ router.patch('/:id/status',
 
       // Check ownership
       const isOwner = existingGallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -715,7 +715,7 @@ router.delete('/:id',
 
       // Check ownership
       const isOwner = existingGallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -784,22 +784,16 @@ router.post('/:id/photos',
 
     // Check ownership
     const isOwner = gallery.photographer.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role === 'ADMIN';
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Access denied' });
     }
 
     // Configure image processing based on gallery settings
-    const watermarkIntensity = gallery.settings?.watermarkIntensity || 'medium';
-    const opacityMap = { light: 0.3, medium: 0.5, heavy: 0.7 };
     
     const processingOptions = {
       createThumbnail: true,
       createPreview: true,
-      applyWatermark: true, // Always apply watermark for uploaded photos
-      watermarkText: 'Gallery Pavilion',
-      watermarkPosition: 'bottom-right',
-      watermarkOpacity: opacityMap[watermarkIntensity] || 0.5,
       quality: 85,
       timeout: 120000 // 2 minute processing timeout
     };
@@ -821,7 +815,7 @@ router.post('/:id/photos',
 
       // Check ownership
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -841,30 +835,86 @@ router.post('/:id/photos',
       for (const processedFile of req.processedFiles) {
         try {
           
-          const { original, preview, thumbnail, watermarked } = processedFile;
-          
-          // Handle GridFS, cloud storage, or local storage paths
-          const isGridFS = isGridFSAvailable();
-          const isCloud = isCloudStorageConfigured();
-          
-          const photo = new Photo({
-            title: processedFile.originalName.replace(/\.[^/.]+$/, ''),
-            gallery: req.params.id,
-            photographer: req.user._id,
-            originalKey: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
-            previewKey: preview ? (isGridFS ? preview.filename : (isCloud ? preview.key : path.basename(preview.path))) : null,
-            thumbnailKey: thumbnail ? (isGridFS ? thumbnail.filename : (isCloud ? thumbnail.key : path.basename(thumbnail.path))) : null,
-            watermarkedKey: watermarked ? (isGridFS ? watermarked.filename : (isCloud ? watermarked.key : path.basename(watermarked.path))) : null,
-            filename: isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path)),
-            originalFilename: processedFile.originalName,
-            mimetype: processedFile.mimetype,
-            size: processedFile.size,
-            dimensions: {
-              width: original.metadata?.width || null,
-              height: original.metadata?.height || null,
-              aspectRatio: original.metadata?.width && original.metadata?.height ? original.metadata.width / original.metadata.height : null
-            },
-            exif: {
+          // Handle different data structures based on storage type
+      const isCloudinary = require('../utils/cloudinaryStorage').isCloudinaryConfigured();
+      const isGridFS = isGridFSAvailable();
+      const isCloud = isCloudStorageConfigured();
+      
+      let original, preview, thumbnail, watermarked, originalName, mimetype, size;
+      
+      if (isCloudinary) {
+        // Cloudinary provides processed structure with URLs
+        ({ original, preview, thumbnail, watermarked } = processedFile.processed);
+        originalName = processedFile.originalname;
+        mimetype = processedFile.mimetype;
+        size = processedFile.size;
+      } else if (isGridFS || isCloud) {
+        // GridFS and cloud storage provide direct structure
+        ({ original, preview, thumbnail, watermarked } = processedFile);
+        originalName = processedFile.originalName;
+        mimetype = processedFile.mimetype;
+        size = processedFile.size;
+      } else {
+        // Local storage uses processed structure
+        ({ original, preview, thumbnail, watermarked } = processedFile.processed || processedFile);
+        originalName = processedFile.originalname;
+        mimetype = processedFile.mimetype;
+        size = processedFile.size;
+      }
+      
+      const photoData = {
+        title: originalName.replace(/\.[^/.]+$/, ''),
+        gallery: req.params.id,
+        photographer: req.user._id,
+        originalFilename: originalName,
+        mimetype: mimetype,
+        size: size,
+      };
+      
+      // Set storage-specific fields
+      if (isCloudinary) {
+        photoData.storageType = 'cloudinary';
+        photoData.cloudinary = {
+          publicId: original.publicId,
+          originalUrl: original.url,
+          previewUrl: preview ? preview.url : null,
+          thumbnailUrl: thumbnail ? thumbnail.url : null,
+          watermarkedUrl: watermarked ? watermarked.url : null,
+          transformations: {
+            preview: preview ? preview.transformation : null,
+            thumbnail: thumbnail ? thumbnail.transformation : null,
+            watermarked: watermarked ? watermarked.transformation : null
+          }
+        };
+        // For backward compatibility, also set the key fields
+        photoData.originalKey = original.publicId;
+        photoData.previewKey = original.publicId;
+        photoData.thumbnailKey = original.publicId;
+        photoData.watermarkedKey = watermarked ? original.publicId : null;
+        photoData.filename = original.publicId;
+      } else {
+        // GridFS, S3, or local storage
+        photoData.storageType = isGridFS ? 'gridfs' : (isCloud ? 's3' : 'local');
+        photoData.originalKey = isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path));
+        photoData.previewKey = preview ? (isGridFS ? preview.filename : (isCloud ? preview.key : path.basename(preview.path))) : null;
+        photoData.thumbnailKey = thumbnail ? (isGridFS ? thumbnail.filename : (isCloud ? thumbnail.key : path.basename(thumbnail.path))) : null;
+        photoData.watermarkedKey = watermarked ? (isGridFS ? watermarked.filename : (isCloud ? watermarked.key : path.basename(watermarked.path))) : null;
+        photoData.filename = isGridFS ? original.filename : (isCloud ? original.key : path.basename(original.path));
+      }
+      
+      // Set dimensions
+       photoData.dimensions = {
+         width: original.metadata?.width || original.width || null,
+         height: original.metadata?.height || original.height || null,
+         aspectRatio: (original.metadata?.width || original.width) && (original.metadata?.height || original.height) ? 
+           (original.metadata?.width || original.width) / (original.metadata?.height || original.height) : null
+       };
+       
+       const photo = new Photo(photoData);
+       
+       // Set EXIF data if available
+       if (original.metadata) {
+         photo.exif = {
               camera: {
                 make: original.metadata?.exif?.Make || null,
                 model: original.metadata?.exif?.Model || null
@@ -890,9 +940,10 @@ router.post('/:id/photos',
                 country: null
               },
               dateTaken: original.metadata?.exif?.DateTime || null
-            },
-            processingStatus: 'completed'
-          });
+            };
+       }
+       
+       photo.processingStatus = 'completed';
 
           await photo.save();
           uploadedPhotos.push(photo);
@@ -942,7 +993,7 @@ router.get('/:id/public',
       if (!gallery.isPublished) {
         // Allow owner or admin to preview unpublished gallery
         const isOwner = req.user && gallery.photographer._id.toString() === req.user._id.toString();
-        const isAdmin = req.user && req.user.role === 'admin';
+        const isAdmin = req.user && req.user.role === 'ADMIN';
         if (!isOwner && !isAdmin) {
           return res.status(403).json({ message: 'This gallery is not publicly available' });
         }
@@ -1049,7 +1100,7 @@ router.get('/:id/photos',
 
       // Check access permissions
       const isOwner = req.user && gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!gallery.isPublished;
 
       if (!isOwner && !isAdmin && !isPublic) {
@@ -1127,7 +1178,7 @@ router.get('/:id/shares',
 
       // Check ownership
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -1173,7 +1224,7 @@ router.post('/:id/shares',
 
       // Check ownership
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }
@@ -1240,7 +1291,7 @@ router.delete('/:id/shares/:shareId',
 
       // Check ownership
       const isOwner = shareLink.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
       }

@@ -48,6 +48,49 @@ const photoSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Original filename is required']
   },
+  // Cloudinary-specific fields
+  cloudinary: {
+    publicId: {
+      type: String,
+      required: false // Only required when using Cloudinary
+    },
+    originalUrl: {
+      type: String,
+      required: false
+    },
+    previewUrl: {
+      type: String,
+      required: false
+    },
+    thumbnailUrl: {
+      type: String,
+      required: false
+    },
+    watermarkedUrl: {
+      type: String,
+      required: false
+    },
+    transformations: {
+      preview: {
+        type: String,
+        default: 'w_1200,h_1200,c_limit,q_auto:good,f_auto'
+      },
+      thumbnail: {
+        type: String,
+        default: 'w_300,h_300,c_fill,g_auto,q_auto:good,f_auto'
+      },
+      watermarked: {
+        type: String,
+        required: false
+      }
+    }
+  },
+  // Storage type indicator
+  storageType: {
+    type: String,
+    enum: ['cloudinary', 'gridfs', 's3', 'local'],
+    default: 'gridfs'
+  },
   mimetype: {
     type: String,
     required: [true, 'MIME type is required'],

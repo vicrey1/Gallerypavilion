@@ -4,8 +4,7 @@ const fs = require('fs').promises;
 
 class ImageProcessor {
   constructor() {
-    this.watermarkPath = path.join(__dirname, '../assets/watermark.png');
-    this.defaultWatermarkText = 'Gallery Pavilion';
+    // Image processor for thumbnails and previews
   }
 
   /**
@@ -19,10 +18,6 @@ class ImageProcessor {
       const {
         createThumbnail = true,
         createPreview = true,
-        applyWatermark = false,
-        watermarkText = this.defaultWatermarkText,
-        watermarkPosition = 'bottom-right',
-        watermarkOpacity = 0.7,
         quality = 85
       } = options;
 
@@ -38,8 +33,7 @@ class ImageProcessor {
           size: metadata.size
         },
         thumbnail: null,
-        preview: null,
-        watermarked: null
+        preview: null
       };
 
       const baseFilename = path.parse(inputPath).name;
@@ -84,22 +78,7 @@ class ImageProcessor {
         };
       }
 
-      // Apply watermark if requested
-      if (applyWatermark) {
-        const watermarkedPath = path.join(outputDir, `${baseFilename}_watermarked.jpg`);
-        const watermarkedImage = await this.applyWatermark(
-          inputPath, 
-          watermarkedPath, 
-          {
-            text: watermarkText,
-            position: watermarkPosition,
-            opacity: watermarkOpacity,
-            quality
-          }
-        );
-        
-        results.watermarked = watermarkedImage;
-      }
+
 
       return results;
     } catch (error) {
@@ -108,138 +87,7 @@ class ImageProcessor {
     }
   }
 
-  /**
-   * Apply watermark to an image
-   * @param {string} inputPath - Path to input image
-   * @param {string} outputPath - Path for watermarked output
-   * @param {Object} options - Watermark options
-   * @returns {Object} - Watermarked image info
-   */
-  async applyWatermark(inputPath, outputPath, options = {}) {
-    try {
-      const {
-        text = this.defaultWatermarkText,
-        position = 'bottom-right',
-        opacity = 0.7,
-        fontSize = 24,
-        quality = 85
-      } = options;
 
-      const image = sharp(inputPath);
-      const metadata = await image.metadata();
-      
-      // Create text watermark SVG
-      const watermarkSvg = this.createTextWatermarkSvg({
-        text,
-        fontSize,
-        opacity,
-        imageWidth: metadata.width,
-        imageHeight: metadata.height,
-        position
-      });
-
-      // Apply watermark
-      await image
-        .composite([{
-          input: Buffer.from(watermarkSvg),
-          gravity: this.getGravityFromPosition(position)
-        }])
-        .jpeg({ quality })
-        .toFile(outputPath);
-
-      const watermarkedMetadata = await sharp(outputPath).metadata();
-      
-      return {
-        path: outputPath,
-        width: watermarkedMetadata.width,
-        height: watermarkedMetadata.height
-      };
-    } catch (error) {
-      console.error('Error applying watermark:', error);
-      throw new Error(`Watermark application failed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Create SVG text watermark
-   * @param {Object} options - Watermark options
-   * @returns {string} - SVG string
-   */
-  createTextWatermarkSvg(options) {
-    const {
-      text,
-      fontSize,
-      opacity,
-      imageWidth,
-      imageHeight,
-      position
-    } = options;
-
-    const padding = 20;
-    const textLength = text.length * fontSize * 0.6; // Approximate text width
-    
-    let x, y;
-    switch (position) {
-      case 'top-left':
-        x = padding;
-        y = fontSize + padding;
-        break;
-      case 'top-right':
-        x = imageWidth - textLength - padding;
-        y = fontSize + padding;
-        break;
-      case 'bottom-left':
-        x = padding;
-        y = imageHeight - padding;
-        break;
-      case 'bottom-right':
-      default:
-        x = imageWidth - textLength - padding;
-        y = imageHeight - padding;
-        break;
-      case 'center':
-        x = (imageWidth - textLength) / 2;
-        y = imageHeight / 2;
-        break;
-    }
-
-    return `
-      <svg width="${imageWidth}" height="${imageHeight}">
-        <defs>
-          <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="black" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        <text 
-          x="${x}" 
-          y="${y}" 
-          font-family="Arial, sans-serif" 
-          font-size="${fontSize}" 
-          font-weight="bold"
-          fill="white" 
-          fill-opacity="${opacity}"
-          filter="url(#shadow)"
-        >${text}</text>
-      </svg>
-    `;
-  }
-
-  /**
-   * Convert position string to Sharp gravity
-   * @param {string} position - Position string
-   * @returns {string} - Sharp gravity value
-   */
-  getGravityFromPosition(position) {
-    const gravityMap = {
-      'top-left': 'northwest',
-      'top-right': 'northeast',
-      'bottom-left': 'southwest',
-      'bottom-right': 'southeast',
-      'center': 'center'
-    };
-    
-    return gravityMap[position] || 'southeast';
-  }
 
   /**
    * Resize image to specific dimensions
@@ -355,7 +203,14 @@ class ImageProcessor {
    */
   async cleanupFiles(filePaths) {
     try {
-      const deletePromises = filePaths.map(async (filePath) => {
+      // Filter out undefined or null paths
+      const validPaths = filePaths.filter(path => path && typeof path === 'string');
+      
+      if (validPaths.length === 0) {
+        return;
+      }
+      
+      const deletePromises = validPaths.map(async (filePath) => {
         try {
           await fs.unlink(filePath);
           console.log(`Cleaned up file: ${filePath}`);

@@ -131,7 +131,7 @@ router.post('/create',
       }
 
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -177,7 +177,7 @@ router.get('/gallery/:galleryId',
       }
 
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -503,7 +503,7 @@ router.put('/:id',
 
       // Check ownership
       const isOwner = shareLink.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -546,7 +546,7 @@ router.delete('/:id',
 
       // Check ownership
       const isOwner = shareLink.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });

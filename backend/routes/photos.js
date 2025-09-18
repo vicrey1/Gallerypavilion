@@ -12,6 +12,7 @@ const {
 } = require('../middleware/auth');
 const { isCloudStorageConfigured, getFileUrl } = require('../utils/cloudStorage');
 const { isGridFSAvailable, getFromGridFS, getPhotoBucket } = require('../utils/gridfsStorage');
+const { isCloudinaryConfigured, getOptimizedUrl } = require('../utils/cloudinaryStorage');
 
 const router = express.Router();
 
@@ -239,7 +240,7 @@ router.get('/:id',
 
       // Check access permissions
       const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
       if (!isOwner && !isAdmin && !isPublic) {
@@ -280,7 +281,7 @@ router.put('/:id',
 
       // Check ownership
       const isOwner = photo.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -320,7 +321,7 @@ router.delete('/:id',
 
       // Check ownership
       const isOwner = photo.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -424,7 +425,7 @@ router.post('/reorder',
       }
 
       const isOwner = gallery.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
@@ -482,8 +483,8 @@ router.get('/:id/download',
       }
 
       // Check access permissions
-      const isOwner = req.user && photo.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!photo.gallery.isPublished && photo.isVisible;
       const allowDownloads = photo.gallery.settings?.allowDownload && photo.displaySettings.allowDownload;
 
@@ -491,7 +492,30 @@ router.get('/:id/download',
         return res.status(403).json({ message: 'Download not allowed' });
       }
 
-      // Handle GridFS storage first
+      // Handle Cloudinary storage first
+      if (isCloudinaryConfigured() && photo.storageType === 'cloudinary') {
+        try {
+          // For Cloudinary, redirect to the original URL
+          const downloadUrl = photo.cloudinary?.originalUrl;
+          if (!downloadUrl) {
+            return res.status(404).json({ message: 'Photo file not found in Cloudinary' });
+          }
+          
+          // Increment download count if not owner
+          if (!isOwner) {
+            await Photo.findByIdAndUpdate(req.params.id, {
+              $inc: { 'stats.downloads': 1 }
+            });
+          }
+          
+          return res.redirect(downloadUrl);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary download error:', cloudinaryError);
+          return res.status(404).json({ message: 'Photo file not found in Cloudinary' });
+        }
+      }
+      
+      // Handle GridFS storage
       if (isGridFSAvailable()) {
         try {
           const filename = photo.originalKey || photo.filename;
@@ -585,15 +609,33 @@ router.get('/:id/preview',
       }
 
       // Check access permissions
-      const isOwner = req.user && photo.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
       if (!isOwner && !isAdmin && !isPublic) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
-      // Handle GridFS storage first
+      // Handle Cloudinary storage first
+      if (isCloudinaryConfigured() && photo.storageType === 'cloudinary') {
+        try {
+          // For Cloudinary, use the preview URL or generate optimized URL
+          const previewUrl = photo.cloudinary?.previewUrl || 
+                           getOptimizedUrl(photo.cloudinary?.publicId, { width: 800, height: 600, crop: 'limit', quality: 'auto' });
+          
+          if (!previewUrl) {
+            return res.status(404).json({ message: 'Preview image not found in Cloudinary' });
+          }
+          
+          return res.redirect(previewUrl);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary preview error:', cloudinaryError);
+          return res.status(404).json({ message: 'Preview image not found in Cloudinary' });
+        }
+      }
+      
+      // Handle GridFS storage
       if (isGridFSAvailable()) {
         try {
           const filename = photo.previewKey || photo.originalKey || photo.filename;
@@ -668,15 +710,33 @@ router.get('/:id/thumbnail',
       }
 
       // Check access permissions
-      const isOwner = req.user && photo.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'admin';
+      const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
+      const isAdmin = req.user && req.user.role === 'ADMIN';
       const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
       if (!isOwner && !isAdmin && !isPublic) {
         return res.status(403).json({ message: 'Access denied' });
       }
 
-      // Handle GridFS storage first
+      // Handle Cloudinary storage first
+      if (isCloudinaryConfigured() && photo.storageType === 'cloudinary') {
+        try {
+          // For Cloudinary, use the thumbnail URL or generate optimized URL
+          const thumbnailUrl = photo.cloudinary?.thumbnailUrl || 
+                             getOptimizedUrl(photo.cloudinary?.publicId, { width: 300, height: 300, crop: 'fill', quality: 'auto' });
+          
+          if (!thumbnailUrl) {
+            return res.status(404).json({ message: 'Thumbnail image not found in Cloudinary' });
+          }
+          
+          return res.redirect(thumbnailUrl);
+        } catch (cloudinaryError) {
+          console.error('Cloudinary thumbnail error:', cloudinaryError);
+          return res.status(404).json({ message: 'Thumbnail image not found in Cloudinary' });
+        }
+      }
+      
+      // Handle GridFS storage
       if (isGridFSAvailable()) {
         try {
           const filename = photo.thumbnailKey || photo.previewKey || photo.originalKey || photo.filename;

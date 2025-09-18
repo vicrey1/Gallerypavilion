@@ -12,6 +12,11 @@ const {
   processGridFSImages,
   isGridFSAvailable
 } = require('../utils/gridfsStorage');
+const {
+  cloudinaryPhotoUpload,
+  processCloudinaryImages,
+  isCloudinaryConfigured
+} = require('../utils/cloudinaryStorage');
 
 // Configure storage
 const createStorage = (uploadType = 'photos') => {
@@ -99,19 +104,24 @@ const createUploadConfig = (options = {}) => {
   });
 };
 
-// Dynamic upload middleware - check GridFS availability at request time
+// Dynamic upload middleware - prioritize Cloudinary, then GridFS, then S3, then local
 const photoUpload = (req, res, next) => {
-  const middleware = isGridFSAvailable() 
-    ? gridfsPhotoUpload
-    : isCloudStorageConfigured() 
-      ? cloudPhotoUpload
-      : createUploadConfig({
-          uploadType: 'photos',
-          maxFiles: 20,
-          maxFileSize: 50 * 1024 * 1024
-        });
+  const middleware = isCloudinaryConfigured()
+    ? cloudinaryPhotoUpload
+    : isGridFSAvailable() 
+      ? gridfsPhotoUpload
+      : isCloudStorageConfigured() 
+        ? cloudPhotoUpload
+        : createUploadConfig({
+            uploadType: 'photos',
+            maxFiles: 20,
+            maxFileSize: 50 * 1024 * 1024
+          });
   
-  console.log('📁 Using upload middleware:', isGridFSAvailable() ? 'GridFS' : isCloudStorageConfigured() ? 'Cloud' : 'Local');
+  console.log('📁 Using upload middleware:', 
+    isCloudinaryConfigured() ? 'Cloudinary' : 
+    isGridFSAvailable() ? 'GridFS' : 
+    isCloudStorageConfigured() ? 'S3 Cloud' : 'Local');
   return middleware.array('photos', 20)(req, res, next);
 };
 
@@ -128,10 +138,12 @@ const singlePhotoUpload = createUploadConfig({
   maxFileSize: 50 * 1024 * 1024
 });
 
-// Middleware to process uploaded images - use GridFS, cloud, or local processing
+// Middleware to process uploaded images - prioritize Cloudinary, then GridFS, then S3, then local
 const processUploadedImages = (options = {}) => {
-  // Use GridFS processing if available, then cloud, then local
-  if (isGridFSAvailable()) {
+  // Use Cloudinary processing if configured, then GridFS, then S3 cloud, then local
+  if (isCloudinaryConfigured()) {
+    return processCloudinaryImages(options);
+  } else if (isGridFSAvailable()) {
     return processGridFSImages(options);
   } else if (isCloudStorageConfigured()) {
     return processCloudImages(options);
@@ -146,9 +158,6 @@ const processUploadedImages = (options = {}) => {
     const {
       createThumbnail = true,
       createPreview = true,
-      applyWatermark = false,
-      watermarkText = 'Gallery Pavilion',
-      watermarkPosition = 'bottom-right',
       quality = 85,
       validateImages = true
     } = options;
@@ -183,11 +192,30 @@ const processUploadedImages = (options = {}) => {
           const processedImage = await imageProcessor.processImage(file.path, {
             createThumbnail,
             createPreview,
-            applyWatermark,
-            watermarkText,
-            watermarkPosition,
             quality
           });
+
+          // Move processed files to uploads directory if they were created in current directory
+          const uploadsDir = path.dirname(file.path);
+          const currentDir = process.cwd();
+          
+          // Check if thumbnail was created in current directory and move it
+          if (processedImage.thumbnail && processedImage.thumbnail.path.startsWith(currentDir)) {
+            const thumbnailName = path.basename(processedImage.thumbnail.path);
+            const newThumbnailPath = path.join(uploadsDir, thumbnailName);
+            await fs.rename(processedImage.thumbnail.path, newThumbnailPath);
+            processedImage.thumbnail.path = newThumbnailPath;
+          }
+          
+          // Check if preview was created in current directory and move it
+          if (processedImage.preview && processedImage.preview.path.startsWith(currentDir)) {
+            const previewName = path.basename(processedImage.preview.path);
+            const newPreviewPath = path.join(uploadsDir, previewName);
+            await fs.rename(processedImage.preview.path, newPreviewPath);
+            processedImage.preview.path = newPreviewPath;
+          }
+          
+
 
           // Extract EXIF data
           const exifData = await imageProcessor.extractExifData(file.path);
@@ -303,7 +331,7 @@ const cleanupOnError = async (req, res, next) => {
         req.processedFiles.forEach(file => {
           if (file.processed.thumbnail) processedPaths.push(file.processed.thumbnail.path);
           if (file.processed.preview) processedPaths.push(file.processed.preview.path);
-          if (file.processed.watermarked) processedPaths.push(file.processed.watermarked.path);
+
         });
         
         if (processedPaths.length > 0) {

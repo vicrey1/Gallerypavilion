@@ -322,7 +322,7 @@ router.get('/:id',
 
       // Check access permissions
       const isOwner = inquiry.photographer._id.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       const isAssigned = inquiry.assignedTo && inquiry.assignedTo._id.toString() === req.user._id.toString();
       
       if (!isOwner && !isAdmin && !isAssigned) {
@@ -365,7 +365,7 @@ router.put('/:id',
 
       // Check access permissions
       const isOwner = inquiry.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       const isAssigned = inquiry.assignedTo && inquiry.assignedTo.toString() === req.user._id.toString();
       
       if (!isOwner && !isAdmin && !isAssigned) {
@@ -407,7 +407,7 @@ router.post('/:id/respond',
 
       // Check access permissions
       const isOwner = inquiry.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       const isAssigned = inquiry.assignedTo && inquiry.assignedTo.toString() === req.user._id.toString();
       
       if (!isOwner && !isAdmin && !isAssigned) {
@@ -463,7 +463,7 @@ router.delete('/:id',
 
       // Check access permissions (only owner or admin can delete)
       const isOwner = inquiry.photographer.toString() === req.user._id.toString();
-      const isAdmin = req.user.role === 'admin';
+      const isAdmin = req.user.role === 'ADMIN';
       
       if (!isOwner && !isAdmin) {
         return res.status(403).json({ message: 'Access denied' });
