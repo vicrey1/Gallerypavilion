@@ -850,9 +850,20 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                   effect="blur"
                   className="photo-image"
                   placeholderSrc={photo.thumbnailUrl}
+                  loading="lazy"
+                  visibleByDefault={false}
                   onError={(e) => {
+                    console.error('Image load error:', photo.url);
                     e.target.onerror = null;
-                    e.target.src = photo.url; // Fallback to original URL if optimized versions fail
+                    // Try different URL formats
+                    if (e.target.src === photo.previewUrl) {
+                      e.target.src = photo.url;
+                    } else if (e.target.src === photo.url) {
+                      // If the URL starts with /uploads, try to use the full URL
+                      if (photo.url.startsWith('/uploads')) {
+                        e.target.src = `${window.location.origin}${photo.url}`;
+                      }
+                    }
                   }}
                 />
                 

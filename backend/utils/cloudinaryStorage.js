@@ -113,10 +113,14 @@ const getCloudinaryUrl = (publicId, transformations = {}) => {
   if (!publicId) return null;
   
   const defaultTransformations = {
-    quality: 'auto', // Automatic quality optimization
+    quality: 'auto:best', // Use best quality optimization
     fetch_format: 'auto', // Automatic format selection (WebP/AVIF)
     dpr: 'auto', // Automatic DPR detection
     responsive: true, // Enable responsive mode
+    format: 'auto', // Ensure format optimization
+    secure: true, // Force HTTPS
+    type: 'fetch', // Better handling of remote URLs
+    flags: 'force_strip', // Strip unnecessary metadata
   };
   
   return cloudinary.url(publicId, { ...defaultTransformations, ...transformations });
