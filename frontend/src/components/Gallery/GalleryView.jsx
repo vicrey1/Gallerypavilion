@@ -99,8 +99,9 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   // Masonry breakpoints
   const breakpointColumnsObj = {
     default: 4,
+    1400: 4,
     1100: 3,
-    700: 2,
+    800: 2,
     500: 1
   };
   
@@ -836,11 +837,23 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
               >
               <div className="photo-container">
                 <LazyLoadImage
-                  src={photo.previewUrl || photo.thumbnailUrl || photo.url}
+                  src={photo.previewUrl || photo.url}
+                  srcSet={`
+                    ${photo.thumbnailUrl || photo.url} 300w,
+                    ${photo.previewUrl || photo.url} 1200w
+                  `}
+                  sizes="(max-width: 500px) 100vw,
+                         (max-width: 800px) 50vw,
+                         (max-width: 1100px) 33vw,
+                         25vw"
                   alt={photo.title || 'Gallery photo'}
                   effect="blur"
                   className="photo-image"
                   placeholderSrc={photo.thumbnailUrl}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = photo.url; // Fallback to original URL if optimized versions fail
+                  }}
                 />
                 
                 {/* Visible caption below photo */}

@@ -112,26 +112,44 @@ const deleteFromCloudinary = async (publicId) => {
 const getCloudinaryUrl = (publicId, transformations = {}) => {
   if (!publicId) return null;
   
-  const defaultTransformations = {};
+  const defaultTransformations = {
+    quality: 'auto', // Automatic quality optimization
+    fetch_format: 'auto', // Automatic format selection (WebP/AVIF)
+    dpr: 'auto', // Automatic DPR detection
+    responsive: true, // Enable responsive mode
+  };
   
   return cloudinary.url(publicId, { ...defaultTransformations, ...transformations });
 };
 
-// Get thumbnail URL
+// Get thumbnail URL optimized for mobile
 const getThumbnailUrl = (publicId) => {
   return getCloudinaryUrl(publicId, {
     width: 300,
     height: 300,
-    crop: 'fill'
+    crop: 'fill',
+    loading: 'lazy',
+    responsive_breakpoints: {
+      create_derived: true,
+      bytes_step: 20000,
+      min_width: 200,
+      max_width: 300
+    }
   });
 };
 
-// Get preview URL
+// Get preview URL with responsive sizing
 const getPreviewUrl = (publicId) => {
   return getCloudinaryUrl(publicId, {
-    width: 1200,
-    height: 1200,
-    crop: 'limit'
+    width: 'auto',
+    responsive: true,
+    crop: 'limit',
+    responsive_breakpoints: {
+      create_derived: true,
+      bytes_step: 20000,
+      min_width: 300,
+      max_width: 1200
+    }
   });
 };
 

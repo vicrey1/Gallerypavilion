@@ -689,6 +689,10 @@
   width: 100%;
   height: auto;
   display: block;
+  -webkit-backface-visibility: hidden; /* Prevent Safari glitches */
+  backface-visibility: hidden;
+  transform: translateZ(0); /* Force GPU acceleration */
+  will-change: transform; /* Optimize animations */
   transition: transform 0.3s ease;
 }
 
