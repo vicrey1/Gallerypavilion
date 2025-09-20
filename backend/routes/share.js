@@ -381,11 +381,15 @@ router.get('/:token',
         .sort({ sortOrder: 1, createdAt: 1 })
         .lean();
 
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://www.gallerypavilion.com'
+        : `${req.protocol}://${req.get('host')}`;
+
       const mappedPhotos = photos.map(photo => ({
         ...photo,
-        previewUrl: `/api/photos/${photo._id}/preview`,
-        thumbnailUrl: `/api/photos/${photo._id}/thumbnail`,
-        url: `/api/photos/${photo._id}/download`,
+        previewUrl: `${baseUrl}/api/photos/${photo._id}/preview`,
+        thumbnailUrl: `${baseUrl}/api/photos/${photo._id}/thumbnail`,
+        url: `${baseUrl}/api/photos/${photo._id}/download`,
         // Normalized metadata for frontend display (keep in sync with public gallery route)
         metadata: {
           description: photo.description || '',
@@ -434,7 +438,12 @@ router.get('/:token',
       });
     } catch (error) {
       console.error('Error accessing shared gallery:', error);
-      res.status(500).json({ message: 'Server error' });
+      // More detailed error response
+      res.status(500).json({ 
+        message: 'Server error',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        code: 'SHARE_ACCESS_ERROR'
+      });
     }
   }
 );
