@@ -32,13 +32,20 @@ const uploadToCloudinary = async (buffer, originalName, options = {}) => {
   try {
     const publicId = generateUniquePublicId(originalName, folder);
     
-    // Upload original image
+    // Upload original image with optimizations
     const originalUpload = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           public_id: publicId,
           folder: folder,
-          resource_type: 'image'
+          resource_type: 'image',
+          quality: 'auto',
+          fetch_format: 'auto',
+          secure: true,
+          transformation: [
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' },
+          ]
         },
         (error, result) => {
           if (error) reject(error);
@@ -58,33 +65,37 @@ const uploadToCloudinary = async (buffer, originalName, options = {}) => {
       }
     };
 
-    // Generate thumbnail (300x300, crop to fill)
+    // Generate thumbnail with optimization
     if (generateThumbnail) {
       const thumbnailUrl = cloudinary.url(originalUpload.public_id, {
-        width: 300,
-        height: 300,
-        crop: 'fill'
+        transformation: [
+          { width: 300, height: 300, crop: 'fill' },
+          { quality: 'auto', fetch_format: 'auto' }
+        ],
+        secure: true
       });
       
       results.thumbnail = {
         publicId: originalUpload.public_id,
         url: thumbnailUrl,
-        transformation: 'w_300,h_300,c_fill'
+        transformation: 'w_300,h_300,c_fill,q_auto,f_auto'
       };
     }
 
-    // Generate preview (1200px max width, maintain aspect ratio)
+    // Generate preview with optimization
     if (generatePreview) {
       const previewUrl = cloudinary.url(originalUpload.public_id, {
-        width: 1200,
-        height: 1200,
-        crop: 'limit'
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto', fetch_format: 'auto' }
+        ],
+        secure: true
       });
       
       results.preview = {
         publicId: originalUpload.public_id,
         url: previewUrl,
-        transformation: 'w_1200,h_1200,c_limit'
+        transformation: 'w_1200,h_1200,c_limit,q_auto,f_auto'
       };
     }
 

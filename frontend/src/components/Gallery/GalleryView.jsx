@@ -837,32 +837,23 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
               >
               <div className="photo-container">
                 <LazyLoadImage
-                  src={photo.previewUrl || photo.url}
-                  srcSet={`
-                    ${photo.thumbnailUrl || photo.url} 300w,
-                    ${photo.previewUrl || photo.url} 1200w
-                  `}
-                  sizes="(max-width: 500px) 100vw,
-                         (max-width: 800px) 50vw,
-                         (max-width: 1100px) 33vw,
-                         25vw"
+                  src={photo.url}
                   alt={photo.title || 'Gallery photo'}
                   effect="blur"
                   className="photo-image"
                   placeholderSrc={photo.thumbnailUrl}
-                  loading="lazy"
-                  visibleByDefault={false}
                   onError={(e) => {
-                    console.error('Image load error:', photo.url);
+                    console.error('Image load error:', e.target.src);
                     e.target.onerror = null;
-                    // Try different URL formats
-                    if (e.target.src === photo.previewUrl) {
-                      e.target.src = photo.url;
-                    } else if (e.target.src === photo.url) {
-                      // If the URL starts with /uploads, try to use the full URL
-                      if (photo.url.startsWith('/uploads')) {
-                        e.target.src = `${window.location.origin}${photo.url}`;
-                      }
+                    if (!photo.url) return;
+                    
+                    if (photo.url.includes('cloudinary')) {
+                      // If it's a Cloudinary URL, try without transformations
+                      const baseUrl = photo.url.split('/upload/')[0] + '/upload/' + photo.url.split('/upload/')[1].split('/').pop();
+                      e.target.src = baseUrl;
+                    } else if (photo.url.startsWith('/')) {
+                      // If it's a relative URL, make it absolute
+                      e.target.src = `${window.location.origin}${photo.url}`;
                     }
                   }}
                 />
