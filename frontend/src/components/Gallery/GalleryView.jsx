@@ -22,7 +22,7 @@ import {
   Moon
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import axiosInstance from '../../utils/axiosConfig';
 import Masonry from 'react-masonry-css';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 import 'react-lazy-load-image-component/src/effects/blur.css';
@@ -842,18 +842,36 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                   effect="blur"
                   className="photo-image"
                   placeholderSrc={photo.thumbnailUrl}
+                  beforeLoad={() => {
+                    // Ensure URLs are absolute
+                    if (photo.url?.startsWith('/')) {
+                      photo.url = `${window.location.origin}${photo.url}`;
+                    }
+                    if (photo.thumbnailUrl?.startsWith('/')) {
+                      photo.thumbnailUrl = `${window.location.origin}${photo.thumbnailUrl}`;
+                    }
+                    if (photo.previewUrl?.startsWith('/')) {
+                      photo.previewUrl = `${window.location.origin}${photo.previewUrl}`;
+                    }
+                  }}
                   onError={(e) => {
                     console.error('Image load error:', e.target.src);
                     e.target.onerror = null;
                     if (!photo.url) return;
                     
-                    if (photo.url.includes('cloudinary')) {
-                      // If it's a Cloudinary URL, try without transformations
-                      const baseUrl = photo.url.split('/upload/')[0] + '/upload/' + photo.url.split('/upload/')[1].split('/').pop();
-                      e.target.src = baseUrl;
-                    } else if (photo.url.startsWith('/')) {
-                      // If it's a relative URL, make it absolute
-                      e.target.src = `${window.location.origin}${photo.url}`;
+                    // Try different URL variations
+                    const urls = [
+                      photo.url,
+                      photo.previewUrl,
+                      photo.thumbnailUrl,
+                      photo.url.replace('/api/', '/'),
+                      `${window.location.origin}${photo.url.startsWith('/') ? '' : '/'}${photo.url}`
+                    ].filter(Boolean);
+
+                    // Try the next URL in the list
+                    const currentIndex = urls.indexOf(e.target.src);
+                    if (currentIndex < urls.length - 1) {
+                      e.target.src = urls[currentIndex + 1];
                     }
                   }}
                 />
