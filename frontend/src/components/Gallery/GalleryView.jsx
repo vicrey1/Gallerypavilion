@@ -437,6 +437,29 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
     return settings.length > 0 ? settings.join(' • ') : null;
   };
   
+  // Helper to choose the safest display URL for images (prefer preview/thumbnail over download endpoint)
+  const getDisplayUrl = (photo) => {
+    if (!photo) return undefined;
+    const candidates = [photo.previewUrl, photo.thumbnailUrl, photo.url];
+    for (let i = 0; i < candidates.length; i++) {
+      const u = candidates[i];
+      if (!u) continue;
+      // If relative, make absolute
+      try {
+        if (u.startsWith('/')) {
+          return `${window.location.origin}${u}`;
+        }
+        // Prefer https
+        if (u.startsWith('http://')) {
+          return u.replace('http://', 'https://');
+        }
+        return u;
+      } catch (e) {
+        continue;
+      }
+    }
+    return undefined;
+  };
 
   
   if (loading) {
@@ -838,7 +861,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
               >
               <div className="photo-container">
                 <LazyLoadImage
-                  src={photo.url}
+                  src={getDisplayUrl(photo)}
                   alt={photo.title || 'Gallery photo'}
                   effect="blur"
                   className="photo-image"
@@ -1089,7 +1112,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                 <div className="lightbox-image-container">
                   <img
                     ref={imageRef}
-                    src={selectedPhoto.url}
+                    src={getDisplayUrl(selectedPhoto)}
                     alt={selectedPhoto.title || 'Gallery photo'}
                     className="lightbox-image"
                     style={{
