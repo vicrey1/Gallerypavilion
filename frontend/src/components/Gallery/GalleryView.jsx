@@ -440,7 +440,11 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   // Helper to choose the safest display URL for images (prefer preview/thumbnail over download endpoint)
   const getDisplayUrl = (photo) => {
     if (!photo) return undefined;
-    const candidates = [photo.previewUrl, photo.thumbnailUrl, photo.url];
+    // Prefer direct Cloudinary URLs when present (shared galleries may include
+    // proxied API endpoints which can be blocked for anonymous requests).
+    const cloudCandidates = [photo?.cloudinary?.previewUrl, photo?.cloudinary?.thumbnailUrl, photo?.cloudinary?.originalUrl];
+    const apiCandidates = [photo.previewUrl, photo.thumbnailUrl, photo.url];
+    const candidates = [...cloudCandidates, ...apiCandidates];
     for (let i = 0; i < candidates.length; i++) {
       const u = candidates[i];
       if (!u) continue;

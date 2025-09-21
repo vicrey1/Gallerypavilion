@@ -387,9 +387,12 @@ router.get('/:token',
 
       const mappedPhotos = photos.map(photo => ({
         ...photo,
-        previewUrl: `${baseUrl}/api/photos/${photo._id}/preview`,
-        thumbnailUrl: `${baseUrl}/api/photos/${photo._id}/thumbnail`,
-        url: `${baseUrl}/api/photos/${photo._id}/download`,
+        // Prefer direct Cloudinary URLs for shared galleries so clients (including
+        // mobile browsers) can load images without the API enforcing gallery/auth checks.
+        // Fall back to proxied API endpoints when Cloudinary URLs aren't available.
+        previewUrl: photo.cloudinary?.previewUrl || `${baseUrl}/api/photos/${photo._id}/preview`,
+        thumbnailUrl: photo.cloudinary?.thumbnailUrl || `${baseUrl}/api/photos/${photo._id}/thumbnail`,
+        url: photo.cloudinary?.originalUrl || `${baseUrl}/api/photos/${photo._id}/download`,
         // Normalized metadata for frontend display (keep in sync with public gallery route)
         metadata: {
           description: photo.description || '',
