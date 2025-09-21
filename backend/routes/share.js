@@ -361,25 +361,48 @@ router.get('/:token',
       }
 
       // Record access
-      const clientInfo = {
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        timestamp: new Date()
-      };
+      try {
+        const clientInfo = {
+          ip: req.ip,
+          userAgent: req.get('User-Agent'),
+          timestamp: new Date()
+        };
 
-      await shareLink.recordAccess(clientInfo);
+        await shareLink.recordAccess(clientInfo);
+      } catch (recErr) {
+        console.error('Failed to record share access, continuing with response:', recErr && recErr.message ? recErr.message : recErr);
+      }
 
       // Get gallery photos
-      const photos = await Photo.find({
-        gallery: shareLink.gallery._id,
-        isDeleted: false,
-        $or: [
-          { isVisible: true },
-          { isVisible: { $exists: false } }
-        ]
-      })
-        .sort({ sortOrder: 1, createdAt: 1 })
-        .lean();
+      let photos;
+      try {
+        photos = await Photo.find({
+          gallery: shareLink.gallery._id,
+          isDeleted: false,
+          $or: [
+            { isVisible: true },
+            { isVisible: { $exists: false } }
+          ]
+        })
+          .sort({ sortOrder: 1, createdAt: 1 })
+          .lean();
+      } catch (photoErr) {
+        console.error('Error fetching photos from DB:', photoErr && photoErr.message ? photoErr.message : photoErr);
+        // Try to serve cached share response if available
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const cachePath = path.join(__dirname, '..', 'cache', `share_${req.params.token}.json`);
+          if (fs.existsSync(cachePath)) {
+            const cached = fs.readFileSync(cachePath, 'utf8');
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(cached);
+          }
+        } catch (cacheReadErr) {
+          console.error('Failed to read share cache after photo DB error:', cacheReadErr);
+        }
+        return res.status(503).json({ message: 'Service unavailable: unable to load photos' });
+      }
 
       const baseUrl = process.env.NODE_ENV === 'production' 
         ? 'https://www.gallerypavilion.com'

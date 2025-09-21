@@ -165,7 +165,12 @@ const ensureDbConnected = (req, res, next) => {
 };
 
 // Apply DB check middleware for API routes that need DB (applies to all /api routes)
-app.use('/api', ensureDbConnected);
+// Exception: allow /api/share to reach the route so it can implement its own
+// fallback logic (serve cached responses) when the DB is disconnected.
+app.use((req, res, next) => {
+  if (req.path && req.path.startsWith('/api/share')) return next();
+  return ensureDbConnected(req, res, next);
+});
 
 // API Routes
 app.use('/api/auth', authRoutes);
