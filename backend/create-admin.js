@@ -15,7 +15,8 @@ const createAdmin = async () => {
     const existingAdmin = await User.findOne({ role: 'ADMIN' });
     if (existingAdmin) {
       console.log('Admin user already exists:', existingAdmin.email);
-      process.exit(0);
+      console.log('Deleting existing admin to create fresh one...');
+      await User.deleteOne({ role: 'ADMIN' });
     }
 
     // Create admin user

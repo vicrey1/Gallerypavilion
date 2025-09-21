@@ -89,7 +89,7 @@ const photoSchema = new mongoose.Schema({
   storageType: {
     type: String,
     enum: ['cloudinary', 'gridfs', 's3', 'local'],
-    default: 'gridfs'
+    default: 'cloudinary'
   },
   mimetype: {
     type: String,

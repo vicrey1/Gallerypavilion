@@ -1143,8 +1143,16 @@ router.get('/:id/photos',
         })
       ]);
 
+      // Map URLs for frontend consumption
+      const mappedPhotos = photos.map(photo => ({
+        ...photo,
+        previewUrl: `/api/photos/${photo._id}/preview`,
+        thumbnailUrl: `/api/photos/${photo._id}/thumbnail`,
+        url: `/api/photos/${photo._id}/download`
+      }));
+
       res.json({
-        photos,
+        photos: mappedPhotos,
         pagination: {
           page,
           limit,

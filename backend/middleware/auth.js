@@ -4,6 +4,13 @@ const User = require('../models/User');
 // Verify JWT token from HttpOnly cookie
 const authenticateToken = async (req, res, next) => {
   try {
+    if (!process.env.JWT_SECRET) {
+      console.error('Missing JWT_SECRET environment variable');
+      return res.status(500).json({
+        success: false,
+        message: 'Server misconfiguration: JWT_SECRET is not set.'
+      });
+    }
     // Check for token in cookies first (preferred method)
     let token = req.cookies.token;
     
@@ -23,10 +30,16 @@ const authenticateToken = async (req, res, next) => {
     }
     
     // Verify token with proper options
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET, {
       issuer: 'gallery-pavilion',
       audience: 'gallery-pavilion-users'
     });
+    } catch (verifyError) {
+      // rethrow so outer catch handles specific JWT errors
+      throw verifyError;
+    }
     
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
@@ -77,6 +90,13 @@ const authenticateToken = async (req, res, next) => {
 // Special authentication for refresh endpoint that allows expired tokens
 const authenticateRefreshToken = async (req, res, next) => {
   try {
+    if (!process.env.JWT_SECRET) {
+      console.error('Missing JWT_SECRET environment variable');
+      return res.status(500).json({
+        success: false,
+        message: 'Server misconfiguration: JWT_SECRET is not set.'
+      });
+    }
     // Check for token in cookies first (preferred method)
     let token = req.cookies.token;
     
@@ -96,11 +116,16 @@ const authenticateRefreshToken = async (req, res, next) => {
     }
     
     // Verify token, but ignore expiration for refresh
-    const decoded = jwt.verify(token, process.env.JWT_SECRET, { 
-      ignoreExpiration: true,
-      issuer: 'gallery-pavilion',
-      audience: 'gallery-pavilion-users'
-    });
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET, { 
+        ignoreExpiration: true,
+        issuer: 'gallery-pavilion',
+        audience: 'gallery-pavilion-users'
+      });
+    } catch (verifyError) {
+      throw verifyError;
+    }
     
     // Get user from database
     const user = await User.findById(decoded.userId).select('-password');
@@ -337,6 +362,11 @@ const updateLastLogin = async (req, res, next) => {
 
 // Generate JWT token
 const generateToken = (userId) => {
+  if (!process.env.JWT_SECRET) {
+    console.error('Missing JWT_SECRET environment variable when generating token');
+    throw new Error('JWT_SECRET is not configured on the server');
+  }
+
   return jwt.sign(
     { userId },
     process.env.JWT_SECRET,

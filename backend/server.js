@@ -138,6 +138,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Middleware to ensure DB is connected before handling requests that require DB
+const ensureDbConnected = (req, res, next) => {
+  const readyState = mongoose.connection.readyState; // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  if (readyState !== 1) {
+    console.error(`DB not connected (state=${readyState}). Request: ${req.method} ${req.originalUrl}`);
+    return res.status(503).json({ success: false, message: 'Service unavailable: database not connected' });
+  }
+  next();
+};
+
+// Apply DB check middleware for API routes that need DB (applies to all /api routes)
+app.use('/api', ensureDbConnected);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -202,31 +215,52 @@ app.use('*', (req, res) => {
 });
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/gallery-pavilion', {
+const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gallery-pavilion';
+
+// Set explicit mongoose options to avoid long buffering and provide better timeouts
+const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('✅ Connected to MongoDB');
-  
-  // Start server only in non-serverless environments
-  if (!isServerless) {
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } else {
-    console.log('🛰️ Serverless runtime detected (Vercel): not calling app.listen');
-  }
-})
-.catch((error) => {
-  console.error('❌ MongoDB connection error:', error);
-  // Avoid exiting in serverless; let function return 500 and logs help debugging
-  if (!isServerless) {
-    process.exit(1);
-  }
+  serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS, 10) || 5000, // 5s
+  socketTimeoutMS: parseInt(process.env.MONGO_SOCKET_TIMEOUT_MS, 10) || 45000,
+  connectTimeoutMS: parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS, 10) || 10000
+};
+
+mongoose.connect(mongoUri, mongooseOptions).catch(err => {
+  // The initial connect may reject; we'll log and allow process to continue in serverless
+  console.error('❌ Initial MongoDB connection error:', err && err.message ? err.message : err);
 });
+
+mongoose.connection.on('connected', () => {
+  console.log('✅ Connected to MongoDB');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('✅ Reconnected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ MongoDB connection error:', err && err.message ? err.message : err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB disconnected');
+});
+
+mongoose.connection.on('close', () => {
+  console.warn('⚠️ MongoDB connection closed');
+});
+
+// Start server only in non-serverless environments
+if (!isServerless) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+} else {
+  console.log('🛰️ Serverless runtime detected (Vercel): not calling app.listen');
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
