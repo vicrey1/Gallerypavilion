@@ -242,10 +242,10 @@ const HomePage = () => {
                 Est. 2018 • Global Photography Network
               </span>
             </div>
-            <h1 className="text-6xl md:text-8xl font-serif font-bold mb-6 text-shadow-lg leading-tight">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-serif font-bold mb-6 text-shadow-lg leading-tight">
               Gallery Pavilion
             </h1>
-            <p className="text-2xl md:text-3xl mb-4 text-shadow font-light">
+            <p className="text-xl sm:text-2xl md:text-3xl mb-4 text-shadow font-light">
               Gallery Pavilion — Where Photography Meets Exclusivity.
             </p>
             <p className="text-lg md:text-xl mb-8 text-gray-200 max-w-3xl mx-auto leading-relaxed">
@@ -269,15 +269,15 @@ const HomePage = () => {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Link
                 to="/signup"
-                className="btn-gold text-lg px-10 py-4 hover:scale-105 transform transition-all duration-300 shadow-2xl"
+                className="btn-gold text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-4 hover:scale-105 transform transition-all duration-300 shadow-2xl z-20"
               >
                 Sign Up as Photographer
               </Link>
               <button
-                className="btn-secondary bg-white/15 backdrop-blur-sm text-white border-white/30 hover:bg-white/25 text-lg px-10 py-4 transition-all duration-300"
+                className="btn-secondary bg-white/15 backdrop-blur-sm text-white border-white/30 hover:bg-white/25 text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-4 transition-all duration-300 z-20"
                 onClick={() => {
                   setInviteToken('');
                   setInvitePassword('');
