@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
+const os = require('os');
 require('dotenv').config();
 
 // Import routes
@@ -148,7 +149,8 @@ const ensureDbConnected = (req, res, next) => {
       const shareMatch = req.originalUrl.match(/^\/api\/share\/([^\/\?]+)/i);
       if (shareMatch && shareMatch[1] && req.method === 'GET') {
         const fs = require('fs');
-        const cachePath = require('path').join(__dirname, 'cache', `share_${shareMatch[1]}.json`);
+        const cacheBase = process.env.SHARE_CACHE_DIR || path.join(os.tmpdir(), 'gallerypavilion_cache');
+        const cachePath = path.join(cacheBase, `share_${shareMatch[1]}.json`);
         if (fs.existsSync(cachePath)) {
           const cached = fs.readFileSync(cachePath, 'utf8');
           res.setHeader('Content-Type', 'application/json');

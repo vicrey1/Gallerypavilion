@@ -392,7 +392,9 @@ router.get('/:token',
         try {
           const fs = require('fs');
           const path = require('path');
-          const cachePath = path.join(__dirname, '..', 'cache', `share_${req.params.token}.json`);
+          const os = require('os');
+          const cacheBase = process.env.SHARE_CACHE_DIR || path.join(os.tmpdir(), 'gallerypavilion_cache');
+          const cachePath = path.join(cacheBase, `share_${req.params.token}.json`);
           if (fs.existsSync(cachePath)) {
             const cached = fs.readFileSync(cachePath, 'utf8');
             res.setHeader('Content-Type', 'application/json');
@@ -467,9 +469,10 @@ router.get('/:token',
       try {
         const fs = require('fs');
         const path = require('path');
-        const cacheDir = path.join(__dirname, '..', 'cache');
-        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-        const cachePath = path.join(cacheDir, `share_${req.params.token}.json`);
+        const os = require('os');
+        const cacheBase = process.env.SHARE_CACHE_DIR || path.join(os.tmpdir(), 'gallerypavilion_cache');
+        if (!fs.existsSync(cacheBase)) fs.mkdirSync(cacheBase, { recursive: true });
+        const cachePath = path.join(cacheBase, `share_${req.params.token}.json`);
         fs.writeFileSync(cachePath, JSON.stringify(responsePayload), 'utf8');
       } catch (cacheWriteErr) {
         console.error('Failed to write share cache:', cacheWriteErr);
