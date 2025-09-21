@@ -239,13 +239,34 @@ router.get('/:id',
       }
 
       // Check access permissions
-      const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'ADMIN';
-      const isPublic = !!photo.gallery.isPublished && photo.isVisible;
+          const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
+          const isAdmin = req.user && req.user.role === 'ADMIN';
+          const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
-      if (!isOwner && !isAdmin && !isPublic) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
+          // Allow access with a valid share token passed as query `?token=` or header `x-share-token`.
+          let allowByShare = false;
+          try {
+            const shareToken = req.query.token || req.headers['x-share-token'];
+            if (shareToken) {
+              const ShareLink = require('../models/ShareLink');
+              const share = await ShareLink.findByToken(shareToken);
+              if (share) {
+                const access = share.isValidAccess();
+                // photo.gallery may be populated (object) or an ObjectId
+                const photoGalleryId = photo.gallery && photo.gallery._id ? photo.gallery._id.toString() : (photo.gallery ? photo.gallery.toString() : null);
+                const shareGalleryId = share.gallery && share.gallery._id ? share.gallery._id.toString() : (share.gallery ? share.gallery.toString() : null);
+                if (access.valid && photoGalleryId && shareGalleryId && photoGalleryId === shareGalleryId) {
+                  allowByShare = true;
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Share token validation error:', e);
+          }
+
+          if (!isOwner && !isAdmin && !isPublic && !allowByShare) {
+            return res.status(403).json({ message: 'Access denied' });
+          }
 
       // Increment view count if not owner
       if (!isOwner) {
@@ -609,13 +630,33 @@ router.get('/:id/preview',
       }
 
       // Check access permissions
-      const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
-      const isAdmin = req.user && req.user.role === 'ADMIN';
-      const isPublic = !!photo.gallery.isPublished && photo.isVisible;
+          const isOwner = req.user && photo.photographer._id.toString() === req.user._id.toString();
+          const isAdmin = req.user && req.user.role === 'ADMIN';
+          const isPublic = !!photo.gallery.isPublished && photo.isVisible;
 
-      if (!isOwner && !isAdmin && !isPublic) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
+          // Allow access with a valid share token passed as query `?token=` or header `x-share-token`.
+          let allowByShare = false;
+          try {
+            const shareToken = req.query.token || req.headers['x-share-token'];
+            if (shareToken) {
+              const ShareLink = require('../models/ShareLink');
+              const share = await ShareLink.findByToken(shareToken);
+              if (share) {
+                const access = share.isValidAccess();
+                const photoGalleryId = photo.gallery && photo.gallery._id ? photo.gallery._id.toString() : (photo.gallery ? photo.gallery.toString() : null);
+                const shareGalleryId = share.gallery && share.gallery._id ? share.gallery._id.toString() : (share.gallery ? share.gallery.toString() : null);
+                if (access.valid && photoGalleryId && shareGalleryId && photoGalleryId === shareGalleryId) {
+                  allowByShare = true;
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Share token validation error:', e);
+          }
+
+          if (!isOwner && !isAdmin && !isPublic && !allowByShare) {
+            return res.status(403).json({ message: 'Access denied' });
+          }
 
       // Handle Cloudinary storage first
       if (isCloudinaryConfigured() && photo.storageType === 'cloudinary') {
