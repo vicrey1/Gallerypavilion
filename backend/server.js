@@ -143,6 +143,22 @@ const ensureDbConnected = (req, res, next) => {
   const readyState = mongoose.connection.readyState; // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   if (readyState !== 1) {
     console.error(`DB not connected (state=${readyState}). Request: ${req.method} ${req.originalUrl}`);
+    // Allow cached share responses to be served when DB is down.
+    try {
+      const shareMatch = req.originalUrl.match(/^\/api\/share\/([^\/\?]+)/i);
+      if (shareMatch && shareMatch[1] && req.method === 'GET') {
+        const fs = require('fs');
+        const cachePath = require('path').join(__dirname, 'cache', `share_${shareMatch[1]}.json`);
+        if (fs.existsSync(cachePath)) {
+          const cached = fs.readFileSync(cachePath, 'utf8');
+          res.setHeader('Content-Type', 'application/json');
+          return res.status(200).send(cached);
+        }
+      }
+    } catch (cacheErr) {
+      console.error('Error reading share cache:', cacheErr);
+    }
+
     return res.status(503).json({ success: false, message: 'Service unavailable: database not connected' });
   }
   next();

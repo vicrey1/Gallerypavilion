@@ -425,7 +425,7 @@ router.get('/:token',
         }
       }));
 
-      res.json({
+      const responsePayload = {
         gallery: shareLink.gallery,
         photographer: shareLink.photographer,
         photos: mappedPhotos,
@@ -438,7 +438,21 @@ router.get('/:token',
           clientName: shareLink.clientInfo.clientName,
           notes: shareLink.clientInfo.notes
         }
-      });
+      };
+
+      // Attempt to write a cached copy for resilience when DB is down
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const cacheDir = path.join(__dirname, '..', 'cache');
+        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+        const cachePath = path.join(cacheDir, `share_${req.params.token}.json`);
+        fs.writeFileSync(cachePath, JSON.stringify(responsePayload), 'utf8');
+      } catch (cacheWriteErr) {
+        console.error('Failed to write share cache:', cacheWriteErr);
+      }
+
+      res.json(responsePayload);
     } catch (error) {
       console.error('Error accessing shared gallery:', error);
       // More detailed error response
