@@ -57,6 +57,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   const [passwordError, setPasswordError] = useState(null);
   const [invitationError, setInvitationError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [autoRetrying, setAutoRetrying] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   
@@ -109,7 +110,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   // Verify password for protected share links
   const verifyPassword = useCallback(async (passwordToVerify) => {
     try {
-      const response = await axios.post(`/share/${actualToken}/verify-password`, {
+      const response = await axiosInstance.post(`/share/${actualToken}/verify-password`, {
         password: passwordToVerify
       });
       return response.data.verified;
@@ -120,7 +121,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   }, [actualToken]);
 
   // Fetch gallery data
-  const fetchGallery = useCallback(async (verifiedPassword = null) => {
+  const fetchGallery = useCallback(async (verifiedPassword = null, retryAttempt = 0) => {
     try {
       setLoading(true);
       setError(null);
@@ -134,7 +135,11 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
         params.password = verifiedPassword || password;
       }
 
-      const response = await axios.get(url, { params });
+      // Add timeout and retry logic for serverless cold starts
+      const response = await axiosInstance.get(url, { 
+        params,
+        timeout: retryAttempt === 0 ? 10000 : 15000 // Longer timeout on retries
+      });
       const data = response.data;
 
       // Normalize photographer info so UI can consistently use gallery.photographer.name and .email
@@ -158,6 +163,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
 
       setGallery(normalizedGallery);
       setPhotos(data.photos || []);
+      setAutoRetrying(false);
       // removed unused setShareLink
     } catch (err) {
       if (err.response?.status === 401 && err.response?.data?.requiresPassword) {
@@ -171,6 +177,27 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
       }
       console.error('Error fetching gallery:', err);
       
+      // Handle serverless cold starts and database connection issues with automatic retry
+      const isServerError = err.response?.status >= 500 || err.response?.status === 503;
+      const isTimeoutError = err.code === 'ECONNABORTED' || err.message.includes('timeout');
+      const isNetworkError = err.message.includes('Network Error') || !err.response;
+      
+      // Auto-retry for serverless cold starts (up to 2 retries)
+      if ((isServerError || isTimeoutError || isNetworkError) && retryAttempt < 2) {
+        console.log(`Auto-retrying gallery fetch (attempt ${retryAttempt + 1}/2)...`);
+        setRetryCount(prev => prev + 1);
+        setAutoRetrying(true);
+        
+        // Wait before retry (exponential backoff)
+        const delay = Math.min(1000 * Math.pow(2, retryAttempt), 3000);
+        setTimeout(() => {
+          fetchGallery(verifiedPassword, retryAttempt + 1);
+        }, delay);
+        return;
+      }
+      
+      setAutoRetrying(false);
+      
       // Provide specific error messages based on status code
       let errorMessage = 'Failed to load gallery';
       if (err.response?.status === 404) {
@@ -179,11 +206,15 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
         errorMessage = 'You do not have permission to access this gallery';
       } else if (err.response?.status === 410) {
         errorMessage = 'This gallery link has expired';
+      } else if (err.response?.status === 503) {
+        errorMessage = 'Service temporarily unavailable. The server may be starting up.';
       } else if (err.response?.status >= 500) {
         errorMessage = 'Server error. Please try again later';
       } else if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
-      } else if (err.message.includes('Network Error')) {
+      } else if (isTimeoutError) {
+        errorMessage = 'Request timed out. The server may be starting up, please try again.';
+      } else if (isNetworkError) {
         errorMessage = 'Network error. Please check your connection and try again';
       }
       
@@ -470,7 +501,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
     return (
       <div className="gallery-loading">
         <div className="loading-spinner"></div>
-        <p>Loading gallery...</p>
+        <p>{autoRetrying ? `Retrying... (attempt ${retryCount + 1})` : 'Loading gallery...'}</p>
       </div>
     );
   }
@@ -488,7 +519,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
               onClick={() => {
                 setError(null);
                 setRetryCount(0);
-                fetchGallery();
+                fetchGallery(null, 0); // Reset retry attempt counter
               }} 
               className="retry-button"
               disabled={loading}
