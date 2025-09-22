@@ -140,30 +140,64 @@ app.get('/api/health', (req, res) => {
 });
 
 // Middleware to ensure DB is connected before handling requests that require DB
-const ensureDbConnected = (req, res, next) => {
+const ensureDbConnected = async (req, res, next) => {
   const readyState = mongoose.connection.readyState; // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-  if (readyState !== 1) {
-    console.error(`DB not connected (state=${readyState}). Request: ${req.method} ${req.originalUrl}`);
-    // Allow cached share responses to be served when DB is down.
-    try {
-      const shareMatch = req.originalUrl.match(/^\/api\/share\/([^\/\?]+)/i);
-      if (shareMatch && shareMatch[1] && req.method === 'GET') {
-        const fs = require('fs');
-        const cacheBase = process.env.SHARE_CACHE_DIR || path.join(os.tmpdir(), 'gallerypavilion_cache');
-        const cachePath = path.join(cacheBase, `share_${shareMatch[1]}.json`);
-        if (fs.existsSync(cachePath)) {
-          const cached = fs.readFileSync(cachePath, 'utf8');
-          res.setHeader('Content-Type', 'application/json');
-          return res.status(200).send(cached);
-        }
-      }
-    } catch (cacheErr) {
-      console.error('Error reading share cache:', cacheErr);
-    }
-
-    return res.status(503).json({ success: false, message: 'Service unavailable: database not connected' });
+  
+  // If connected, proceed immediately
+  if (readyState === 1) {
+    return next();
   }
-  next();
+  
+  // If connecting, wait a bit for connection to establish (serverless cold start)
+  if (readyState === 2) {
+    console.log(`DB connecting (state=${readyState}). Waiting for connection... Request: ${req.method} ${req.originalUrl}`);
+    try {
+      // Wait up to 3 seconds for connection to establish
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Connection timeout')), 3000);
+        
+        const checkConnection = () => {
+          if (mongoose.connection.readyState === 1) {
+            clearTimeout(timeout);
+            resolve();
+          } else if (mongoose.connection.readyState === 0 || mongoose.connection.readyState === 3) {
+            clearTimeout(timeout);
+            reject(new Error('Connection failed'));
+          } else {
+            setTimeout(checkConnection, 100);
+          }
+        };
+        
+        checkConnection();
+      });
+      
+      console.log(`✅ DB connection established. Proceeding with request: ${req.method} ${req.originalUrl}`);
+      return next();
+    } catch (waitErr) {
+      console.error(`❌ DB connection wait failed: ${waitErr.message}. Request: ${req.method} ${req.originalUrl}`);
+    }
+  }
+  
+  console.error(`DB not connected (state=${readyState}). Request: ${req.method} ${req.originalUrl}`);
+  
+  // Allow cached share responses to be served when DB is down.
+  try {
+    const shareMatch = req.originalUrl.match(/^\/api\/share\/([^\/\?]+)/i);
+    if (shareMatch && shareMatch[1] && req.method === 'GET') {
+      const fs = require('fs');
+      const cacheBase = process.env.SHARE_CACHE_DIR || path.join(os.tmpdir(), 'gallerypavilion_cache');
+      const cachePath = path.join(cacheBase, `share_${shareMatch[1]}.json`);
+      if (fs.existsSync(cachePath)) {
+        const cached = fs.readFileSync(cachePath, 'utf8');
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).send(cached);
+      }
+    }
+  } catch (cacheErr) {
+    console.error('Error reading share cache:', cacheErr);
+  }
+
+  return res.status(503).json({ success: false, message: 'Service unavailable: database not connected' });
 };
 
 // Apply DB check middleware for API routes that need DB (applies to all /api routes)
@@ -240,13 +274,17 @@ app.use('*', (req, res) => {
 // Database connection
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/gallery-pavilion';
 
-// Set explicit mongoose options to avoid long buffering and provide better timeouts
+// Set explicit mongoose options optimized for serverless environments
 const mongooseOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverSelectionTimeoutMS: parseInt(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS, 10) || 5000, // 5s
   socketTimeoutMS: parseInt(process.env.MONGO_SOCKET_TIMEOUT_MS, 10) || 45000,
-  connectTimeoutMS: parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS, 10) || 10000
+  connectTimeoutMS: parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS, 10) || 10000,
+  maxPoolSize: 10, // Maintain up to 10 socket connections
+  minPoolSize: 1, // Maintain at least 1 socket connection
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  bufferCommands: false // Disable mongoose buffering
 };
 
 mongoose.connect(mongoUri, mongooseOptions).catch(err => {

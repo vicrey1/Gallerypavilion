@@ -23,7 +23,9 @@ import {
   ExternalLink,
   Trash2,
   AlertTriangle,
-  LogOut
+  LogOut,
+  Menu,
+  X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
@@ -44,6 +46,7 @@ const AdminPanel = () => {
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -53,6 +56,15 @@ const AdminPanel = () => {
     } finally {
       navigate('/login', { replace: true });
     }
+  };
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsMobileSidebarOpen(false); // Close mobile sidebar when tab is selected
   };
 
   // Safe display helpers for user objects
@@ -760,16 +772,40 @@ const AdminPanel = () => {
 
   return (
     <div className="admin-panel">
+      {/* Mobile Menu Button */}
+      <button 
+        className="mobile-menu-button"
+        onClick={toggleMobileSidebar}
+        aria-label="Toggle mobile menu"
+      >
+        {isMobileSidebarOpen ? <X className="menu-icon" /> : <Menu className="menu-icon" />}
+      </button>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="mobile-sidebar-overlay"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <div className="admin-sidebar">
+      <div className={`admin-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <h2>Admin Panel</h2>
+          <button 
+            className="mobile-close-button"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-label="Close mobile menu"
+          >
+            <X className="close-icon" />
+          </button>
         </div>
         
         <nav className="sidebar-nav">
           <button
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => handleTabChange('dashboard')}
           >
             <BarChart3 className="nav-icon" />
             Dashboard
@@ -777,7 +813,7 @@ const AdminPanel = () => {
           
           <button
             className={`nav-item ${activeTab === 'photographers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('photographers')}
+            onClick={() => handleTabChange('photographers')}
           >
             <Users className="nav-icon" />
             Photographers
@@ -788,7 +824,7 @@ const AdminPanel = () => {
           
           <button
             className={`nav-item ${activeTab === 'galleries' ? 'active' : ''}`}
-            onClick={() => setActiveTab('galleries')}
+            onClick={() => handleTabChange('galleries')}
           >
             <Camera className="nav-icon" />
             Galleries
@@ -796,7 +832,7 @@ const AdminPanel = () => {
           
           <button
             className={`nav-item ${activeTab === 'inquiries' ? 'active' : ''}`}
-            onClick={() => setActiveTab('inquiries')}
+            onClick={() => handleTabChange('inquiries')}
           >
             <MessageSquare className="nav-icon" />
             Inquiries

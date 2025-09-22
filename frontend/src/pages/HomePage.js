@@ -168,7 +168,7 @@ const HomePage = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen scroll-container">
       {/* Hero Section */}
       <section className="relative h-screen overflow-hidden">
         {/* Background Slideshow */}
