@@ -926,12 +926,11 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                   key={photo._id}
                   className="photo-item"
                   data-photo-id={photo._id}
-                  initial={{ opacity: 0, y: 60, scale: 0.7, rotateX: 20 }}
+                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
                   animate={{ 
-                    opacity: isVisible ? 1 : 0.3, 
-                    y: isVisible ? 0 : 30, 
-                    scale: isVisible ? 1 : 0.9, 
-                    rotateX: isVisible ? 0 : 10 
+                    opacity: isVisible ? 1 : 0.4, 
+                    y: isVisible ? 0 : 20, 
+                    scale: isVisible ? 1 : 0.96
                   }}
                   transition={{ 
                     delay: isVisible ? Math.min(index * 0.05, 1) : 0,
@@ -941,13 +940,12 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                     damping: 20
                   }}
                 whileHover={{ 
-                  y: -12,
-                  scale: 1.03,
-                  rotateX: -2,
+                  y: -8,
+                  scale: 1.02,
                   transition: { 
-                    duration: 0.4,
+                    duration: 0.3,
                     type: "spring",
-                    stiffness: 300
+                    stiffness: 400
                   }
                 }}
                 whileTap={{ 

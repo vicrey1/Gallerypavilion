@@ -687,6 +687,9 @@
   will-change: transform, opacity;
   transform: translateZ(0);
   backface-visibility: hidden;
+  /* Prevent image blurring during animations */
+  -webkit-perspective: 1000px;
+  perspective: 1000px;
 }
 
 .photo-item:hover {
@@ -785,6 +788,14 @@
   transform: translateZ(0); /* Force GPU acceleration */
   will-change: transform; /* Optimize animations */
   transition: transform 0.3s ease;
+  /* Prevent image blurring during animations */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Ensure sharp rendering */
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .photo-overlay {
