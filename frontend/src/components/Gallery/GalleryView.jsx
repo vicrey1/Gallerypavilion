@@ -858,34 +858,16 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
       
       {/* Photo Grid */}
       {photos.length > 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 1 }}
-        >
+        <div className="photo-grid-container">
           <Masonry
             breakpointCols={breakpointColumnsObj}
             className="photo-masonry"
             columnClassName="photo-masonry-column"
           >
             {photos.map((photo, index) => (
-              <motion.div
+              <div
                 key={photo._id}
                 className="photo-item"
-                initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ 
-                  delay: index * 0.1,
-                  duration: 0.6,
-                  type: "spring",
-                  stiffness: 100
-                }}
-                whileHover={{ 
-                  y: -8,
-                  scale: 1.02,
-                  transition: { duration: 0.3 }
-                }}
-                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (isSharedView) {
                     navigate(`/gallery/${actualToken}/photo/${photo._id}`);
@@ -898,136 +880,73 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                 <LazyLoadImage
                   src={getDisplayUrl(photo)}
                   alt={photo.title || 'Gallery photo'}
-                  effect="blur"
+                  effect="opacity"
                   className="photo-image"
                   placeholderSrc={photo.thumbnailUrl}
-                  beforeLoad={() => {
-                    // Ensure URLs are absolute
-                    if (photo.url?.startsWith('/')) {
-                      photo.url = `${window.location.origin}${photo.url}`;
-                    }
-                    if (photo.thumbnailUrl?.startsWith('/')) {
-                      photo.thumbnailUrl = `${window.location.origin}${photo.thumbnailUrl}`;
-                    }
-                    if (photo.previewUrl?.startsWith('/')) {
-                      photo.previewUrl = `${window.location.origin}${photo.previewUrl}`;
-                    }
-                  }}
+                  threshold={200}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
-                    console.error('Image load error:', e.target.src);
-                    e.target.onerror = null;
-                    if (!photo.url) return;
-                    
-                    // Try different URL variations
-                    const urls = [
-                      photo.url,
-                      photo.previewUrl,
-                      photo.thumbnailUrl,
-                      photo.url.replace('/api/', '/'),
-                      `${window.location.origin}${photo.url.startsWith('/') ? '' : '/'}${photo.url}`
-                    ].filter(Boolean);
-
-                    // Try the next URL in the list
-                    const currentIndex = urls.indexOf(e.target.src);
-                    if (currentIndex < urls.length - 1) {
-                      e.target.src = urls[currentIndex + 1];
+                    // Simple fallback to thumbnail if main image fails
+                    if (photo.thumbnailUrl && e.target.src !== photo.thumbnailUrl) {
+                      e.target.src = photo.thumbnailUrl;
                     }
                   }}
                 />
                 
                 {/* Visible caption below photo */}
-                <motion.div 
-                  className="photo-caption"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
+                <div className="photo-caption">
                   {photo.title && (
                     <div className="caption-title">
                       {photo.title}
                     </div>
                   )}
                   
-                  {photo.metadata?.purchaseInfo?.price && (
+                  {photo.price && (
                     <div className="caption-price">
-                      ${photo.metadata.purchaseInfo.price.toLocaleString()}
+                      ${photo.price}
                     </div>
                   )}
                   
-                  {!photo.title && !photo.metadata?.purchaseInfo?.price && (
+                  {!photo.title && !photo.price && (
                     <div className="caption-placeholder">
-                      Untitled Artwork
+                      Click to view
                     </div>
                   )}
-                </motion.div>
+                </div>
                 
-                <motion.div 
-                  className="photo-overlay"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <motion.div 
-                    className="photo-actions"
-                    initial={{ y: 20, opacity: 0 }}
-                    whileHover={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                  >
-                    <motion.button 
+                <div className="photo-overlay">
+                  <div className="photo-actions">
+                    <button 
                       className={`favorite-button ${favorites.has(photo._id) ? 'active' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFavorite(photo._id);
                       }}
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 300 }}
                     >
                       <Heart className="action-icon" />
-                    </motion.button>
+                    </button>
                     
-                    <motion.button 
+                    <button 
                       className="download-button"
                       onClick={(e) => {
                         e.stopPropagation();
                         downloadPhoto(photo);
                       }}
-                      whileHover={{ scale: 1.1, y: -2 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 300 }}
                     >
                       <Download className="action-icon" />
-                    </motion.button>
-                  </motion.div>
+                    </button>
+                  </div>
                   
-                  <motion.div 
-                    className="photo-info"
-                    initial={{ y: 30, opacity: 0 }}
-                    whileHover={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
+                  <div className="photo-info">
                     {photo.title && (
-                      <motion.div 
-                        className="photo-title"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                      >
+                      <div className="photo-title">
                         {photo.title}
-                      </motion.div>
+                      </div>
                     )}
                     
                     {photo.metadata && (
-                      <motion.div 
-                        className="photo-metadata"
-                        initial={{ opacity: 0 }}
-                        whileHover={{ opacity: 1 }}
-                        transition={{ delay: 0.4 }}
-                      >
-
-                        
-
-                        
+                      <div className="photo-metadata">
                         {photo.tags && photo.tags.length > 0 && (
                           <div className="photo-tags">
                             {photo.tags.map((tag, tagIndex) => (
@@ -1039,38 +958,31 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                         )}
                         
                         {photo.metadata.purchaseInfo && photo.metadata.purchaseInfo.price && (
-                          <motion.div 
-                            className="photo-price"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                          >
+                          <div className="photo-price">
                             ${photo.metadata.purchaseInfo.price.toLocaleString()}
-                          </motion.div>
+                          </div>
                         )}
                         
                         {photo.metadata.purchaseInfo && photo.metadata.purchaseInfo.available && (
-                          <motion.button 
+                          <button 
                             className="inquiry-button"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleInquiry(photo);
                             }}
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 300 }}
                           >
                             Inquire
-                          </motion.button>
+                          </button>
                         )}
-                      </motion.div>
+                      </div>
                     )}
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
               </div>
-            </motion.div>
+            </div>
           ))}
           </Masonry>
-        </motion.div>
+        </div>
       ) : (
         <div className="empty-gallery">
           <Camera className="empty-icon" />
