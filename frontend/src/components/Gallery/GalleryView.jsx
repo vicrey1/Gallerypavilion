@@ -10,7 +10,6 @@ import {
   X, 
   ChevronLeft, 
   ChevronRight,
-  ChevronUp,
   ZoomIn,
   ZoomOut,
   RotateCw,
@@ -60,12 +59,9 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   const [retryCount, setRetryCount] = useState(0);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [visiblePhotos, setVisiblePhotos] = useState(new Set());
   
   const lightboxRef = useRef(null);
   const imageRef = useRef(null);
-  const observerRef = useRef(null);
   
   // Theme and navigation
   const navigate = useNavigate();
@@ -81,14 +77,6 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   const lightBg = '#f7f7f9';
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
-
-  // Scroll to top function
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
   }, []);
   
   useEffect(() => {
@@ -364,61 +352,6 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [showLightbox, showInfo, lightboxIndex, navigateLightbox]);
   
-  // Scroll progress tracking
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = (scrollTop / docHeight) * 100;
-      setScrollProgress(Math.min(100, Math.max(0, scrollPercent)));
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Intersection Observer for scroll-triggered animations
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const photoId = entry.target.getAttribute('data-photo-id');
-          if (entry.isIntersecting) {
-            setVisiblePhotos(prev => new Set([...prev, photoId]));
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '50px 0px -50px 0px'
-      }
-    );
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Observe photo elements when photos change
-  useEffect(() => {
-    if (!observerRef.current || photos.length === 0) return;
-
-    const photoElements = document.querySelectorAll('.photo-item');
-    photoElements.forEach(element => {
-      observerRef.current.observe(element);
-    });
-
-    return () => {
-      if (observerRef.current) {
-        photoElements.forEach(element => {
-          observerRef.current.unobserve(element);
-        });
-      }
-    };
-  }, [photos]);
-  
   // Toggle favorite
   const toggleFavorite = (photoId) => {
     const newFavorites = new Set(favorites);
@@ -589,21 +522,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
   }
   
   return (
-    <div className={`gallery-view scroll-container ${theme}`} style={{ backgroundColor: theme === 'dark' ? darkBg : lightBg }}>
-      {/* Scroll Progress Indicator */}
-      <motion.div 
-        className="scroll-progress"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: scrollProgress > 5 ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.div 
-          className="scroll-progress-bar"
-          style={{ width: `${scrollProgress}%` }}
-          transition={{ type: "spring", stiffness: 400, damping: 40 }}
-        />
-      </motion.div>
-      
+    <div className={`gallery-view ${theme}`} style={{ backgroundColor: theme === 'dark' ? darkBg : lightBg }}>
       {/* Animated Background Elements */}
       <div className="animated-background">
         <motion.div 
@@ -909,7 +828,6 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
       {/* Photo Grid */}
       {photos.length > 0 ? (
         <motion.div
-          className="scroll-container"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 1 }}
@@ -919,40 +837,24 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
             className="photo-masonry"
             columnClassName="photo-masonry-column"
           >
-            {photos.map((photo, index) => {
-              const isVisible = visiblePhotos.has(photo._id);
-              return (
-                <motion.div
-                  key={photo._id}
-                  className="photo-item"
-                  data-photo-id={photo._id}
-                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
-                  animate={{ 
-                    opacity: isVisible ? 1 : 0.4, 
-                    y: isVisible ? 0 : 20, 
-                    scale: isVisible ? 1 : 0.96
-                  }}
-                  transition={{ 
-                    delay: isVisible ? Math.min(index * 0.05, 1) : 0,
-                    duration: isVisible ? 0.8 : 0.4,
-                    type: "spring",
-                    stiffness: isVisible ? 150 : 100,
-                    damping: 20
-                  }}
+            {photos.map((photo, index) => (
+              <motion.div
+                key={photo._id}
+                className="photo-item"
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ 
+                  delay: index * 0.1,
+                  duration: 0.6,
+                  type: "spring",
+                  stiffness: 100
+                }}
                 whileHover={{ 
                   y: -8,
                   scale: 1.02,
-                  transition: { 
-                    duration: 0.3,
-                    type: "spring",
-                    stiffness: 400
-                  }
+                  transition: { duration: 0.3 }
                 }}
-                whileTap={{ 
-                  scale: 0.97,
-                  y: -6,
-                  transition: { duration: 0.1 }
-                }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   if (isSharedView) {
                     navigate(`/gallery/${actualToken}/photo/${photo._id}`);
@@ -1135,8 +1037,7 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
                 </motion.div>
               </div>
             </motion.div>
-          );
-        })}
+          ))}
           </Masonry>
         </motion.div>
       ) : (
@@ -1425,24 +1326,6 @@ const GalleryView = ({ galleryId: propGalleryId, isSharedView = false }) => {
               </AnimatePresence>
              </div>
            </motion.div>
-         )}
-       </AnimatePresence>
-
-       {/* Scroll to Top Button */}
-       <AnimatePresence>
-         {scrollProgress > 20 && (
-           <motion.button
-             className="scroll-to-top"
-             onClick={scrollToTop}
-             initial={{ opacity: 0, scale: 0.8, y: 20 }}
-             animate={{ opacity: 1, scale: 1, y: 0 }}
-             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-             whileHover={{ scale: 1.1, y: -4 }}
-             whileTap={{ scale: 0.95 }}
-             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-           >
-             <ChevronUp />
-           </motion.button>
          )}
        </AnimatePresence>
      </div>

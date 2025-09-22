@@ -181,40 +181,14 @@ const PhotoDetailPage = () => {
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark' : ''} bg-gradient-to-br from-white via-neutral-50 to-neutral-100 dark:from-black dark:via-neutral-950 dark:to-neutral-900 text-neutral-900 dark:text-neutral-50 relative overflow-hidden`}>
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-        <motion.div 
-          className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-emerald-400/10 to-cyan-600/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            rotate: [360, 180, 0],
-          }}
-          transition={{ 
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      </div>
+      {/* Removed animated background elements for performance and clarity */}
       
       <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex items-center justify-between mb-8"
+          className="flex items-center justify-between mb-8 gap-3 flex-wrap sm:flex-nowrap"
         >
           <button 
             onClick={() => navigate(`/gallery/${token}`)} 
@@ -261,9 +235,7 @@ const PhotoDetailPage = () => {
                 <motion.img 
                   src={photo.url || photo.previewUrl || photo.thumbnailUrl} 
                   alt={photo.title || 'Photo'} 
-                  className="w-full h-auto object-contain transition-transform duration-700 group-hover:scale-105"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.3 }}
+                  className="w-full h-auto max-h-[70vh] object-contain transition-transform duration-500 group-hover:scale-103 mx-auto"
                 />
                 
                 {/* Overlay with actions */}
@@ -275,23 +247,23 @@ const PhotoDetailPage = () => {
                   <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
                     <div className="flex gap-3">
                       <motion.button 
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.96 }}
                         className="p-3 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 transition-colors"
                       >
                         <Eye size={20} />
                       </motion.button>
                       <motion.button 
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.96 }}
                         className="p-3 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 transition-colors"
                       >
                         <Heart size={20} />
                       </motion.button>
                     </div>
                     <motion.button 
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.96 }}
                       className="p-3 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30 transition-colors"
                     >
                       <Download size={20} />
@@ -314,377 +286,379 @@ const PhotoDetailPage = () => {
               )}
             </div>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Details */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }} 
-            className="space-y-8"
+      {/* Details */}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }} 
+        className="space-y-8"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <motion.h1 
+            className="text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-neutral-100 dark:to-neutral-400 bg-clip-text text-transparent mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
           >
-            <motion.div
+            {photo.title || 'Untitled'}
+          </motion.h1>
+          {photo.metadata?.description && (
+            <motion.p 
+              className="text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed font-light"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.6 }}
             >
-              <motion.h1 
-                className="text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-neutral-100 dark:to-neutral-400 bg-clip-text text-transparent mb-4"
+              {photo.metadata.description}
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Artsy-style Tabbed Content */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="space-y-6"
+        >
+          {/* Tab Navigation */}
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
+            <nav className="flex space-x-8">
+              <button 
+                onClick={() => setActiveTab('about')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'about' 
+                    ? 'border-black dark:border-white text-neutral-900 dark:text-neutral-100' 
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                }`}
+              >
+                About the work
+              </button>
+
+              <button 
+                onClick={() => setActiveTab('provenance')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'provenance' 
+                    ? 'border-black dark:border-white text-neutral-900 dark:text-neutral-100' 
+                    : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                }`}
+              >
+                Provenance
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <AnimatePresence mode="wait">
+            {activeTab === 'about' && (
+              <motion.div 
+                key="about"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
               >
-                {photo.title || 'Untitled'}
-              </motion.h1>
-              {photo.metadata?.description && (
-                <motion.p 
-                  className="text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed font-light"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  {photo.metadata.description}
-                </motion.p>
-              )}
-            </motion.div>
-
-            {/* Artsy-style Tabbed Content */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="space-y-6"
-            >
-              {/* Tab Navigation */}
-              <div className="border-b border-neutral-200 dark:border-neutral-700">
-                <nav className="flex space-x-8">
-                  <button 
-                    onClick={() => setActiveTab('about')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === 'about' 
-                        ? 'border-black dark:border-white text-neutral-900 dark:text-neutral-100' 
-                        : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-                    }`}
-                  >
-                    About the work
-                  </button>
-
-                  <button 
-                    onClick={() => setActiveTab('provenance')}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === 'provenance' 
-                        ? 'border-black dark:border-white text-neutral-900 dark:text-neutral-100' 
-                        : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
-                    }`}
-                  >
-                    Provenance
-                  </button>
-                </nav>
-              </div>
-
-              {/* Tab Content */}
-              <AnimatePresence mode="wait">
-                {activeTab === 'about' && (
-                  <motion.div 
-                    key="about"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                  >
-                    {/* Description */}
-                    {photo.metadata?.description && (
-                      <div className="prose prose-neutral dark:prose-invert max-w-none">
-                        <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                          {photo.metadata.description}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Detailed Artwork Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Left Column */}
-                      <div className="space-y-4">
-                        {photo.artwork?.materials && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Materials</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.materials}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.dimensions && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Size</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.dimensions}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.edition && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Edition</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.edition}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.rarity && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Rarity</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.rarity}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.medium && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Medium</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.medium}</dd>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right Column */}
-                      <div className="space-y-4">
-                        {photo.artwork?.condition && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Condition</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.condition}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.signature && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Signature</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.signature}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.certificate !== undefined && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Certificate of authenticity</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.certificate ? 'Included' : 'Not included'}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.frame && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Frame</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.frame}</dd>
-                          </div>
-                        )}
-                        {photo.artwork?.series && (
-                          <div>
-                            <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Series</dt>
-                            <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.series}</dd>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
+                {/* Description */}
+                {photo.metadata?.description && (
+                  <div className="prose prose-neutral dark:prose-invert max-w-none">
+                    <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                      {photo.metadata.description}
+                    </p>
+                  </div>
                 )}
 
-
-
-                {activeTab === 'provenance' && (
-                  <motion.div 
-                    key="provenance"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                  >
-                    {photo.artwork?.provenance ? (
+                {/* Detailed Artwork Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column */}
+                  <div className="space-y-4">
+                    {photo.artwork?.materials && (
                       <div>
-                        <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Provenance</h4>
-                        <div className="prose prose-neutral dark:prose-invert max-w-none">
-                          <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                            {photo.artwork.provenance}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="text-neutral-500 dark:text-neutral-400">No provenance information available</div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Materials</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.materials}</dd>
                       </div>
                     )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+                    {photo.artwork?.dimensions && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Size</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.dimensions}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.edition && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Edition</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.edition}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.rarity && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Rarity</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.rarity}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.medium && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Medium</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.medium}</dd>
+                      </div>
+                    )}
+                  </div>
 
-            {/* Technical Details */}
-            {photo.metadata?.exif && (
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    {photo.artwork?.condition && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Condition</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.condition}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.signature && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Signature</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.signature}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.certificate !== undefined && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Certificate of authenticity</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.certificate ? 'Included' : 'Not included'}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.frame && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Frame</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.frame}</dd>
+                      </div>
+                    )}
+                    {photo.artwork?.series && (
+                      <div>
+                        <dt className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Series</dt>
+                        <dd className="text-neutral-900 dark:text-neutral-100">{photo.artwork.series}</dd>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+
+
+            {activeTab === 'provenance' && (
               <motion.div 
-                initial={{ opacity: 0, y: 30 }}
+                key="provenance"
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="rounded-2xl bg-gradient-to-br from-white/90 to-white/70 dark:from-neutral-900/90 dark:to-neutral-900/60 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 p-6 shadow-xl"
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
               >
-                <div className="space-y-4">
+                {photo.artwork?.provenance ? (
+                  <div>
+                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Provenance</h4>
+                    <div className="prose prose-neutral dark:prose-invert max-w-none">
+                      <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                        {photo.artwork.provenance}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-neutral-500 dark:text-neutral-400">No provenance information available</div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Technical Details */}
+        {photo.metadata?.exif && (
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="rounded-2xl bg-gradient-to-br from-white/90 to-white/70 dark:from-neutral-900/90 dark:to-neutral-900/60 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 p-6 shadow-xl"
+          >
+            <div className="space-y-4">
+              <div className="font-semibold text-lg flex items-center gap-3 text-neutral-800 dark:text-neutral-200">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                  <Camera size={18} />
+                </div>
+                Technical Details
+              </div>
+              
+              {photo.metadata?.exif && (
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.9 }}
+                  className="space-y-3"
+                >
                   <div className="font-semibold text-lg flex items-center gap-3 text-neutral-800 dark:text-neutral-200">
                     <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
                       <Camera size={18} />
                     </div>
                     Technical Details
                   </div>
-                  
-                  {photo.metadata?.exif && (
-                    <motion.div 
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.9 }}
-                      className="space-y-3"
-                    >
-                      <div className="font-semibold text-lg flex items-center gap-3 text-neutral-800 dark:text-neutral-200">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-                          <Camera size={18} />
-                        </div>
-                        Technical Details
+                  <div className="grid gap-2 pl-12">
+                    {photo.metadata.exif.cameraModel && (
+                      <div className="flex justify-between items-center py-2 border-b border-neutral-200/50 dark:border-neutral-700/50">
+                        <span className="text-neutral-600 dark:text-neutral-400 font-medium">Camera</span>
+                        <span className="text-neutral-900 dark:text-neutral-100 font-semibold">{photo.metadata.exif.cameraModel}</span>
                       </div>
-                      <div className="grid gap-2 pl-12">
-                        {photo.metadata.exif.cameraModel && (
-                          <div className="flex justify-between items-center py-2 border-b border-neutral-200/50 dark:border-neutral-700/50">
-                            <span className="text-neutral-600 dark:text-neutral-400 font-medium">Camera</span>
-                            <span className="text-neutral-900 dark:text-neutral-100 font-semibold">{photo.metadata.exif.cameraModel}</span>
-                          </div>
-                        )}
-                        {photo.metadata.exif.lensModel && (
-                          <div className="flex justify-between items-center py-2 border-b border-neutral-200/50 dark:border-neutral-700/50">
-                            <span className="text-neutral-600 dark:text-neutral-400 font-medium">Lens</span>
-                            <span className="text-neutral-900 dark:text-neutral-100 font-semibold">{photo.metadata.exif.lensModel}</span>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-4">
-                          {photo.metadata.exif.fNumber && (
-                            <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Aperture</div>
-                              <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">f/{photo.metadata.exif.fNumber}</div>
-                            </div>
-                          )}
-                          {photo.metadata.exif.exposureTime && (
-                            <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Shutter</div>
-                              <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.exposureTime}s</div>
-                            </div>
-                          )}
-                          {photo.metadata.exif.iso && (
-                            <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">ISO</div>
-                              <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.iso}</div>
-                            </div>
-                          )}
-                          {photo.metadata.exif.focalLength && (
-                            <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Focal</div>
-                              <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.focalLength}mm</div>
-                            </div>
-                          )}
-                        </div>
+                    )}
+                    {photo.metadata.exif.lensModel && (
+                      <div className="flex justify-between items-center py-2 border-b border-neutral-200/50 dark:border-neutral-700/50">
+                        <span className="text-neutral-600 dark:text-neutral-400 font-medium">Lens</span>
+                        <span className="text-neutral-900 dark:text-neutral-100 font-semibold">{photo.metadata.exif.lensModel}</span>
                       </div>
-                    </motion.div>
-                  )}
-                  
-                  {photo.metadata?.location && (
-                    <motion.div 
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 1.0 }}
-                      className="space-y-3"
-                    >
-                      <div className="font-semibold text-lg flex items-center gap-3 text-neutral-800 dark:text-neutral-200">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 text-white">
-                          <MapPin size={18} />
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      {photo.metadata.exif.fNumber && (
+                        <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Aperture</div>
+                          <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">f/{photo.metadata.exif.fNumber}</div>
                         </div>
-                        Location
-                      </div>
-                      <p className="text-neutral-700 dark:text-neutral-300 pl-12 font-medium">{photo.metadata.location}</p>
-                    </motion.div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Price and actions */}
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.1 }}
-              className="space-y-6"
-            >
-              {photo.artwork?.price && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.2 }}
-                  className="text-center p-6 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200/50 dark:border-amber-700/50"
-                >
-                  <div className="text-sm text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide mb-2">
-                    {photo.artwork.isForSale ? 'Price' : 'Estimated Value'}
-                  </div>
-                  <div className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                    {photo.artwork.currency || '$'}{parseFloat(photo.artwork.price).toLocaleString()}
-                  </div>
-                  {photo.artwork.isForSale && (
-                    <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">
-                      Available for Purchase
+                      )}
+                      {photo.metadata.exif.exposureTime && (
+                        <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Shutter</div>
+                          <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.exposureTime}s</div>
+                        </div>
+                      )}
+                      {photo.metadata.exif.iso && (
+                        <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">ISO</div>
+                          <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.iso}</div>
+                        </div>
+                      )}
+                      {photo.metadata.exif.focalLength && (
+                        <div className="text-center p-3 rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Focal</div>
+                          <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{photo.metadata.exif.focalLength}mm</div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </motion.div>
               )}
               
-              <div className="grid grid-cols-2 gap-4">
-                <motion.button 
-                  onClick={handleInquiry}
+              {photo.metadata?.location && (
+                <motion.div 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.3 }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-white dark:to-neutral-200 text-white dark:text-black font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                  transition={{ delay: 1.0 }}
+                  className="space-y-3"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-900 dark:from-neutral-200 dark:to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex items-center justify-center gap-2">
-                    <Mail size={18} className="group-hover:rotate-12 transition-transform duration-300" />
-                    <span>Inquiry</span>
+                  <div className="font-semibold text-lg flex items-center gap-3 text-neutral-800 dark:text-neutral-200">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 text-white">
+                      <MapPin size={18} />
+                    </div>
+                    Location
                   </div>
-                </motion.button>
-                
-                <motion.button 
-                  onClick={handlePurchase}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.4 }}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex items-center justify-center gap-2">
-                    <ShoppingCart size={18} className="group-hover:scale-110 transition-transform duration-300" />
-                    <span>Purchase</span>
-                  </div>
-                </motion.button>
+                  <p className="text-neutral-700 dark:text-neutral-300 pl-12 font-medium">{photo.metadata.location}</p>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Price and actions */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1 }}
+          className="space-y-6"
+        >
+          {photo.artwork?.price && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2 }}
+              className="text-center p-6 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200/50 dark:border-amber-700/50"
+            >
+              <div className="text-sm text-amber-600 dark:text-amber-400 font-medium uppercase tracking-wide mb-2">
+                {photo.artwork.isForSale ? 'Price' : 'Estimated Value'}
               </div>
-            </motion.div>
-
-            {/* Artist Information - Artsy Style */}
-            {gallery?.photographer?.name && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.5 }}
-                className="space-y-6"
-              >
-                {/* Artist Header */}
-                <div className="flex items-center gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center text-2xl font-bold text-neutral-600 dark:text-neutral-300">
-                    {gallery.photographer.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{gallery.photographer.name}</h3>
-                  </div>
+              <div className="text-4xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                {photo.artwork.currency || '$'}{parseFloat(photo.artwork.price).toLocaleString()}
+              </div>
+              {photo.artwork.isForSale && (
+                <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-2">
+                  Available for Purchase
                 </div>
+              )}
+            </motion.div>
+          )}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <motion.button 
+              onClick={handleInquiry}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.3 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-white dark:to-neutral-200 text-white dark:text-black font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-900 dark:from-neutral-200 dark:to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center gap-2">
+                <Mail size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+                <span>Inquiry</span>
+              </div>
+            </motion.button>
+            
+            <motion.button 
+              onClick={handlePurchase}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.4 }}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="group relative px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center gap-2">
+                <ShoppingCart size={18} className="group-hover:scale-110 transition-transform duration-300" />
+                <span>Purchase</span>
+              </div>
+            </motion.button>
+          </div>
+        </motion.div>
 
-                {/* Artist Biography */}
-                {photo.artist?.biography && (
-                  <div className="prose prose-neutral dark:prose-invert max-w-none">
-                    <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
-                      {photo.artist.biography}
-                    </p>
-                  </div>
-                )}
+        {/* Artist Information - Artsy Style */}
+        {gallery?.photographer?.name && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5 }}
+            className="space-y-6"
+          >
+            {/* Artist Header */}
+            <div className="flex items-center gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-700">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center text-2xl font-bold text-neutral-600 dark:text-neutral-300">
+                {gallery.photographer.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{gallery.photographer.name}</h3>
+              </div>
+            </div>
+
+            {/* Artist Biography */}
+            {photo.artist?.biography && (
+              <div className="prose prose-neutral dark:prose-invert max-w-none">
+                <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
+                  {photo.artist.biography}
+                </p>
+              </div>
+            )}
 
 
 
@@ -693,18 +667,16 @@ const PhotoDetailPage = () => {
 
 
 
-                {/* Contact */}
-                {gallery.photographer.email && (
-                  <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                    <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Contact</div>
-                    <div className="text-neutral-600 dark:text-neutral-400">{gallery.photographer.email}</div>
-                  </div>
-                )}
-              </motion.div>
+            {/* Contact */}
+            {gallery.photographer.email && (
+              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Contact</div>
+                <div className="text-neutral-600 dark:text-neutral-400">{gallery.photographer.email}</div>
+              </div>
             )}
           </motion.div>
-        </div>
-      </div>
+        )}
+      </motion.div>
 
       {/* Edit Modal */}
       <AnimatePresence>
